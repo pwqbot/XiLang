@@ -105,6 +105,14 @@ constexpr auto satisfy(Pr pred, P parser = item) -> Parser auto{
     };
 }
 
+constexpr auto P_digit = satisfy(::isdigit);
+constexpr auto P_letter = satisfy(::isalpha);
+constexpr auto P_space = satisfy(::isspace);
+constexpr auto P_lower = satisfy(::islower);
+constexpr auto P_upper = satisfy(::isupper);
+constexpr auto P_alpha = P_letter || P_digit;
+constexpr auto P_alphanum = P_alpha || P_space;
+
 inline constexpr decltype(auto) papply =
     []<typename F, typename... Args>(F &&f, Args &&...args) {
         if constexpr (std::invocable<F, Args...>) {

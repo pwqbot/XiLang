@@ -42,3 +42,40 @@ TEST_CASE("Test Satisfy") {
     auto result3 = parser("def");
     REQUIRE(result3 == std::nullopt);
 }
+
+TEST_CASE("Parse digit") {
+    auto [result1, result2] = P_digit("123").value();
+    REQUIRE(result1 == '1');
+    REQUIRE(result2 == "23");
+
+    auto result3 = P_digit("abc");
+    REQUIRE(result3 == std::nullopt);
+}
+
+TEST_CASE("Parse space") {
+    auto [result1, result2] = P_space(" 123").value();
+    REQUIRE(result1 == ' ');
+    REQUIRE(result2 == "123");
+
+    auto result3 = P_space("123");
+    REQUIRE(result3 == std::nullopt);
+}
+
+TEST_CASE("Parse letter"){
+    auto [result1, result2] = P_letter("abc").value();
+    REQUIRE(result1 == 'a');
+    REQUIRE(result2 == "bc");
+
+    auto result3 = P_letter("123");
+    REQUIRE(result3 == std::nullopt);
+}
+
+TEST_CASE("Parse alphanum"){
+    auto [result1, result2] = P_alphanum("abc").value();
+    REQUIRE(result1 == 'a');
+    REQUIRE(result2 == "bc");
+
+    auto [result3, result4] = P_alphanum("123").value();
+    REQUIRE(result3 == '1');
+    REQUIRE(result4 == "23");
+}
