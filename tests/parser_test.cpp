@@ -24,19 +24,21 @@ TEST_CASE("Test ||") {
     REQUIRE(result4 == "ghi");
 }
 
-// TEST_CASE("Test >>") {
-//     auto parser = str("abc") >> [](auto) {
-//         return str("def");
-//     };
-// }
+TEST_CASE("Test >>") {
+    auto parser = str("abc") >> [](auto) {
+        return str("def");
+    };
+    auto [result1, result2] = parser("abcdef").value();
+    REQUIRE(result1 == "def");
+    REQUIRE(result2.empty());
+}
 
-// TEST_CASE("Test Satisfy") {
-//     auto parser             = satisfy([](char c) { return c == 'a'; });
-//     auto [result1, result2] = parser("abc").value();
-//     REQUIRE(result1 == 'a');
-//     REQUIRE(result2 == "bc");
-//
-//     auto result3 = parser("def");
-//     REQUIRE(result3 == std::nullopt);
-//     REQUIRE(result3 == std::nullopt);
-// }
+TEST_CASE("Test Satisfy") {
+    auto parser             = satisfy([](char c) { return c == 'a'; });
+    auto [result1, result2] = parser("abc").value();
+    REQUIRE(result1 == 'a');
+    REQUIRE(result2 == "bc");
+
+    auto result3 = parser("def");
+    REQUIRE(result3 == std::nullopt);
+}

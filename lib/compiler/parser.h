@@ -36,7 +36,7 @@ concept Parser_combinator = std::regular_invocable<F, Args...> &&
 
 template <typename F, typename... Args>
     requires Parser_combinator<F, Args...>
-using Parser_combinator_value_t = std::invoke_result<F, Args...>;
+using Parser_combinator_value_t = std::invoke_result_t<F, Args...>;
 
 // Return a Parser that matched the beginning of the input
 auto str(std::string_view match) -> Parser auto{
@@ -78,7 +78,7 @@ constexpr auto operator||(P p, Q q) -> Parser auto
 // monadic action
 template <Parser P, Parser_combinator<Parser_value_t<P>> F>
 constexpr Parser auto operator>>(P Parser, F func) {
-    using Parser_t = Parser_combinator_value_t<F, Parser_result_t<P>>;
+    using Parser_t = Parser_combinator_value_t<F, Parser_value_t<P>>;
     return [=](std::string_view input) -> Parser_result_t<Parser_t> {
         if (auto result = std::invoke(Parser, input)) {
             return std::invoke(std::invoke(func, result->first),
@@ -98,7 +98,7 @@ constexpr auto satisfy(Pr pred, P parser = item) -> Parser auto{
         return
             [pred, c](std::string_view input) -> Parsed_t<Parser_value_t<P>> {
                 if (std::invoke(pred, c)) {
-                    return std::make_pair(c, input);
+                    return {std::make_pair(c, input)};
                 }
                 return {};
             };
