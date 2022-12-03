@@ -74,6 +74,11 @@ inline const Parser auto Xi_integer = maybe(symbol('-')) >> [](auto x) {
     };
 };
 
+// real = integer "." [integer] | "." integer.
+inline const auto Xi_real = Xi_integer >> [](Xi_Integer x) {
+    return unit(Xi_Expr{Xi_Real{1.0}});
+};
+
 inline const Parser auto Xi_expr = Xi_true || Xi_false || Xi_integer;
 
 // literal = boolean | integer | real.

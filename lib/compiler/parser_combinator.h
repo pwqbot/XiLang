@@ -1,10 +1,9 @@
-#include <concepts>
 #include <functional>
-#include <iostream>
 #include <optional>
 #include <string>
 #include <string_view>
 #include <type_traits>
+#include <variant>
 
 namespace xi {
 
@@ -52,13 +51,57 @@ constexpr auto unit(T thing) -> Parser auto{
     };
 }
 
+template <typename V>
+concept is_variant = requires(V v) {
+                         []<typename... Ts>(std::variant<Ts...> const &) {
+                         }(v);
+                     };
+
 template <Parser P, Parser_combinator<Parser_value_t<P>> F>
-constexpr Parser auto operator>>(P Parser, F func) {
+    requires(!is_variant<Parser_value_t<P>>)
+constexpr auto operator>>(P parser, F func) -> Parser auto{
     using Parser_t = Parser_combinator_value_t<F, Parser_value_t<P>>;
     return [=](std::string_view input) -> Parser_result_t<Parser_t> {
-        if (auto result = std::invoke(Parser, input)) {
+        if (auto result = std::invoke(parser, input)) {
             return std::invoke(std::invoke(func, result->first),
                                result->second);
+        }
+        return std::nullopt;
+    };
+}
+
+template <typename Callable>
+using return_type_of_t =
+    typename decltype(std::function{std::declval<Callable>()})::result_type;
+
+template <typename T, typename F>
+struct _call_on_variant;
+
+template <typename F, typename... V>
+struct _call_on_variant<F, std::variant<V...>>
+    : std::disjunction<std::is_invocable<F, V>...> {};
+
+template <typename F, typename V>
+concept call_on_variant = _call_on_variant<F, V>::value;
+
+// If the parser returns a variant, then we unwrap it
+template <Parser P, typename F>
+constexpr auto operator>>(P parser, F func) -> auto
+    requires is_variant<Parser_value_t<P>> &&
+             call_on_variant<F, Parser_value_t<P>>
+{
+    return [=](std::string_view input) -> Parser_result_t<return_type_of_t<F>> {
+        if (auto result = std::invoke(parser, input)) {
+            auto n_parser = std::visit(
+                [&](auto &&thing) -> std::optional<return_type_of_t<F>> {
+                    if constexpr (std::invocable<F, decltype(thing)>) {
+                        return std::optional(std::invoke(func, thing));
+                    }
+                    return std::nullopt;
+                },
+                result->first);
+            return n_parser.and_then(
+                [result](auto f) { return std::invoke(f, result->second); });
         }
         return std::nullopt;
     };
