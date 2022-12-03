@@ -132,4 +132,14 @@ TEST_CASE("Test integer") {
     REQUIRE(result4 == "abc");
 }
 
+TEST_CASE("Test boolean") {
+    auto [result1, result2] = Xi_boolean("trueabc").value();
+    REQUIRE(result1 == Xi_Boolean{true});
+    REQUIRE(result2 == "abc");
+
+    auto [result3, result4] = Xi_boolean("falseabc").value();
+    REQUIRE(result3 == Xi_Boolean{false});
+    REQUIRE(result4 == "abc");
+}
+
 } // namespace xi
