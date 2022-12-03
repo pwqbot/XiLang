@@ -1,5 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
-#include <compiler/parser.h>
+#include <compiler/parsers.h>
+
+namespace xi {
 
 TEST_CASE("Test item") {
     auto [result1, result2] = item("abc").value();
@@ -61,7 +63,7 @@ TEST_CASE("Parse space") {
     REQUIRE(result3 == std::nullopt);
 }
 
-TEST_CASE("Parse letter"){
+TEST_CASE("Parse letter") {
     auto [result1, result2] = P_letter("abc").value();
     REQUIRE(result1 == 'a');
     REQUIRE(result2 == "bc");
@@ -70,7 +72,7 @@ TEST_CASE("Parse letter"){
     REQUIRE(result3 == std::nullopt);
 }
 
-TEST_CASE("Parse alphanum"){
+TEST_CASE("Parse alphanum") {
     auto [result1, result2] = P_alphanum("abc").value();
     REQUIRE(result1 == 'a');
     REQUIRE(result2 == "bc");
@@ -113,3 +115,21 @@ TEST_CASE("Test some") {
     auto result3 = parser("cabcabc");
     REQUIRE(result3 == std::nullopt);
 }
+
+TEST_CASE("Test natural") {
+    auto [result1, result2] = natural("123abc").value();
+    REQUIRE(result1 == 123);
+    REQUIRE(result2 == "abc");
+}
+
+TEST_CASE("Test integer") {
+    auto [result1, result2] = integer("123abc").value();
+    REQUIRE(result1 == 123);
+    REQUIRE(result2 == "abc");
+
+    auto [result3, result4] = integer("-123abc").value();
+    REQUIRE(result3 == -123);
+    REQUIRE(result4 == "abc");
+}
+
+} // namespace xi
