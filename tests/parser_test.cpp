@@ -79,3 +79,9 @@ TEST_CASE("Parse alphanum"){
     REQUIRE(result3 == '1');
     REQUIRE(result4 == "23");
 }
+
+TEST_CASE("Parse symbol") {
+    auto [result1, result2] = symbol('a')("abc").value();
+    REQUIRE(result1 == 'a');
+    REQUIRE(result2 == "bc");
+}

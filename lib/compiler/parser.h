@@ -105,13 +105,19 @@ constexpr auto satisfy(Pr pred, P parser = item) -> Parser auto{
     };
 }
 
-constexpr auto P_digit = satisfy(::isdigit);
-constexpr auto P_letter = satisfy(::isalpha);
-constexpr auto P_space = satisfy(::isspace);
-constexpr auto P_lower = satisfy(::islower);
-constexpr auto P_upper = satisfy(::isupper);
-constexpr auto P_alpha = P_letter || P_digit;
-constexpr auto P_alphanum = P_alpha || P_space;
+inline constexpr Parser auto P_digit = satisfy(::isdigit);
+inline constexpr Parser auto P_letter = satisfy(::isalpha);
+inline constexpr Parser auto P_space = satisfy(::isspace);
+inline constexpr Parser auto P_lower = satisfy(::islower);
+inline constexpr Parser auto P_upper = satisfy(::isupper);
+inline constexpr Parser auto P_alpha = P_letter || P_digit;
+inline constexpr Parser auto P_alphanum = P_alpha || P_space;
+
+constexpr auto symbol(char x) -> Parser auto {
+    return satisfy([x](char c) { return c == x; });
+}
+
+inline constexpr Parser auto plus = symbol('+');
 
 inline constexpr decltype(auto) papply =
     []<typename F, typename... Args>(F &&f, Args &&...args) {
