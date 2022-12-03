@@ -85,3 +85,31 @@ TEST_CASE("Parse symbol") {
     REQUIRE(result1 == 'a');
     REQUIRE(result2 == "bc");
 }
+
+TEST_CASE("Test many") {
+    auto parser             = many(symbol('+'));
+    auto [result1, result2] = parser("+++cabcabc").value();
+    REQUIRE(result1 == "+++");
+    REQUIRE(result2 == "cabcabc");
+
+    auto [result3, result4] = parser("cabcabc").value();
+    REQUIRE(result3.empty());
+    REQUIRE(result4 == "cabcabc");
+}
+
+TEST_CASE("Test token") {
+    auto parser             = token(str("foo"));
+    auto [result1, result2] = parser("  foo bar").value();
+    REQUIRE(result1 == "foo");
+    REQUIRE(result2 == " bar");
+}
+
+TEST_CASE("Test some") {
+    auto parser             = some(symbol('+'));
+    auto [result1, result2] = parser("+++cabcabc").value();
+    REQUIRE(result1 == "+++");
+    REQUIRE(result2 == "cabcabc");
+
+    auto result3 = parser("cabcabc");
+    REQUIRE(result3 == std::nullopt);
+}

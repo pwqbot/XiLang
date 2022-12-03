@@ -1,3 +1,4 @@
+#include <compiler/inner_type.h>
 #include <concepts>
 #include <functional>
 #include <optional>
@@ -89,7 +90,7 @@ constexpr Parser auto operator>>(P Parser, F func) {
 }
 
 constexpr auto operator>(Parser auto p, Parser auto q) -> Parser auto{
-    return (p >> [q](auto) { return q; }) || p;
+    return p >> [q](auto) { return q; };
 }
 
 template <typename Pr, Parser P = decltype(item)>
@@ -105,19 +106,69 @@ constexpr auto satisfy(Pr pred, P parser = item) -> Parser auto{
     };
 }
 
-inline constexpr Parser auto P_digit = satisfy(::isdigit);
-inline constexpr Parser auto P_letter = satisfy(::isalpha);
-inline constexpr Parser auto P_space = satisfy(::isspace);
-inline constexpr Parser auto P_lower = satisfy(::islower);
-inline constexpr Parser auto P_upper = satisfy(::isupper);
-inline constexpr Parser auto P_alpha = P_letter || P_digit;
+inline constexpr Parser auto P_digit    = satisfy(::isdigit);
+inline constexpr Parser auto P_letter   = satisfy(::isalpha);
+inline constexpr Parser auto P_space    = satisfy(::isspace);
+inline constexpr Parser auto P_lower    = satisfy(::islower);
+inline constexpr Parser auto P_upper    = satisfy(::isupper);
+inline constexpr Parser auto P_alpha    = P_letter || P_digit;
 inline constexpr Parser auto P_alphanum = P_alpha || P_space;
 
-constexpr auto symbol(char x) -> Parser auto {
+constexpr auto symbol(char x) -> Parser auto{
     return satisfy([x](char c) { return c == x; });
 }
 
 inline constexpr Parser auto plus = symbol('+');
+
+// Parse thing 0+ times
+template <typename T, Parser P, std::regular_invocable<T, Parser_value_t<P>> F>
+    requires std::convertible_to<std::invoke_result_t<F, T, Parser_value_t<P>>,
+                                 T>
+class reduce_many {
+    T init;
+    P parser;
+    F func;
+
+  public:
+    reduce_many(T init, P parser, F fn)
+        : init(init), parser(parser), func{fn} {}
+
+    constexpr auto operator()(std::string_view input) const -> Parsed_t<T> {
+        return ((parser >>
+                 [this](auto first) {
+                     return reduce_many{std::invoke(func, init, first), parser,
+                                        func};
+                 }) ||
+                unit(init))(input);
+    }
+};
+
+// Repeat a char parser 0+ times and concatenate the result into a string
+template <Parser P>
+    requires std::same_as<Parser_value_t<P>, char>
+constexpr auto many(P parser) -> Parser auto{
+    return reduce_many{std::string{}, parser, [](auto acc, auto c) {
+                           return acc + c;
+                       }};
+}
+
+// Repeat a char parser 1+ times and concatenate the result into a string
+template <Parser P>
+    requires std::same_as<Parser_value_t<P>, char>
+constexpr auto some(P parser) -> Parser auto{
+    return parser >> [parser](auto first) {
+        return many(parser) >> [first](auto rest) {
+            return unit(std::string{first} + rest);
+        };
+    };
+}
+ 
+// whitespace is many space
+inline const Parser auto whitespace = many(P_space);
+
+constexpr auto token(Parser auto parser) -> Parser auto{
+    return whitespace > parser;
+}
 
 inline constexpr decltype(auto) papply =
     []<typename F, typename... Args>(F &&f, Args &&...args) {
