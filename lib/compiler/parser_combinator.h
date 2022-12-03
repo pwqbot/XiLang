@@ -1,4 +1,3 @@
-#include <compiler/inner_type.h>
 #include <concepts>
 #include <functional>
 #include <iostream>
