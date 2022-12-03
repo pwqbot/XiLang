@@ -46,38 +46,38 @@ TEST_CASE("Test Satisfy") {
 }
 
 TEST_CASE("Parse digit") {
-    auto [result1, result2] = P_digit("123").value();
+    auto [result1, result2] = Xi_digit("123").value();
     REQUIRE(result1 == '1');
     REQUIRE(result2 == "23");
 
-    auto result3 = P_digit("abc");
+    auto result3 = Xi_digit("abc");
     REQUIRE(result3 == std::nullopt);
 }
 
 TEST_CASE("Parse space") {
-    auto [result1, result2] = P_space(" 123").value();
+    auto [result1, result2] = Xi_space(" 123").value();
     REQUIRE(result1 == ' ');
     REQUIRE(result2 == "123");
 
-    auto result3 = P_space("123");
+    auto result3 = Xi_space("123");
     REQUIRE(result3 == std::nullopt);
 }
 
 TEST_CASE("Parse letter") {
-    auto [result1, result2] = P_letter("abc").value();
+    auto [result1, result2] = Xi_letter("abc").value();
     REQUIRE(result1 == 'a');
     REQUIRE(result2 == "bc");
 
-    auto result3 = P_letter("123");
+    auto result3 = Xi_letter("123");
     REQUIRE(result3 == std::nullopt);
 }
 
 TEST_CASE("Parse alphanum") {
-    auto [result1, result2] = P_alphanum("abc").value();
+    auto [result1, result2] = Xi_alphanum("abc").value();
     REQUIRE(result1 == 'a');
     REQUIRE(result2 == "bc");
 
-    auto [result3, result4] = P_alphanum("123").value();
+    auto [result3, result4] = Xi_alphanum("123").value();
     REQUIRE(result3 == '1');
     REQUIRE(result4 == "23");
 }
@@ -117,18 +117,18 @@ TEST_CASE("Test some") {
 }
 
 TEST_CASE("Test natural") {
-    auto [result1, result2] = natural("123abc").value();
-    REQUIRE(result1 == 123);
+    auto [result1, result2] = Xi_natural("123abc").value();
+    REQUIRE(result1.value == 123);
     REQUIRE(result2 == "abc");
 }
 
 TEST_CASE("Test integer") {
-    auto [result1, result2] = integer("123abc").value();
-    REQUIRE(result1 == 123);
+    auto [result1, result2] = Xi_integer("123abc").value();
+    REQUIRE(result1 == Xi_Integer{123});
     REQUIRE(result2 == "abc");
 
-    auto [result3, result4] = integer("-123abc").value();
-    REQUIRE(result3 == -123);
+    auto [result3, result4] = Xi_integer("-123abc").value();
+    REQUIRE(result3 == Xi_Integer{-123});
     REQUIRE(result4 == "abc");
 }
 

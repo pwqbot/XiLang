@@ -129,4 +129,11 @@ constexpr auto some(P parser) -> Parser auto{
     };
 }
 
+template <Parser P>
+auto maybe(P parser) -> Parser auto{
+    return parser >> [](auto thing) {
+        return unit(std::optional{thing});
+    } || unit(std::optional<Parser_value_t<P>>{});
+}
+
 } // namespace xi
