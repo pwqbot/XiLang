@@ -1,0 +1,17 @@
+InlayHints:
+  Enabled: Yes
+  ParameterNames: Yes
+  DeducedTypes: Yes
+
+Diagnostics:
+  UnusedIncludes: Strict
+
+CompileFlags:
+  Add: [-std=c++2b]
+  Compiler: g++
+
+Completion:
+  AllScopes: Yes
+
+Hover:
+  ShowAKA: Yes
