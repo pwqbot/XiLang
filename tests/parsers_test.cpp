@@ -1,5 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 #include <compiler/parsers.h>
+#include <cstdio>
 
 namespace xi {
 
@@ -53,13 +54,19 @@ TEST_CASE("Test token", "[string]") {
     REQUIRE(result2 == " bar");
 }
 
+TEST_CASE("Test String", "[Xi_String]") {
+    auto [result1, result2] = Xi_string("\"abcccb\"").value();
+    REQUIRE(result1 == Xi_String{"abcccb", "abcccb"});
+    REQUIRE(result2 == "");
+}
+
 TEST_CASE("Test natural", "[string]") {
     auto [result1, result2] = s_natural("123abc").value();
     REQUIRE(result1 == "123");
     REQUIRE(result2 == "abc");
 }
 
-TEST_CASE("Test integer", "[integer]") {
+TEST_CASE("Test integer", "[Xi_Integer]") {
     auto [result1, result2] = Xi_integer("123abc").value();
     REQUIRE(result1 == Xi_Integer{"123", 123});
     REQUIRE(result2 == "abc");
@@ -69,7 +76,7 @@ TEST_CASE("Test integer", "[integer]") {
     REQUIRE(result4 == "abc");
 }
 
-TEST_CASE("Test boolean", "[boolean]") {
+TEST_CASE("Test boolean", "[Xi_Boolean]") {
     auto [result1, result2] = Xi_boolean("trueabc").value();
     REQUIRE(result1 == Xi_Boolean{"true", true});
     REQUIRE(result2 == "abc");
@@ -79,7 +86,7 @@ TEST_CASE("Test boolean", "[boolean]") {
     REQUIRE(result4 == "abc");
 }
 
-TEST_CASE("Test real", "[real]") {
+TEST_CASE("Test real", "[Xi_Real]") {
     auto [result1, result2] = Xi_real("123.456abc").value();
     REQUIRE(result1 == Xi_Real{"123.456", 123.456});
     REQUIRE(result2 == "abc");
@@ -90,6 +97,23 @@ TEST_CASE("Test real", "[real]") {
 
     auto result5 = Xi_real("123abc");
     REQUIRE(result5 == std::nullopt);
+}
+
+TEST_CASE("Test expr", "Xi_Expr") {
+    auto [integer1, integer2] = Xi_expr("123abc").value();
+    REQUIRE(integer1 == Xi_Integer{"123", 123});
+    REQUIRE(integer2 == "abc");
+
+    auto [real1, real2] = Xi_expr("123.456abc").value();
+    REQUIRE(real1 == Xi_Real{"123.456", 123.456});
+    REQUIRE(real2 == "abc");
+
+    auto [boolean1, boolean2] = Xi_expr("trueabc").value();
+    REQUIRE(boolean1 == Xi_Boolean{"true", true});
+    REQUIRE(boolean2 == "abc");
+
+    auto [string1, string2] = Xi_expr("\"abc\"abc").value();
+    REQUIRE(string1 == Xi_String{"\"abc\"", "abc"});
 }
 
 } // namespace xi
