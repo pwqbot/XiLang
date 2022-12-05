@@ -56,7 +56,7 @@ TEST_CASE("Test token", "[string]") {
 
 TEST_CASE("Test String", "[Xi_String]") {
     auto [result1, result2] = Xi_string("\"abcccb\"").value();
-    REQUIRE(result1 == Xi_String{"\"abcccb\"", "abcccb"});
+    REQUIRE(result1 == Xi_String{"abcccb"});
     REQUIRE(result2 == "");
 }
 
@@ -68,52 +68,67 @@ TEST_CASE("Test natural", "[string]") {
 
 TEST_CASE("Test integer", "[Xi_Integer]") {
     auto [result1, result2] = Xi_integer("123abc").value();
-    REQUIRE(result1 == Xi_Integer{"123", 123});
+    REQUIRE(result1 == Xi_Integer{123});
     REQUIRE(result2 == "abc");
 
     auto [result3, result4] = Xi_integer("-123abc").value();
-    REQUIRE(result3 == Xi_Integer{"-123", -123});
+    REQUIRE(result3 == Xi_Integer{-123});
     REQUIRE(result4 == "abc");
 }
 
 TEST_CASE("Test boolean", "[Xi_Boolean]") {
     auto [result1, result2] = Xi_boolean("trueabc").value();
-    REQUIRE(result1 == Xi_Boolean{"true", true});
+    REQUIRE(result1 == Xi_Boolean{true});
     REQUIRE(result2 == "abc");
 
     auto [result3, result4] = Xi_boolean("falseabc").value();
-    REQUIRE(result3 == Xi_Boolean{"false", false});
+    REQUIRE(result3 == Xi_Boolean{false});
     REQUIRE(result4 == "abc");
 }
 
 TEST_CASE("Test real", "[Xi_Real]") {
     auto [result1, result2] = Xi_real("123.456abc").value();
-    REQUIRE(result1 == Xi_Real{"123.456", 123.456});
+    REQUIRE(result1 == Xi_Real{123.456});
     REQUIRE(result2 == "abc");
 
     auto [result3, result4] = Xi_real("-123.456abc").value();
-    REQUIRE(result3 == Xi_Real{"-123.456", -123.456});
+    REQUIRE(result3 == Xi_Real{-123.456});
     REQUIRE(result4 == "abc");
 
     auto result5 = Xi_real("123abc");
     REQUIRE(result5 == std::nullopt);
 }
 
-TEST_CASE("Test expr", "Xi_Expr") {
+TEST_CASE("Test expr", "[Xi_Expr]") {
     auto [integer1, integer2] = Xi_expr("123abc").value();
-    REQUIRE(integer1 == Xi_Integer{"123", 123});
+    REQUIRE(integer1 == Xi_Integer{123});
     REQUIRE(integer2 == "abc");
 
     auto [real1, real2] = Xi_expr("123.456abc").value();
-    REQUIRE(real1 == Xi_Real{"123.456", 123.456});
+    REQUIRE(real1 == Xi_Real{123.456});
     REQUIRE(real2 == "abc");
 
     auto [boolean1, boolean2] = Xi_expr("trueabc").value();
-    REQUIRE(boolean1 == Xi_Boolean{"true", true});
+    REQUIRE(boolean1 == Xi_Boolean{true});
     REQUIRE(boolean2 == "abc");
 
     auto [string1, string2] = Xi_expr("\"abc\"abc").value();
-    REQUIRE(string1 == Xi_String{"\"abc\"", "abc"});
+    REQUIRE(string1 == Xi_String{"abc"});
+}
+
+TEST_CASE("Test mathexpr", "[Xi_Expr]") {
+    auto x1 = recursive_wrapper<Xi_Binop>(
+        Xi_Binop{Xi_Integer{1}, Xi_Integer{2}, Xi_Op::Add});
+    auto x2 = recursive_wrapper<Xi_Binop>(
+        Xi_Binop{Xi_Integer{1}, Xi_Integer{2}, Xi_Op::Add});
+    REQUIRE(x1 == x2);
+
+    // auto [integer1, integer2] = Xi_mathexpr("1 + 2").value();
+    // REQUIRE(GetText(integer1) == "12");
+    // REQUIRE(integer1 ==
+    //         Xi_Binop{Xi_Integer{1}, Xi_Integer{2}, Xi_Op::Add});
+    // auto integer1 = Xi_mathexpr("1 + 2");
+    // REQUIRE(integer1 == std::nullopt);
 }
 
 } // namespace xi
