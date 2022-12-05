@@ -101,22 +101,26 @@ inline const Parser auto Xi_real = Xi_integer >> [](const Xi_Integer &integer) {
     };
 };
 
-// <expr> ::= <term> | <expr> +- <expr>
+
+// <expr> ::= <term> | <expr> +- <term>
 // <term> ::= <number> | <number> "*" <number>
 // <number> ::= <integer> | <real>
-
 inline const Parser auto Xi_number = Xi_integer || Xi_real;
-//
-// inline const Parser auto Xi_term =
-//     Xi_number || (Xi_number >> [](auto x) {
-//         return s_times > Xi_number >> [x](auto y) {
-//             return unit(Xi_Expr{Xi_Binop{.text{x.text + "*" + y.text},
-//                                          .lhs{&std::move(x)},
-//                                          .rhs{&std::move(y)}}});
-//         };
-//     });
 
-inline const Parser auto Xi_expr =
-    Xi_true || Xi_false || Xi_real || Xi_integer || Xi_string;
+//
+inline const Parser auto Xi_term =
+    Xi_number || (Xi_number >> []<typename T>(T x) {
+        return (s_times || s_divide) > Xi_number >> [x]<typename U>(U y) {
+            return unit(Xi_Expr{Xi_Binop{.text{GetText(x) + "*" + GetText(y)},
+                                         .lhs{x},
+                                         .rhs{y},
+                                         .op{Xi_Op::Add}}});
+        };
+    });
+
+auto Xi_expr(std::string_view input) -> Parsed_t<Xi_Expr> {
+    return (Xi_true || Xi_false || Xi_real || Xi_integer || Xi_string ||
+            Xi_term || Xi_expr)(input);
+}
 
 } // namespace xi

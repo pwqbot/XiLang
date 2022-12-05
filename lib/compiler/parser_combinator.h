@@ -3,6 +3,7 @@
 #include <string>
 #include <string_view>
 #include <type_traits>
+#include <utility>
 #include <variant>
 
 namespace xi {
@@ -57,8 +58,12 @@ concept is_variant = requires(V v) {
                          }(v);
                      };
 
+template <typename F>
+concept no_overload = requires(
+    F f) { typename decltype(std::function{std::declval<F>()})::result_type; };
+
 template <Parser P, Parser_combinator<Parser_value_t<P>> F>
-    requires(!is_variant<Parser_value_t<P>>)
+    requires(!is_variant<Parser_value_t<P>> || !no_overload<F>)
 constexpr auto operator>>(P parser, F func) -> Parser auto{
     using Parser_t = Parser_combinator_value_t<F, Parser_value_t<P>>;
     return [=](std::string_view input) -> Parser_result_t<Parser_t> {
@@ -74,6 +79,14 @@ template <typename Callable>
 using return_type_of_t =
     typename decltype(std::function{std::declval<Callable>()})::result_type;
 
+template <typename Callable>
+struct trait_return_type;
+
+template <typename Ret, typename... Args>
+struct trait_return_type<Ret(Args...)> {
+    using type = Ret;
+};
+
 template <typename T, typename F>
 struct _call_on_variant;
 
@@ -88,7 +101,7 @@ concept call_on_variant = _call_on_variant<F, V>::value;
 template <Parser P, typename F>
 constexpr auto operator>>(P parser, F func) -> auto
     requires is_variant<Parser_value_t<P>> &&
-             call_on_variant<F, Parser_value_t<P>>
+             call_on_variant<F, Parser_value_t<P>> && no_overload<F>
 {
     return [=](std::string_view input) -> Parser_result_t<return_type_of_t<F>> {
         if (auto result = std::invoke(parser, input)) {
