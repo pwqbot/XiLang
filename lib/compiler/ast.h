@@ -14,21 +14,25 @@ auto operator==(const std::variant<Types...> &v, T const &t) noexcept
 }
 
 struct Xi_Boolean {
-    bool value;
-    auto operator<=>(const Xi_Boolean &) const = default;
+    std::string text;
+    bool        value;
+    auto        operator<=>(const Xi_Boolean &) const = default;
 };
 
 struct Xi_Integer {
-    int  value;
-    auto operator<=>(const Xi_Integer &) const = default;
+    std::string text;
+    int         value;
+    auto        operator<=>(const Xi_Integer &) const = default;
 };
 
 struct Xi_Real {
-    double value;
-    auto   operator<=>(const Xi_Real &) const = default;
+    std::string text;
+    double      value;
+    auto        operator<=>(const Xi_Real &) const = default;
 };
 
 struct Xi_String {
+    std::string text;
     std::string value;
     auto        operator<=>(const Xi_String &) const = default;
 };
