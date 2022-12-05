@@ -39,7 +39,7 @@ struct Xi_String {
 
 using Xi_Literal = std::variant<Xi_Boolean, Xi_Integer, Xi_Real, Xi_String>;
 
-using Xi_Expr = std::variant<Xi_Integer, Xi_Boolean, Xi_Real>;
+using Xi_Expr = std::variant<Xi_Integer, Xi_Boolean, Xi_Real, Xi_String>;
 
 struct Xi_Iden {
     std::string name;

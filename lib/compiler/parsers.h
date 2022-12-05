@@ -18,6 +18,9 @@ constexpr auto item(std::string_view input) -> Parsed_t<char> {
     return std::make_pair(input[0], input.substr(1));
 }
 
+// constexpr auto dd = reduce_many{std::string{}, item("1"),
+//                            [](auto acc, auto c) { return acc + c; }};
+
 template <typename Pr, Parser P = decltype(item)>
 constexpr auto satisfy(Pr pred, P parser = item) -> Parser auto{
     return parser >> [pred](auto c) -> Parser auto{
@@ -45,23 +48,31 @@ inline constexpr Parser auto s_alpha      = s_letter || s_digit;
 inline constexpr Parser auto s_alphanum   = s_alpha || s_space;
 inline constexpr Parser auto s_plus       = symbol('+');
 
-inline constexpr Parser auto Xi_true = str("true") >> [](auto) {
-    return unit(Xi_Expr{Xi_Boolean{.text{"true"}, .value{true}}});
-};
-
-inline constexpr Parser auto Xi_false = str("false") >> [](auto) {
-    return unit(Xi_Expr{Xi_Boolean{.text{"false"}, .value{false}}});
-};
-
-inline constexpr Parser auto Xi_boolean = Xi_true || Xi_false;
-
 constexpr auto token(Parser auto parser) -> Parser auto{
     return s_whitespace > parser;
 }
 
-inline const Parser auto s_natural = some(s_digit);
+// string literal
+inline const Parser auto
+    Xi_string = token(str("\"")) > many(s_alphanum) >> [](auto s) {
+        return str("\"") >> [s](auto) {
+            return unit(Xi_Expr{Xi_String{.text{s}, .value{s}}});
+        };
+    };
 
-inline const Parser auto Xi_integer = maybe(symbol('-')) >> [](auto x) {
+inline const Parser auto Xi_true = token(str("true")) >> [](auto) {
+    return unit(Xi_Expr{Xi_Boolean{.text{"true"}, .value{true}}});
+};
+
+inline const Parser auto Xi_false = token(str("false")) >> [](auto) {
+    return unit(Xi_Expr{Xi_Boolean{.text{"false"}, .value{false}}});
+};
+
+inline const Parser auto Xi_boolean = Xi_true || Xi_false;
+
+inline const Parser auto s_natural = token(some(s_digit));
+
+inline const Parser auto Xi_integer = token(maybe(symbol('-'))) >> [](auto x) {
     return s_natural >> [x](auto nat) {
         if (x) {
             return unit(Xi_Expr{Xi_Integer{.text{std::string("-") + nat},
@@ -80,8 +91,7 @@ inline const Parser auto Xi_real = Xi_integer >> [](const Xi_Integer &integer) {
     };
 };
 
-inline const Parser auto Xi_expr = Xi_true || Xi_false || Xi_integer;
+inline const Parser auto Xi_expr =
+    Xi_true || Xi_false || Xi_integer || Xi_real || Xi_string;
 
-// literal = boolean | integer | real.
-// auto literal = Xi_true || Xi_false || Xi_integer;
 } // namespace xi

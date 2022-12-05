@@ -138,7 +138,7 @@ class reduce_many {
     F func;
 
   public:
-    reduce_many(T init, P parser, F fn)
+    constexpr reduce_many(T init, P parser, F fn)
         : init(init), parser(parser), func{fn} {}
 
     constexpr auto operator()(std::string_view input) const -> Parsed_t<T> {
@@ -152,12 +152,12 @@ class reduce_many {
 };
 
 // Repeat a char parser 0+ times and concatenate the result into a string
+// TODO(ding.wang): refactor to constexpr after std::string is constepxr
 template <Parser P>
     requires std::same_as<Parser_value_t<P>, char>
-constexpr auto many(P parser) -> Parser auto{
-    return reduce_many{std::string{}, parser, [](auto acc, auto c) {
-                           return acc + c;
-                       }};
+auto many(P parser) -> Parser auto{
+    return reduce_many(std::string{}, parser,
+                       [](auto acc, auto c) { return acc + c; });
 }
 
 // Repeat a char parser 1+ times and concatenate the result into a string
