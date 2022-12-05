@@ -39,7 +39,40 @@ struct Xi_String {
 
 using Xi_Literal = std::variant<Xi_Boolean, Xi_Integer, Xi_Real, Xi_String>;
 
-using Xi_Expr = std::variant<Xi_Integer, Xi_Boolean, Xi_Real, Xi_String>;
+enum class Xi_Op {
+    Add,
+    Sub,
+    Mul,
+    Div,
+    Mod,
+    Pow,
+    Eq,
+    Neq,
+    Lt,
+    Gt,
+    Leq,
+    Geq,
+    And,
+    Or,
+    Not,
+};
+
+struct Xi_Binop;
+
+// <expr> ::= <term> | <expr> +- <expr>
+// <term> ::= <number> | <number> "*" <number>
+// <number> ::= <integer> | <real>
+using Xi_Expr = std::variant<Xi_Integer, Xi_Boolean, Xi_Real, Xi_String, Xi_Binop>;
+
+// binary expression
+struct Xi_Binop {
+    // use pointer to avoid recursive type
+    std::string text;
+    Xi_Expr* lhs;
+    Xi_Expr* rhs;
+    Xi_Op   op;
+    auto    operator<=>(const Xi_Binop &) const = default;
+};
 
 struct Xi_Iden {
     std::string name;
