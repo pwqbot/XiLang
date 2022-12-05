@@ -90,10 +90,7 @@ auto StrToOp(std::string_view s) -> Xi_Op {
 }
 
 struct Xi_Binop;
-template <typename T>
-std::strong_ordering operator<=>(const T& a, const T& b);
-template <typename T>
-auto operator<=>(const Xi_Binop &a, const Xi_Binop &b) -> std::strong_ordering;
+auto operator<=>(const Xi_Binop &a, const Xi_Binop &b) -> std::partial_ordering;
 
 // <expr> ::= <term> | <expr> +- <expr>
 // <term> ::= <number> | <number> "*" <number>
@@ -101,26 +98,32 @@ auto operator<=>(const Xi_Binop &a, const Xi_Binop &b) -> std::strong_ordering;
 using Xi_Expr = std::variant<Xi_Integer, Xi_Boolean, Xi_Real, Xi_String,
                              recursive_wrapper<Xi_Binop>>;
 
-template <typename T>
-std::strong_ordering compare(T a, T b);
-
 // binary expression
 struct Xi_Binop {
     Xi_Expr lhs;
     Xi_Expr rhs;
     Xi_Op   op;
-    auto    operator<=>(const Xi_Binop &) const { return compare(lhs, rhs); }
+    // I don't know why this work
+    auto operator==(const Xi_Binop &b) const {
+        return this->lhs == b.lhs && this->rhs == b.rhs;
+    }
 };
 
-template <typename T>
-std::strong_ordering compare(T a, T b) {
-    return a <=> b;
+auto operator<=>(const Xi_Binop &a, const Xi_Binop &b)
+    -> std::partial_ordering {
+    if (auto cmp = a.lhs <=> b.lhs; cmp != 0) {
+        return cmp;
+    }
+    if (auto cmp = a.rhs <=> b.rhs; cmp != 0) {
+        return cmp;
+    }
+    return a.op <=> b.op;
 }
 
 struct Xi_Iden {
     std::string name;
-    Xi_Expr     expr;
-    auto        operator<=>(const Xi_Iden &) const = default;
+    // Xi_Expr     expr;
+    // auto        operator<=>(const Xi_Iden &) const = default;
 };
 
 void test() {
