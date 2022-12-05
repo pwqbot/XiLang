@@ -56,7 +56,7 @@ TEST_CASE("Test token", "[string]") {
 
 TEST_CASE("Test String", "[Xi_String]") {
     auto [result1, result2] = Xi_string("\"abcccb\"").value();
-    REQUIRE(result1 == Xi_String{"abcccb", "abcccb"});
+    REQUIRE(result1 == Xi_String{"\"abcccb\"", "abcccb"});
     REQUIRE(result2 == "");
 }
 
