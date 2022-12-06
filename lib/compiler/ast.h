@@ -99,19 +99,31 @@ constexpr auto Xi_Op_To_OpStr(Xi_Op op) -> std::string_view {
         ->first;
 }
 
+struct Xi_Iden {
+    std::string name;
+    // Xi_Expr     expr;
+    auto operator<=>(const Xi_Iden &) const = default;
+};
+
 struct Xi_Binop;
-auto operator<=>(const Xi_Binop &a, const Xi_Binop &b) -> std::partial_ordering;
+auto operator<=>(const Xi_Binop &lhs, const Xi_Binop &rhs)
+    -> std::partial_ordering;
 
 struct Xi_If;
-auto operator<=>(const Xi_If &a, const Xi_If &b) -> std::partial_ordering;
+auto operator<=>(const Xi_If &lhs, const Xi_If &rhs) -> std::partial_ordering;
 
 struct Xi_Unop;
-auto operator<=>(const Xi_Unop &a, const Xi_Unop &b) -> std::partial_ordering;
+auto operator<=>(const Xi_Unop &lhs, const Xi_Unop &rhs)
+    -> std::partial_ordering;
+
+struct Xi_Lam;
+auto operator<=>(const Xi_Lam &lhs, const Xi_Lam &rhs) -> std::partial_ordering;
 
 using Xi_Expr =
     std::variant<Xi_Integer, Xi_Boolean, Xi_Real, Xi_String,
-                 recursive_wrapper<Xi_Unop>, recursive_wrapper<Xi_Binop>,
-                 recursive_wrapper<Xi_If>>;
+                 Xi_Iden, recursive_wrapper<Xi_Unop>,
+                 recursive_wrapper<Xi_Binop>, recursive_wrapper<Xi_If>,
+                 recursive_wrapper<Xi_Lam>>;
 
 // binary expression
 struct Xi_Binop {
@@ -123,15 +135,15 @@ struct Xi_Binop {
     }
 };
 
-auto operator<=>(const Xi_Binop &a, const Xi_Binop &b)
+auto operator<=>(const Xi_Binop &lhs, const Xi_Binop &rhs)
     -> std::partial_ordering {
-    if (auto cmp = a.lhs <=> b.lhs; cmp != nullptr) {
+    if (auto cmp = lhs.lhs <=> rhs.lhs; cmp != nullptr) {
         return cmp;
     }
-    if (auto cmp = a.rhs <=> b.rhs; cmp != nullptr) {
+    if (auto cmp = lhs.rhs <=> rhs.rhs; cmp != nullptr) {
         return cmp;
     }
-    return a.op <=> b.op;
+    return lhs.op <=> rhs.op;
 }
 
 struct Xi_Unop {
@@ -163,10 +175,19 @@ auto operator<=>(const Xi_If &lhs, const Xi_If &rhs) -> std::partial_ordering {
     return lhs.els <=> rhs.els;
 }
 
-struct Xi_Iden {
-    std::string name;
-    // Xi_Expr     expr;
-    auto        operator<=>(const Xi_Iden &) const = default;
+using Xi_Args = std::vector<Xi_Iden>;
+
+struct Xi_Lam {
+    std::vector<Xi_Iden> args;
+    Xi_Expr              body;
 };
+
+auto operator<=>(const Xi_Lam &lhs, const Xi_Lam &rhs)
+    -> std::partial_ordering {
+    if (auto cmp = lhs.args <=> rhs.args; cmp != nullptr) {
+        return cmp;
+    }
+    return lhs.body <=> rhs.body;
+}
 
 } // namespace xi

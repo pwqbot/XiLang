@@ -2,17 +2,25 @@
 
 #include <compiler/ast.h>
 #include <compiler/basic_parsers.h>
+#include <iostream>
 
 namespace xi {
 
+const auto Xi_iden = token(some(s_alphanum || s_underscore)) >> [](auto name) {
+    return unit(Xi_Expr{Xi_Iden{.name{name}}});
+};
+
+auto Xi_expr(std::string_view input) -> Parsed_t<Xi_Expr>;
+
 // <mathexpr> ::= <term> | <term> "+-" <term>
 // <term> ::= <number> | <number> "*/" <number>
-// <number> ::= <integer> | <real> | "(" <mathexpr> ")"
+// <number> ::= <integer> | <real> | "(" <mathexpr> ")" | <iden>
 auto Xi_mathexpr(std::string_view input) -> Parsed_t<Xi_Expr>;
 
 auto Xi_number(std::string_view input) -> Parsed_t<Xi_Expr> {
-    return (Xi_real || Xi_integer || (s_lparen > Xi_mathexpr >> [](auto expr) {
-                return s_rparen >> [expr](auto) {
+    return (Xi_real || Xi_integer || Xi_iden ||
+            (token(s_lparen) > Xi_mathexpr >> [](auto expr) {
+                return token(s_rparen) >> [expr](auto) {
                     return unit(expr);
                 };
             }))(input);
@@ -31,16 +39,29 @@ inline const Parser auto Xi_term =
 
 auto Xi_mathexpr(std::string_view input) -> Parsed_t<Xi_Expr> {
     return ((Xi_term >>
-             [](auto lhs) {
-                 return (Xi_add || Xi_minus) >> [lhs](auto op) {
-                     return Xi_term >> [lhs, op](auto rhs) {
-                         return unit(
-                             Xi_Expr{Xi_Binop{.lhs{lhs}, .rhs{rhs}, .op{op}}});
-                     };
-                 };
-             }) ||
-            Xi_term)(input);
+            [](auto lhs) {
+                return (Xi_add || Xi_minus) >> [lhs](auto op) {
+                    return Xi_mathexpr >> [lhs, op](auto rhs) {
+                        return unit(Xi_Expr{Xi_Binop{.lhs{lhs}, .rhs{rhs}, .op{op}}});
+                    };
+                };
+            }) ||
+           Xi_term)(input);
 }
+
+
+// auto Xi_mathexpr(std::string_view input) -> Parsed_t<Xi_Expr> {
+//     return ((Xi_term >>
+//              [](auto lhs) {
+//                  return (Xi_add || Xi_minus) >> [lhs](auto op) {
+//                      return Xi_term >> [lhs, op](auto rhs) {
+//                          return unit(
+//                              Xi_Expr{Xi_Binop{.lhs{lhs}, .rhs{rhs}, .op{op}}});
+//                      };
+//                  };
+//              }) ||
+//             Xi_term)(input);
+// }
 
 // <boolexpr> ::= <boolterm> | <boolterm> "||" <boolterm>
 // <boolterm> ::= <boolfactor> | <boolfactor> "&&" <boolfactor>
@@ -59,12 +80,12 @@ const auto Xi_mathbool = Xi_mathexpr >> [](auto lhs) {
            };
 };
 
-const auto Xi_boolvalue =
-    Xi_boolean || Xi_mathbool || (s_lparen > Xi_boolexpr >> [](auto expr) {
-        return s_rparen >> [expr](auto) {
-            return unit(expr);
-        };
-    });
+const auto Xi_boolvalue = Xi_boolean || Xi_mathbool || Xi_iden ||
+                          (token(s_lparen) > Xi_boolexpr >> [](auto expr) {
+                              return token(s_rparen) >> [expr](auto) {
+                                  return unit(expr);
+                              };
+                          });
 
 const auto Xi_factor =
     Xi_boolvalue || (Xi_not > Xi_boolvalue >> [](auto expr) {
@@ -98,11 +119,11 @@ auto Xi_boolexpr(std::string_view input) -> Parsed_t<Xi_Expr> {
 };
 
 // parse if expression: if cond then expr else expr
-const auto Xi_if = s_if >> [](auto) {
+const auto Xi_if = token(s_if) >> [](auto) {
     return Xi_boolexpr >> [](auto cond) {
-        return s_then >> [cond](auto) {
+        return token(s_then) >> [cond](auto) {
             return Xi_mathexpr >> [cond](auto then) {
-                return s_else >> [cond, then](auto) {
+                return token(s_else) >> [cond, then](auto) {
                     return Xi_mathexpr >> [cond, then](auto els) {
                         return unit(Xi_Expr{
                             Xi_If{.cond{cond}, .then{then}, .els{els}}});
@@ -113,12 +134,31 @@ const auto Xi_if = s_if >> [](auto) {
     };
 };
 
-const auto Xi_iden = token(some(s_alphanum || s_underscore)) >> [](auto name) {
-    return unit(Xi_Iden{.name{name}});
+// parse lambda: "?" <args> "->" <expr>
+// <args> ::= <iden> | <iden> <args>
+
+auto Xi_args(std::string_view input) -> Parsed_t<Xi_Args> {
+    return ((Xi_iden >>
+             [](Xi_Iden arg) {
+                 return Xi_args >> [arg](auto args) {
+                     args.insert(args.begin(), arg);
+                     return unit(Xi_Args{args});
+                 };
+             }) ||
+            Xi_iden >> [](Xi_Iden arg) { return unit(Xi_Args{arg}); })(input);
+}
+
+const auto Xi_lam = token(s_question) > Xi_args >> [](auto args) {
+    return token(s_arrow) >> [args](auto) {
+        return Xi_expr >> [args](auto expr) {
+            return unit(Xi_Expr{Xi_Lam{.args{args}, .body{expr}}});
+        };
+    };
 };
 
-
-const auto Xi_expr =
-    Xi_true || Xi_false || Xi_string || Xi_mathexpr || Xi_if || Xi_boolexpr;
+auto Xi_expr(std::string_view input) -> Parsed_t<Xi_Expr> {
+    return (Xi_true || Xi_false || Xi_string || Xi_mathexpr || Xi_if ||
+            Xi_boolexpr || Xi_lam)(input);
+}
 
 } // namespace xi

@@ -108,3 +108,28 @@ struct fmt::formatter<xi::Xi_If> : fmt::formatter<xi::Xi_Expr> {
         return out;
     }
 };
+
+template <>
+struct fmt::formatter<xi::Xi_Lam> : fmt::formatter<xi::Xi_Expr> {
+    template <typename FormatContext>
+    auto format(const xi::Xi_Lam &l, FormatContext &ctx) {
+        auto out = ctx.out();
+        out      = fmt::format_to(out, "Xi_Lam\n");
+        out      = fmt::format_to(out, "\t");
+        // out      = fmt::formatter<xi::Xi_Expr>::format(l.args, ctx);
+        out      = fmt::format_to(out, "\n\t");
+        out      = fmt::formatter<xi::Xi_Expr>::format(l.body, ctx);
+        return out;
+    }
+};
+
+template <>
+struct fmt::formatter<xi::Xi_Iden> : fmt::formatter<xi::Xi_Expr> {
+    template <typename FormatContext>
+    auto format(const xi::Xi_Iden &i, FormatContext &ctx) {
+        auto out = ctx.out();
+        out      = fmt::format_to(out, "Xi_Iden ");
+        out      = fmt::formatter<std::string>::format(i.name, ctx);
+        return out;
+    }
+};

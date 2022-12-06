@@ -65,6 +65,10 @@ TEST_CASE("Parse natural", "[string]") {
     auto [result1, result2] = s_natural("123abc").value();
     REQUIRE(result1 == "123");
     REQUIRE(result2 == "abc");
+
+    auto [result3, result4] = s_natural("123 123").value();
+    REQUIRE(result3 == "123");
+    REQUIRE(result4 == " 123");
 }
 
 TEST_CASE("Parse integer", "[Xi_Integer]") {
@@ -128,15 +132,46 @@ TEST_CASE("Parse mathexpr", "[Xi_Expr]") {
     REQUIRE(integer1 == Xi_Binop{Xi_Integer{1}, Xi_Integer{2}, Xi_Op::Add});
 
     // test multiply
-    auto [integer3, integer4] = Xi_mathexpr("1 * 2").value();
+    auto [integer3, integer4] = Xi_mathexpr(" 1*2").value();
     REQUIRE(integer3 == Xi_Binop{Xi_Integer{1}, Xi_Integer{2}, Xi_Op::Mul});
 
     // test add and multiply
-    auto [integer5, integer6] = Xi_mathexpr("1 + 2 * 3").value();
+    auto [integer5, integer6] = Xi_mathexpr(" 1 + 2 * 3").value();
     REQUIRE(integer5 ==
             Xi_Binop{Xi_Integer{1},
                      Xi_Binop{Xi_Integer{2}, Xi_Integer{3}, Xi_Op::Mul},
                      Xi_Op::Add});
+
+    auto [integer7, integer8] = Xi_mathexpr(" 1 + 2 + 3").value();
+    REQUIRE(integer7 ==
+            Xi_Binop{Xi_Integer{1},
+                     Xi_Binop{Xi_Integer{2}, Xi_Integer{3}, Xi_Op::Add},
+                     Xi_Op::Add});
+
+    // test paren
+    auto [integer9, integer10] = Xi_mathexpr(" (1 + 2) * 3").value();
+    REQUIRE(integer9 ==
+            Xi_Binop{Xi_Binop{Xi_Integer{1}, Xi_Integer{2}, Xi_Op::Add},
+                     Xi_Integer{3}, Xi_Op::Mul});
+
+    auto [integer11, integer12] = Xi_mathexpr(" (1 * 2) * 3 + 4").value();
+    REQUIRE(integer11 == Xi_Binop{Xi_Binop{Xi_Binop{Xi_Integer{1},
+                                                    Xi_Integer{2}, Xi_Op::Mul},
+                                           Xi_Integer{3}, Xi_Op::Mul},
+                                  Xi_Integer{4}, Xi_Op::Add});
+}
+
+TEST_CASE("Parse mathexpr with identify", "[Xi_Expr]") {
+    auto [integer1, integer2] = Xi_mathexpr("a + 2").value();
+    REQUIRE(integer1 == Xi_Binop{Xi_Iden{"a"}, Xi_Integer{2}, Xi_Op::Add});
+
+    auto [integer3, integer4] = Xi_mathexpr("a + b").value();
+    REQUIRE(integer3 == Xi_Binop{Xi_Iden{"a"}, Xi_Iden{"b"}, Xi_Op::Add});
+
+    auto [integer5, integer6] = Xi_mathexpr("(a_1 + b) * 3").value();
+    REQUIRE(integer5 ==
+            Xi_Binop{Xi_Binop{Xi_Iden{"a_1"}, Xi_Iden{"b"}, Xi_Op::Add},
+                     Xi_Integer{3}, Xi_Op::Mul});
 }
 
 TEST_CASE("Parse boolexpr", "[Xi_Expr]") {
@@ -224,6 +259,44 @@ TEST_CASE("Parse Xi_Iden", "[Xi_Iden]") {
     auto [iden5, iden6] = Xi_iden("abc_123").value();
     REQUIRE(iden5 == Xi_Iden{"abc_123"});
     REQUIRE(iden6 == "");
+
+    auto [iden7, iden8] = Xi_iden("abc 123").value();
+    // REQUIRE(fmt::format("{}", iden7) == "abc");
+    REQUIRE(iden7 == Xi_Iden{"abc"});
+    REQUIRE(iden8 == " 123");
+}
+
+TEST_CASE("Parse Xi_Lam", "[Xi_Expr]") {
+    {
+        auto [lam1, lam2] = Xi_lam("? x y -> (x + y + 1)").value();
+        REQUIRE(lam1 == Xi_Lam{{Xi_Iden{"x"}, Xi_Iden{"y"}},
+                               Xi_Binop{Xi_Binop{Xi_Iden{"x"}, Xi_Iden{"y"},
+                                                 Xi_Op::Add},
+                                        Xi_Integer{1}, Xi_Op::Add}});
+    }
+
+    {
+        auto [lam3, lam4] = Xi_lam("? x -> (x + y + 1) - (5 * 2)").value();
+        REQUIRE(
+            lam3 ==
+            Xi_Lam{{Xi_Iden{"x"}},
+                   Xi_Binop{Xi_Binop{Xi_Binop{Xi_Iden{"x"}, Xi_Iden{"y"},
+                                              Xi_Op::Add},
+                                     Xi_Integer{1}, Xi_Op::Add},
+                            Xi_Binop{Xi_Integer{5}, Xi_Integer{2}, Xi_Op::Mul},
+                            Xi_Op::Sub}});
+    }
+
+    {
+        auto [lam5, lam6] = Xi_lam("? x y -> ?z -> x + y + z").value();
+        REQUIRE(fmt::format("{}", lam5) == "(x y -> (z -> (x + y + z)))");
+        REQUIRE(lam5 ==
+                Xi_Lam{{Xi_Iden{"x"}, Xi_Iden{"y"}},
+                       Xi_Lam{{Xi_Iden{"z"}},
+                              Xi_Binop{Xi_Binop{Xi_Iden{"x"}, Xi_Iden{"y"},
+                                                Xi_Op::Add},
+                                       Xi_Iden{"z"}, Xi_Op::Add}}});
+    }
 }
 
 // NOLINTEND(cppcoreguidelines-*, readability*)

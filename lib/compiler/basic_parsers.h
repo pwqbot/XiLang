@@ -47,7 +47,7 @@ constexpr auto token(Parser auto parser) -> Parser auto{
 }
 
 constexpr auto symbol(char x) -> Parser auto{
-    return token(satisfy([x](char c) { return c == x; }));
+    return satisfy([x](char c) { return c == x; });
 }
 
 constexpr auto op(std::string_view s) -> Parser auto{
@@ -56,50 +56,60 @@ constexpr auto op(std::string_view s) -> Parser auto{
     };
 }
 
-inline const Parser auto s_digit     = token(satisfy(::isdigit));
-inline const Parser auto s_lower     = token(satisfy(::islower));
-inline const Parser auto s_upper     = token(satisfy(::isupper));
-inline const Parser auto s_alpha     = token(satisfy(::isalpha));
-inline const Parser auto s_alphanum  = s_alpha || s_digit;
-inline const Parser auto Xi_add      = op("+");
-inline const Parser auto Xi_minus    = op("-");
-inline const Parser auto Xi_mul      = op("*");
-inline const Parser auto Xi_divide   = op("/");
-inline const Parser auto Xi_eq       = op("==");
-inline const Parser auto Xi_lt       = op("<");
-inline const Parser auto Xi_le       = op("<=");
-inline const Parser auto Xi_gt       = op(">");
-inline const Parser auto Xi_ge       = op(">=");
-inline const Parser auto Xi_ne       = op("!=");
-inline const Parser auto Xi_and      = op("&&");
-inline const Parser auto Xi_or       = op("||");
-inline const Parser auto Xi_not      = op("!");
-inline const Parser auto s_lparen    = symbol('(');
-inline const Parser auto s_rparen    = symbol(')');
-inline const Parser auto s_lbracket  = symbol('[');
-inline const Parser auto s_rbracket  = symbol(']');
-inline const Parser auto s_lbrace    = symbol('{');
-inline const Parser auto s_rbrace    = symbol('}');
-inline const Parser auto s_semicolon = symbol(';');
-inline const Parser auto s_comma     = symbol(',');
-inline const Parser auto s_dot       = symbol('.');
-inline const Parser auto s_colon     = symbol(':');
-inline const Parser auto s_equals    = symbol('=');
-inline const Parser auto s_backslash = symbol('\\');
-inline const Parser auto s_bar       = symbol('|');
-inline const Parser auto s_quote     = symbol('\"');
+inline const Parser auto s_digit      = satisfy(::isdigit);
+inline const Parser auto s_lower      = satisfy(::islower);
+inline const Parser auto s_upper      = satisfy(::isupper);
+inline const Parser auto s_alpha      = satisfy(::isalpha);
+inline const Parser auto s_alphanum   = s_alpha || s_digit;
+inline const Parser auto Xi_add       = op("+");
+inline const Parser auto Xi_minus     = op("-");
+inline const Parser auto Xi_mul       = op("*");
+inline const Parser auto Xi_divide    = op("/");
+inline const Parser auto Xi_eq        = op("==");
+inline const Parser auto Xi_lt        = op("<");
+inline const Parser auto Xi_le        = op("<=");
+inline const Parser auto Xi_gt        = op(">");
+inline const Parser auto Xi_ge        = op(">=");
+inline const Parser auto Xi_ne        = op("!=");
+inline const Parser auto Xi_and       = op("&&");
+inline const Parser auto Xi_or        = op("||");
+inline const Parser auto Xi_not       = op("!");
+inline const Parser auto s_lparen     = symbol('(');
+inline const Parser auto s_rparen     = symbol(')');
+inline const Parser auto s_lbracket   = symbol('[');
+inline const Parser auto s_rbracket   = symbol(']');
+inline const Parser auto s_lbrace     = symbol('{');
+inline const Parser auto s_rbrace     = symbol('}');
+inline const Parser auto s_semicolon  = symbol(';');
+inline const Parser auto s_comma      = symbol(',');
+inline const Parser auto s_dot        = symbol('.');
+inline const Parser auto s_colon      = symbol(':');
+inline const Parser auto s_equals     = symbol('=');
+inline const Parser auto s_backslash  = symbol('\\');
+inline const Parser auto s_bar        = symbol('|');
+inline const Parser auto s_quote      = symbol('\"');
 inline const Parser auto s_apostrophe = symbol('\'');
 inline const Parser auto s_underscore = symbol('_');
-inline const Parser auto s_if        = token(str("if"));
-inline const Parser auto s_then      = token(str("then"));
-inline const Parser auto s_else      = token(str("else"));
+inline const Parser auto s_hash       = symbol('#');
+inline const Parser auto s_dollar     = symbol('$');
+inline const Parser auto s_percent    = symbol('%');
+inline const Parser auto s_ampersand  = symbol('&');
+inline const Parser auto s_caret      = symbol('^');
+inline const Parser auto s_tilde      = symbol('~');
+inline const Parser auto s_at         = symbol('@');
+inline const Parser auto s_question   = symbol('?');
+inline const Parser auto s_arrow      = str("->");
+inline const Parser auto s_if         = str("if");
+inline const Parser auto s_then       = str("then");
+inline const Parser auto s_else       = str("else");
 
 // string literal
-inline const Parser auto Xi_string = s_quote > many(s_alphanum) >> [](auto s) {
-    return s_quote >> [s](auto) {
-        return unit(Xi_Expr{Xi_String{s}});
-    };
-};
+inline const Parser auto Xi_string = token(s_quote) >
+                                     many(s_alphanum || s_space) >> [](auto s) {
+                                         return s_quote >> [s](auto) {
+                                             return unit(Xi_Expr{Xi_String{s}});
+                                         };
+                                     };
 
 inline const Parser auto Xi_true = token(str("true")) >> [](auto) {
     return unit(Xi_Expr{Xi_Boolean{true}});
@@ -111,10 +121,10 @@ inline const Parser auto Xi_false = token(str("false")) >> [](auto) {
 
 inline const Parser auto Xi_boolean = Xi_true || Xi_false;
 
-inline const Parser auto s_natural = token(some(s_digit));
+inline const Parser auto s_natural = some(s_digit);
 
 inline const Parser auto Xi_integer = token(maybe(symbol('-'))) >> [](auto x) {
-    return s_natural >> [x](auto nat) {
+    return token(s_natural) >> [x](auto nat) {
         if (x) {
             return unit(Xi_Expr{Xi_Integer{.value{-std::stoi(nat)}}});
         }
@@ -124,7 +134,7 @@ inline const Parser auto Xi_integer = token(maybe(symbol('-'))) >> [](auto x) {
 
 // real = integer "." integer
 inline const Parser auto Xi_real = Xi_integer >> [](const Xi_Integer &integer) {
-    return s_dot > s_natural >> [integer](auto nat) {
+    return token(s_dot) > token(s_natural) >> [integer](auto nat) {
         return unit(Xi_Expr{Xi_Real{
             .value{std::stod(std::to_string(integer.value) + "." + nat)}}});
     };
