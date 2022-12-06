@@ -1,7 +1,7 @@
 #pragma once
 
-#include <compiler/basic_parsers.h>
 #include <compiler/ast.h>
+#include <compiler/basic_parsers.h>
 
 namespace xi {
 
@@ -47,7 +47,6 @@ auto Xi_mathexpr(std::string_view input) -> Parsed_t<Xi_Expr> {
 // <boolfactor> ::= <boolvalue> | "!" <boolvalue>
 // <boolvalue> ::= <boolean> | <mathexpr> <cmpop> <mathexpr> | "(" <boolexpr>
 // ")"
-
 auto Xi_boolexpr(std::string_view input) -> Parsed_t<Xi_Expr>;
 
 const auto Xi_mathbool = Xi_mathexpr >> [](auto lhs) {
@@ -77,7 +76,8 @@ const auto Xi_boolterm =
      [](auto lhs) {
          return Xi_and >> [lhs](auto) {
              return Xi_factor >> [lhs](auto rhs) {
-                 return unit(Xi_Expr{Xi_Binop{.lhs{lhs}, .rhs{rhs}, .op{Xi_Op::And}}});
+                 return unit(
+                     Xi_Expr{Xi_Binop{.lhs{lhs}, .rhs{rhs}, .op{Xi_Op::And}}});
              };
          };
      }) ||
@@ -86,14 +86,15 @@ const auto Xi_boolterm =
 // parse bool expression
 auto Xi_boolexpr(std::string_view input) -> Parsed_t<Xi_Expr> {
     return ((Xi_boolterm >>
-     [](auto lhs) {
-         return (Xi_and || Xi_or) >> [lhs](auto op) {
-             return Xi_boolterm >> [lhs, op](auto rhs) {
-                 return unit(Xi_Expr{Xi_Binop{.lhs{lhs}, .rhs{rhs}, .op{op}}});
-             };
-         };
-     }) ||
-    Xi_boolterm)(input);
+             [](auto lhs) {
+                 return (Xi_and || Xi_or) >> [lhs](auto op) {
+                     return Xi_boolterm >> [lhs, op](auto rhs) {
+                         return unit(
+                             Xi_Expr{Xi_Binop{.lhs{lhs}, .rhs{rhs}, .op{op}}});
+                     };
+                 };
+             }) ||
+            Xi_boolterm)(input);
 };
 
 // parse if expression: if cond then expr else expr
@@ -112,6 +113,7 @@ const auto Xi_if = s_if >> [](auto) {
     };
 };
 
-const auto Xi_expr = Xi_true || Xi_false || Xi_string || Xi_mathexpr;
+const auto Xi_expr =
+    Xi_true || Xi_false || Xi_string || Xi_mathexpr || Xi_if || Xi_boolexpr;
 
 } // namespace xi

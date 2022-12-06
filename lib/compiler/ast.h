@@ -108,9 +108,6 @@ auto operator<=>(const Xi_If &a, const Xi_If &b) -> std::partial_ordering;
 struct Xi_Unop;
 auto operator<=>(const Xi_Unop &a, const Xi_Unop &b) -> std::partial_ordering;
 
-// <expr> ::= <term> | <expr> +- <expr>
-// <term> ::= <number> | <number> "*" <number>
-// <number> ::= <integer> | <real>
 using Xi_Expr =
     std::variant<Xi_Integer, Xi_Boolean, Xi_Real, Xi_String,
                  recursive_wrapper<Xi_Unop>, recursive_wrapper<Xi_Binop>,
@@ -148,11 +145,6 @@ auto operator<=>(const Xi_Unop &lhs, const Xi_Unop &rhs)
         return cmp;
     }
     return lhs.op <=> rhs.op;
-}
-
-void test() {
-    auto a = Xi_Binop{Xi_Integer{1}, Xi_Integer{2}, Xi_Op::Add};
-    auto x = Xi_Expr{Xi_Unop{.expr{a}, .op{Xi_Op::Add}}};
 }
 
 struct Xi_If {
