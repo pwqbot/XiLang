@@ -1,6 +1,7 @@
 #pragma once
 
 #include <compiler/ast.h>
+#include <fmt/core.h>
 #include <fmt/format.h>
 
 // format Xi_Integer
@@ -75,6 +76,35 @@ struct fmt::formatter<xi::Xi_Binop> : fmt::formatter<xi::Xi_Expr> {
         out      = fmt::formatter<xi::Xi_Expr>::format(b.lhs, ctx);
         out      = fmt::format_to(out, "\n\t");
         out      = fmt::formatter<xi::Xi_Expr>::format(b.rhs, ctx);
+        return out;
+    }
+};
+
+template <>
+struct fmt::formatter<xi::Xi_Unop> : fmt::formatter<xi::Xi_Expr> {
+    template <typename FormatContext>
+    auto format(const xi::Xi_Unop &u, FormatContext &ctx) {
+        auto out = ctx.out();
+        out      = fmt::format_to(out, "Xi_Unop ");
+        out      = fmt::format_to(out, "{}\n", xi::Xi_Op_To_OpStr(u.op));
+        out      = fmt::format_to(out, "\t");
+        out      = fmt::formatter<xi::Xi_Expr>::format(u.expr, ctx);
+        return out;
+    }
+};
+
+template <>
+struct fmt::formatter<xi::Xi_If> : fmt::formatter<xi::Xi_Expr> {
+    template <typename FormatContext>
+    auto format(const xi::Xi_If &i, FormatContext &ctx) {
+        auto out = ctx.out();
+        out      = fmt::format_to(out, "Xi_If\n");
+        out      = fmt::format_to(out, "\t");
+        out      = fmt::formatter<xi::Xi_Expr>::format(i.cond, ctx);
+        out      = fmt::format_to(out, "\n\t");
+        out      = fmt::formatter<xi::Xi_Expr>::format(i.then, ctx);
+        out      = fmt::format_to(out, "\n\t");
+        out      = fmt::formatter<xi::Xi_Expr>::format(i.els, ctx);
         return out;
     }
 };

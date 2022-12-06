@@ -1,4 +1,4 @@
-# pragma once
+#pragma once
 #include <compare>
 #include <compiler/utils.h>
 #include <fmt/format.h>
@@ -102,11 +102,19 @@ constexpr auto Xi_Op_To_OpStr(Xi_Op op) -> std::string_view {
 struct Xi_Binop;
 auto operator<=>(const Xi_Binop &a, const Xi_Binop &b) -> std::partial_ordering;
 
+struct Xi_If;
+auto operator<=>(const Xi_If &a, const Xi_If &b) -> std::partial_ordering;
+
+struct Xi_Unop;
+auto operator<=>(const Xi_Unop &a, const Xi_Unop &b) -> std::partial_ordering;
+
 // <expr> ::= <term> | <expr> +- <expr>
 // <term> ::= <number> | <number> "*" <number>
 // <number> ::= <integer> | <real>
-using Xi_Expr = std::variant<Xi_Integer, Xi_Boolean, Xi_Real, Xi_String,
-                             recursive_wrapper<Xi_Binop>>;
+using Xi_Expr =
+    std::variant<Xi_Integer, Xi_Boolean, Xi_Real, Xi_String,
+                 recursive_wrapper<Xi_Unop>, recursive_wrapper<Xi_Binop>,
+                 recursive_wrapper<Xi_If>>;
 
 // binary expression
 struct Xi_Binop {
@@ -127,6 +135,40 @@ auto operator<=>(const Xi_Binop &a, const Xi_Binop &b)
         return cmp;
     }
     return a.op <=> b.op;
+}
+
+struct Xi_Unop {
+    Xi_Expr expr;
+    Xi_Op   op;
+};
+
+auto operator<=>(const Xi_Unop &lhs, const Xi_Unop &rhs)
+    -> std::partial_ordering {
+    if (auto cmp = lhs.expr <=> rhs.expr; cmp != nullptr) {
+        return cmp;
+    }
+    return lhs.op <=> rhs.op;
+}
+
+void test() {
+    auto a = Xi_Binop{Xi_Integer{1}, Xi_Integer{2}, Xi_Op::Add};
+    auto x = Xi_Expr{Xi_Unop{.expr{a}, .op{Xi_Op::Add}}};
+}
+
+struct Xi_If {
+    Xi_Expr cond;
+    Xi_Expr then;
+    Xi_Expr els;
+};
+
+auto operator<=>(const Xi_If &lhs, const Xi_If &rhs) -> std::partial_ordering {
+    if (auto cmp = lhs.cond <=> rhs.cond; cmp != nullptr) {
+        return cmp;
+    }
+    if (auto cmp = lhs.then <=> rhs.then; cmp != nullptr) {
+        return cmp;
+    }
+    return lhs.els <=> rhs.els;
 }
 
 struct Xi_Iden {

@@ -1,127 +1,13 @@
+#pragma once
+
+#include <compiler/basic_parsers.h>
 #include <compiler/ast.h>
-#include <compiler/parser_combinator.h>
 
 namespace xi {
 
-// Return a Parser that matched the beginning of the input
-constexpr auto str(std::string_view match) -> Parser auto{
-    return [match](std::string_view input) -> Parsed_t<std::string_view> {
-        if (input.starts_with(match)) {
-            return std::make_pair(match, input.substr(match.size()));
-        }
-        return std::nullopt;
-    };
-}
-
-// A parser that consume a char
-constexpr auto item(std::string_view input) -> Parsed_t<char> {
-    if (input.empty()) {
-        return std::nullopt;
-    }
-    if (input.size() == 1) {
-        return std::make_pair(input[0], "");
-    }
-    return std::make_pair(input[0], input.substr(1));
-}
-
-// constexpr auto dd = reduce_many{std::string{}, item("1"),
-//                            [](auto acc, auto c) { return acc + c; }};
-
-template <typename Pr, Parser P = decltype(item)>
-constexpr auto satisfy(Pr pred, P parser = item) -> Parser auto{
-    return parser >> [pred](auto c) -> Parser auto{
-        return
-            [pred, c](std::string_view input) -> Parsed_t<Parser_value_t<P>> {
-                if (std::invoke(pred, c)) {
-                    return {std::make_pair(c, input)};
-                }
-                return {};
-            };
-    };
-}
-
-inline constexpr Parser auto s_space      = satisfy(::isspace);
-inline const Parser auto     s_whitespace = many(s_space);
-
-constexpr auto token(Parser auto parser) -> Parser auto{
-    return s_whitespace > parser;
-}
-
-constexpr auto symbol(char x) -> Parser auto{
-    return token(satisfy([x](char c) { return c == x; }));
-}
-
-constexpr auto op(std::string_view s) -> Parser auto{
-    return token(str(s)) >> [](auto s) {
-        return unit(OpStr_To_Xi_Op(s));
-    };
-}
-
-inline const Parser auto s_digit     = token(satisfy(::isdigit));
-inline const Parser auto s_letter    = token(satisfy(::isalpha));
-inline const Parser auto s_lower     = token(satisfy(::islower));
-inline const Parser auto s_upper     = token(satisfy(::isupper));
-inline const Parser auto s_alpha     = s_letter || s_digit;
-inline const Parser auto s_alphanum  = s_alpha || s_space;
-inline const Parser auto Xi_add      = op("+");
-inline const Parser auto Xi_minus    = op("-");
-inline const Parser auto Xi_mul      = op("*");
-inline const Parser auto Xi_divide   = op("/");
-inline const Parser auto s_lparen    = symbol('(');
-inline const Parser auto s_rparen    = symbol(')');
-inline const Parser auto s_lbracket  = symbol('[');
-inline const Parser auto s_rbracket  = symbol(']');
-inline const Parser auto s_lbrace    = symbol('{');
-inline const Parser auto s_rbrace    = symbol('}');
-inline const Parser auto s_semicolon = symbol(';');
-inline const Parser auto s_comma     = symbol(',');
-inline const Parser auto s_dot       = symbol('.');
-inline const Parser auto s_colon     = symbol(':');
-inline const Parser auto s_equals    = symbol('=');
-inline const Parser auto s_backslash = symbol('\\');
-inline const Parser auto s_bar       = symbol('|');
-inline const Parser auto s_quote     = symbol('\"');
-
-// string literal
-inline const Parser auto Xi_string = s_quote > many(s_alphanum) >> [](auto s) {
-    return s_quote >> [s](auto) {
-        return unit(Xi_Expr{Xi_String{s}});
-    };
-};
-
-inline const Parser auto Xi_true = token(str("true")) >> [](auto) {
-    return unit(Xi_Expr{Xi_Boolean{true}});
-};
-
-inline const Parser auto Xi_false = token(str("false")) >> [](auto) {
-    return unit(Xi_Expr{Xi_Boolean{false}});
-};
-
-inline const Parser auto Xi_boolean = Xi_true || Xi_false;
-
-inline const Parser auto s_natural = token(some(s_digit));
-
-inline const Parser auto Xi_integer = token(maybe(symbol('-'))) >> [](auto x) {
-    return s_natural >> [x](auto nat) {
-        if (x) {
-            return unit(Xi_Expr{Xi_Integer{.value{-std::stoi(nat)}}});
-        }
-        return unit(Xi_Expr{Xi_Integer{.value{std::stoi(nat)}}});
-    };
-};
-
-// real = integer "." integer
-inline const Parser auto Xi_real = Xi_integer >> [](const Xi_Integer &integer) {
-    return s_dot > s_natural >> [integer](auto nat) {
-        return unit(Xi_Expr{Xi_Real{
-            .value{std::stod(std::to_string(integer.value) + "." + nat)}}});
-    };
-};
-
-// <expr> ::= <term> | <term> "+-" <term>
+// <mathexpr> ::= <term> | <term> "+-" <term>
 // <term> ::= <number> | <number> "*/" <number>
-// <number> ::= <integer> | <real> | "(" expr ")"
-
+// <number> ::= <integer> | <real> | "(" <mathexpr> ")"
 auto Xi_mathexpr(std::string_view input) -> Parsed_t<Xi_Expr>;
 
 auto Xi_number(std::string_view input) -> Parsed_t<Xi_Expr> {
@@ -155,6 +41,76 @@ auto Xi_mathexpr(std::string_view input) -> Parsed_t<Xi_Expr> {
              }) ||
             Xi_term)(input);
 }
+
+// <boolexpr> ::= <boolterm> | <boolterm> "||" <boolterm>
+// <boolterm> ::= <boolfactor> | <boolfactor> "&&" <boolfactor>
+// <boolfactor> ::= <boolvalue> | "!" <boolvalue>
+// <boolvalue> ::= <boolean> | <mathexpr> <cmpop> <mathexpr> | "(" <boolexpr>
+// ")"
+
+auto Xi_boolexpr(std::string_view input) -> Parsed_t<Xi_Expr>;
+
+const auto Xi_mathbool = Xi_mathexpr >> [](auto lhs) {
+    return (Xi_eq || Xi_lt || Xi_le || Xi_gt || Xi_ge || Xi_ne) >>
+           [lhs](auto op) {
+               return Xi_mathexpr >> [lhs, op](auto rhs) {
+                   return unit(
+                       Xi_Expr{Xi_Binop{.lhs{lhs}, .rhs{rhs}, .op{op}}});
+               };
+           };
+};
+
+const auto Xi_boolvalue =
+    Xi_boolean || Xi_mathbool || (s_lparen > Xi_boolexpr >> [](auto expr) {
+        return s_rparen >> [expr](auto) {
+            return unit(expr);
+        };
+    });
+
+const auto Xi_factor =
+    Xi_boolvalue || (Xi_not > Xi_boolvalue >> [](auto expr) {
+        return unit(Xi_Expr{Xi_Unop{.expr{expr}, .op{Xi_Op::Not}}});
+    });
+
+const auto Xi_boolterm =
+    (Xi_factor >>
+     [](auto lhs) {
+         return Xi_and >> [lhs](auto) {
+             return Xi_factor >> [lhs](auto rhs) {
+                 return unit(Xi_Expr{Xi_Binop{.lhs{lhs}, .rhs{rhs}, .op{Xi_Op::And}}});
+             };
+         };
+     }) ||
+    Xi_factor;
+
+// parse bool expression
+auto Xi_boolexpr(std::string_view input) -> Parsed_t<Xi_Expr> {
+    return ((Xi_boolterm >>
+     [](auto lhs) {
+         return (Xi_and || Xi_or) >> [lhs](auto op) {
+             return Xi_boolterm >> [lhs, op](auto rhs) {
+                 return unit(Xi_Expr{Xi_Binop{.lhs{lhs}, .rhs{rhs}, .op{op}}});
+             };
+         };
+     }) ||
+    Xi_boolterm)(input);
+};
+
+// parse if expression: if cond then expr else expr
+const auto Xi_if = s_if >> [](auto) {
+    return Xi_boolexpr >> [](auto cond) {
+        return s_then >> [cond](auto) {
+            return Xi_mathexpr >> [cond](auto then) {
+                return s_else >> [cond, then](auto) {
+                    return Xi_mathexpr >> [cond, then](auto els) {
+                        return unit(Xi_Expr{
+                            Xi_If{.cond{cond}, .then{then}, .els{els}}});
+                    };
+                };
+            };
+        };
+    };
+};
 
 const auto Xi_expr = Xi_true || Xi_false || Xi_string || Xi_mathexpr;
 
