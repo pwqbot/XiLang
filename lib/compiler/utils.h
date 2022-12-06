@@ -6,7 +6,8 @@
 // See docs and recursive_wrapper_fwd.hpp for more information.
 //
 
-#include <compare>
+#include <fmt/core.h>
+#include <fmt/std.h>
 #include <utility>
 template <typename T>
 class recursive_wrapper {
@@ -113,3 +114,12 @@ inline void swap(recursive_wrapper<T> &lhs,
                  recursive_wrapper<T> &rhs) noexcept {
     lhs.swap(rhs);
 }
+
+template <typename T>
+    requires fmt::is_formattable<T>::value
+struct fmt::formatter<recursive_wrapper<T>> : fmt::formatter<T> {
+    template <typename FormatContext>
+    auto format(const recursive_wrapper<T> &t, FormatContext &ctx) {
+        return fmt::formatter<T>::format(t.get(), ctx);
+    }
+};

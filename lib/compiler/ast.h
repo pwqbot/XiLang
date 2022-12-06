@@ -1,9 +1,8 @@
-// #include <boost/variant/recursive_wrapper.hpp>
+# pragma once
 #include <compare>
 #include <compiler/utils.h>
 #include <fmt/format.h>
 #include <magic_enum.hpp>
-#include <memory>
 #include <range/v3/algorithm/find_if.hpp>
 #include <range/v3/view.hpp>
 #include <string>
@@ -72,7 +71,7 @@ enum class Xi_Op {
 };
 
 constexpr auto OpMaps = std::array<std::pair<std::string_view, Xi_Op>,
-                               magic_enum::enum_count<Xi_Op>()>{{
+                                   magic_enum::enum_count<Xi_Op>()>{{
     {"+", Xi_Op::Add},
     {"-", Xi_Op::Sub},
     {"*", Xi_Op::Mul},
@@ -135,28 +134,5 @@ struct Xi_Iden {
     // Xi_Expr     expr;
     // auto        operator<=>(const Xi_Iden &) const = default;
 };
-
-auto GetText(const Xi_Expr &expr) -> std::string {
-    return std::visit(
-        [](auto &&arg) -> std::string {
-            using T = std::decay_t<decltype(arg)>;
-            if constexpr (std::same_as<T, Xi_Integer>) {
-                return std::to_string(arg.value);
-            } else if constexpr (std::same_as<T, Xi_Boolean>) {
-                return std::to_string(arg.value);
-            } else if constexpr (std::same_as<T, Xi_Real>) {
-                return std::to_string(arg.value);
-            } else if constexpr (std::same_as<T, Xi_String>) {
-                return arg.value;
-            } else if constexpr (std::same_as<T, recursive_wrapper<Xi_Binop>>) {
-                return fmt::format("{} {} {}", GetText(arg.get().lhs),
-                                   Xi_Op_To_OpStr(arg.get().op),
-                                   GetText(arg.get().rhs));
-            } else {
-                return "";
-            }
-        },
-        expr);
-}
 
 } // namespace xi
