@@ -1,5 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 #include <compiler/parsers.h>
+#include <compiler/ast_format.h>
 
 namespace xi {
 
@@ -46,26 +47,26 @@ TEST_CASE("Parse symbol", "[string]") {
     REQUIRE(result2 == "bc");
 }
 
-TEST_CASE("Test token", "[string]") {
+TEST_CASE("Parse token", "[string]") {
     auto parser             = token(str("foo"));
     auto [result1, result2] = parser("  foo bar").value();
     REQUIRE(result1 == "foo");
     REQUIRE(result2 == " bar");
 }
 
-TEST_CASE("Test String", "[Xi_String]") {
+TEST_CASE("Parse String", "[Xi_String]") {
     auto [result1, result2] = Xi_string("\"abcccb\"").value();
     REQUIRE(result1 == Xi_String{"abcccb"});
     REQUIRE(result2 == "");
 }
 
-TEST_CASE("Test natural", "[string]") {
+TEST_CASE("Parse natural", "[string]") {
     auto [result1, result2] = s_natural("123abc").value();
     REQUIRE(result1 == "123");
     REQUIRE(result2 == "abc");
 }
 
-TEST_CASE("Test integer", "[Xi_Integer]") {
+TEST_CASE("Parse integer", "[Xi_Integer]") {
     auto [result1, result2] = Xi_integer("123abc").value();
     REQUIRE(result1 == Xi_Integer{123});
     REQUIRE(result2 == "abc");
@@ -75,7 +76,7 @@ TEST_CASE("Test integer", "[Xi_Integer]") {
     REQUIRE(result4 == "abc");
 }
 
-TEST_CASE("Test boolean", "[Xi_Boolean]") {
+TEST_CASE("Parse boolean", "[Xi_Boolean]") {
     auto [result1, result2] = Xi_boolean("trueabc").value();
     REQUIRE(result1 == Xi_Boolean{true});
     REQUIRE(result2 == "abc");
@@ -85,7 +86,7 @@ TEST_CASE("Test boolean", "[Xi_Boolean]") {
     REQUIRE(result4 == "abc");
 }
 
-TEST_CASE("Test real", "[Xi_Real]") {
+TEST_CASE("Parse real", "[Xi_Real]") {
     auto [result1, result2] = Xi_real("123.456abc").value();
     REQUIRE(result1 == Xi_Real{123.456});
     REQUIRE(result2 == "abc");
@@ -98,7 +99,7 @@ TEST_CASE("Test real", "[Xi_Real]") {
     REQUIRE(result5 == std::nullopt);
 }
 
-TEST_CASE("Test expr", "[Xi_Expr]") {
+TEST_CASE("Parse expr", "[Xi_Expr]") {
     auto [integer1, integer2] = Xi_expr("123abc").value();
     REQUIRE(integer1 == Xi_Integer{123});
     REQUIRE(integer2 == "abc");
@@ -115,9 +116,26 @@ TEST_CASE("Test expr", "[Xi_Expr]") {
     REQUIRE(string1 == Xi_String{"abc"});
 }
 
-TEST_CASE("Test mathexpr", "[Xi_Expr]") {
+TEST_CASE("Parse Xi_Op", "[Xi_Op]") {
+    auto [op5, op6] = Xi_mul(" *abc").value();
+    REQUIRE(op5 == Xi_Op::Mul);
+    REQUIRE(op6 == "abc");
+}
+
+TEST_CASE("Parse mathexpr", "[Xi_Expr]") {
     auto [integer1, integer2] = Xi_mathexpr("1 + 2").value();
     REQUIRE(integer1 == Xi_Binop{Xi_Integer{1}, Xi_Integer{2}, Xi_Op::Add});
+
+    // test multiply
+    auto [integer3, integer4] = Xi_mathexpr("1 * 2").value();
+    REQUIRE(integer3 == Xi_Binop{Xi_Integer{1}, Xi_Integer{2}, Xi_Op::Mul});
+
+    // test add and multiply
+    auto [integer5, integer6] = Xi_mathexpr("1 + 2 * 3").value();
+    REQUIRE(integer5 ==
+            Xi_Binop{Xi_Integer{1},
+                     Xi_Binop{Xi_Integer{2}, Xi_Integer{3}, Xi_Op::Mul},
+                     Xi_Op::Add});
 }
 
 } // namespace xi

@@ -64,10 +64,10 @@ inline const Parser auto s_lower     = token(satisfy(::islower));
 inline const Parser auto s_upper     = token(satisfy(::isupper));
 inline const Parser auto s_alpha     = s_letter || s_digit;
 inline const Parser auto s_alphanum  = s_alpha || s_space;
-inline const Parser auto s_plus      = op("+");
-inline const Parser auto s_minus     = op("-");
-inline const Parser auto s_times     = op("*");
-inline const Parser auto s_divide    = op("/");
+inline const Parser auto Xi_add      = op("+");
+inline const Parser auto Xi_minus    = op("-");
+inline const Parser auto Xi_mul      = op("*");
+inline const Parser auto Xi_divide   = op("/");
 inline const Parser auto s_lparen    = symbol('(');
 inline const Parser auto s_rparen    = symbol(')');
 inline const Parser auto s_lbracket  = symbol('[');
@@ -133,35 +133,32 @@ auto Xi_number(std::string_view input) -> Parsed_t<Xi_Expr> {
             }))(input);
 }
 
-// inline const Parser auto Xi_term =
-//     Xi_number || (Xi_number >> [](auto lhs) {
-//         return (s_times || s_divide) >> [lhs](auto op) {
-//             return Xi_number >> [lhs, op](auto rhs) {
-//                 return unit(
-//                     Xi_Expr{Xi_Binop{.text{GetText(lhs) + op + GetText(rhs)},
-//                                      .lhs{lhs},
-//                                      .rhs{rhs},
-//                                      .op{StrToOp(std::string(1, op))}}});
-//             };
-//         };
-//     });
-
-inline const Parser auto Xi_term = Xi_number;
+inline const Parser auto Xi_term =
+    (Xi_number >>
+     [](auto lhs) {
+         std::cout << "lhs " << std::endl;
+         return (Xi_mul || Xi_divide) >> [lhs](auto op) {
+             std::cout << "op: " << std::endl;
+             return Xi_number >> [lhs, op](auto rhs) {
+                 return unit(Xi_Expr{Xi_Binop{.lhs{lhs}, .rhs{rhs}, .op{op}}});
+             };
+         };
+     }) ||
+    Xi_number;
 
 auto Xi_mathexpr(std::string_view input) -> Parsed_t<Xi_Expr> {
-    return ((Xi_term >> [](auto lhs) {
-        std::cout << "lhs: " << std::endl;
-        return (s_plus || s_minus) >> [lhs](auto op) {
-            return Xi_term >> [lhs, op](auto rhs) {
-                std::cout << "rhs: " << std::endl;
-                // std::cout << "op: " << op << std::endl;
-                return unit(Xi_Expr{Xi_Binop{.lhs{lhs}, .rhs{rhs}, .op{op}}});
-            };
-        };
-    }))(input);
+    return ((Xi_term >>
+             [](auto lhs) {
+                 return (Xi_add || Xi_minus) >> [lhs](auto op) {
+                     return Xi_term >> [lhs, op](auto rhs) {
+                         return unit(
+                             Xi_Expr{Xi_Binop{.lhs{lhs}, .rhs{rhs}, .op{op}}});
+                     };
+                 };
+             }) ||
+            Xi_term)(input);
 }
 
-const auto Xi_expr =
-    Xi_true || Xi_false || Xi_real || Xi_integer || Xi_string || Xi_term;
+const auto Xi_expr = Xi_true || Xi_false || Xi_string || Xi_mathexpr;
 
 } // namespace xi
