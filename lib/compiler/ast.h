@@ -1,11 +1,13 @@
 // #include <boost/variant/recursive_wrapper.hpp>
 #include <compare>
 #include <compiler/utils.h>
+#include <fmt/format.h>
 #include <magic_enum.hpp>
 #include <memory>
+#include <range/v3/algorithm/find_if.hpp>
+#include <range/v3/view.hpp>
 #include <string>
 #include <type_traits>
-#include <unordered_map>
 #include <variant>
 
 namespace xi {
@@ -69,15 +71,33 @@ enum class Xi_Op {
     Not,
 };
 
-auto StrToOp(std::string_view s) -> Xi_Op {
-    static std::unordered_map<std::string_view, Xi_Op> map = {
-        {"+", Xi_Op::Add},  {"-", Xi_Op::Sub},  {"*", Xi_Op::Mul},
-        {"/", Xi_Op::Div},  {"%", Xi_Op::Mod},  {"^", Xi_Op::Pow},
-        {"==", Xi_Op::Eq},  {"!=", Xi_Op::Neq}, {"<", Xi_Op::Lt},
-        {">", Xi_Op::Gt},   {"<=", Xi_Op::Leq}, {">=", Xi_Op::Geq},
-        {"&&", Xi_Op::And}, {"||", Xi_Op::Or},  {"!", Xi_Op::Not},
-    };
-    return map.at(s);
+constexpr auto OpMaps = std::array<std::pair<std::string_view, Xi_Op>,
+                               magic_enum::enum_count<Xi_Op>()>{{
+    {"+", Xi_Op::Add},
+    {"-", Xi_Op::Sub},
+    {"*", Xi_Op::Mul},
+    {"/", Xi_Op::Div},
+    {"%", Xi_Op::Mod},
+    {"^", Xi_Op::Pow},
+    {"==", Xi_Op::Eq},
+    {"!=", Xi_Op::Neq},
+    {"<", Xi_Op::Lt},
+    {">", Xi_Op::Gt},
+    {"<=", Xi_Op::Leq},
+    {">=", Xi_Op::Geq},
+    {"&&", Xi_Op::And},
+    {"||", Xi_Op::Or},
+    {"!", Xi_Op::Not},
+}};
+
+constexpr auto OpStr_To_Xi_Op(std::string_view s) -> Xi_Op {
+    return ranges::find_if(OpMaps, [&](auto p) { return p.first == s; })
+        ->second;
+}
+
+constexpr auto Xi_Op_To_OpStr(Xi_Op op) -> std::string_view {
+    return ranges::find_if(OpMaps, [&](auto p) { return p.second == op; })
+        ->first;
 }
 
 struct Xi_Binop;
@@ -129,7 +149,9 @@ auto GetText(const Xi_Expr &expr) -> std::string {
             } else if constexpr (std::same_as<T, Xi_String>) {
                 return arg.value;
             } else if constexpr (std::same_as<T, recursive_wrapper<Xi_Binop>>) {
-                return GetText(arg.get().lhs) + GetText(arg.get().rhs);
+                return fmt::format("{} {} {}", GetText(arg.get().lhs),
+                                   Xi_Op_To_OpStr(arg.get().op),
+                                   GetText(arg.get().rhs));
             } else {
                 return "";
             }

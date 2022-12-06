@@ -54,7 +54,7 @@ constexpr auto symbol(char x) -> Parser auto{
 
 constexpr auto op(std::string_view s) -> Parser auto{
     return token(str(s)) >> [](auto s) {
-        return unit(StrToOp(s));
+        return unit(OpStr_To_Xi_Op(s));
     };
 }
 
