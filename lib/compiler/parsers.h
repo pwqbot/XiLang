@@ -1,6 +1,5 @@
 #include <compiler/ast.h>
 #include <compiler/parser_combinator.h>
-#include <iostream>
 
 namespace xi {
 
@@ -136,9 +135,7 @@ auto Xi_number(std::string_view input) -> Parsed_t<Xi_Expr> {
 inline const Parser auto Xi_term =
     (Xi_number >>
      [](auto lhs) {
-         std::cout << "lhs " << std::endl;
          return (Xi_mul || Xi_divide) >> [lhs](auto op) {
-             std::cout << "op: " << std::endl;
              return Xi_number >> [lhs, op](auto rhs) {
                  return unit(Xi_Expr{Xi_Binop{.lhs{lhs}, .rhs{rhs}, .op{op}}});
              };

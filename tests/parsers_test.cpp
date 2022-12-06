@@ -4,6 +4,7 @@
 
 namespace xi {
 
+// NOLINTBEGIN(cppcoreguidelines-*, readability*)
 TEST_CASE("Parse digit", "[string]") {
     auto [result1, result2] = s_digit("123").value();
     REQUIRE(result1 == '1');
@@ -137,5 +138,6 @@ TEST_CASE("Parse mathexpr", "[Xi_Expr]") {
                      Xi_Binop{Xi_Integer{2}, Xi_Integer{3}, Xi_Op::Mul},
                      Xi_Op::Add});
 }
+// NOLINTEND(cppcoreguidelines-*, readability*)
 
 } // namespace xi
