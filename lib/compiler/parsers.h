@@ -113,6 +113,11 @@ const auto Xi_if = s_if >> [](auto) {
     };
 };
 
+const auto Xi_iden = token(some(s_alphanum || s_underscore)) >> [](auto name) {
+    return unit(Xi_Iden{.name{name}});
+};
+
+
 const auto Xi_expr =
     Xi_true || Xi_false || Xi_string || Xi_mathexpr || Xi_if || Xi_boolexpr;
 

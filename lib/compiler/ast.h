@@ -166,7 +166,7 @@ auto operator<=>(const Xi_If &lhs, const Xi_If &rhs) -> std::partial_ordering {
 struct Xi_Iden {
     std::string name;
     // Xi_Expr     expr;
-    // auto        operator<=>(const Xi_Iden &) const = default;
+    auto        operator<=>(const Xi_Iden &) const = default;
 };
 
 } // namespace xi

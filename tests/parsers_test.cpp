@@ -24,11 +24,11 @@ TEST_CASE("Parse space", "[string]") {
 }
 
 TEST_CASE("Parse letter", "[string]") {
-    auto [result1, result2] = s_letter("abc").value();
+    auto [result1, result2] = s_alpha("abc").value();
     REQUIRE(result1 == 'a');
     REQUIRE(result2 == "bc");
 
-    auto result3 = s_letter("123");
+    auto result3 = s_alpha("123");
     REQUIRE(result3 == std::nullopt);
 }
 
@@ -210,6 +210,20 @@ TEST_CASE("Parse Xi_If", "[Xi_If]") {
             Xi_If{Xi_Binop{Xi_Boolean{true}, Xi_Boolean{false}, Xi_Op::Or},
                   Xi_Binop{Xi_Integer{1}, Xi_Integer{2}, Xi_Op::Add},
                   Xi_Binop{Xi_Integer{3}, Xi_Integer{4}, Xi_Op::Mul}});
+}
+
+TEST_CASE("Parse Xi_Iden", "[Xi_Iden]") {
+    auto [iden1, iden2] = Xi_iden("abc").value();
+    REQUIRE(iden1 == Xi_Iden{"abc"});
+    REQUIRE(iden2 == "");
+
+    auto [iden3, iden4] = Xi_iden("abc123").value();
+    REQUIRE(iden3 == Xi_Iden{"abc123"});
+    REQUIRE(iden4 == "");
+
+    auto [iden5, iden6] = Xi_iden("abc_123").value();
+    REQUIRE(iden5 == Xi_Iden{"abc_123"});
+    REQUIRE(iden6 == "");
 }
 
 // NOLINTEND(cppcoreguidelines-*, readability*)

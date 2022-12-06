@@ -57,11 +57,10 @@ constexpr auto op(std::string_view s) -> Parser auto{
 }
 
 inline const Parser auto s_digit     = token(satisfy(::isdigit));
-inline const Parser auto s_letter    = token(satisfy(::isalpha));
 inline const Parser auto s_lower     = token(satisfy(::islower));
 inline const Parser auto s_upper     = token(satisfy(::isupper));
-inline const Parser auto s_alpha     = s_letter || s_digit;
-inline const Parser auto s_alphanum  = s_alpha || s_space;
+inline const Parser auto s_alpha     = token(satisfy(::isalpha));
+inline const Parser auto s_alphanum  = s_alpha || s_digit;
 inline const Parser auto Xi_add      = op("+");
 inline const Parser auto Xi_minus    = op("-");
 inline const Parser auto Xi_mul      = op("*");
@@ -89,6 +88,8 @@ inline const Parser auto s_equals    = symbol('=');
 inline const Parser auto s_backslash = symbol('\\');
 inline const Parser auto s_bar       = symbol('|');
 inline const Parser auto s_quote     = symbol('\"');
+inline const Parser auto s_apostrophe = symbol('\'');
+inline const Parser auto s_underscore = symbol('_');
 inline const Parser auto s_if        = token(str("if"));
 inline const Parser auto s_then      = token(str("then"));
 inline const Parser auto s_else      = token(str("else"));
