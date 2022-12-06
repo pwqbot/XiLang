@@ -1,6 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
-#include <compiler/parsers.h>
 #include <compiler/ast_format.h>
+#include <compiler/parsers.h>
 
 namespace xi {
 
@@ -138,6 +138,80 @@ TEST_CASE("Parse mathexpr", "[Xi_Expr]") {
                      Xi_Binop{Xi_Integer{2}, Xi_Integer{3}, Xi_Op::Mul},
                      Xi_Op::Add});
 }
+
+TEST_CASE("Parse boolexpr", "[Xi_Expr]") {
+    auto [boolean1, boolean2] = Xi_boolexpr("true && false").value();
+    REQUIRE(boolean1 ==
+            Xi_Binop{Xi_Boolean{true}, Xi_Boolean{false}, Xi_Op::And});
+
+    auto [boolean3, boolean4] = Xi_boolexpr("true || false").value();
+    REQUIRE(boolean3 ==
+            Xi_Binop{Xi_Boolean{true}, Xi_Boolean{false}, Xi_Op::Or});
+
+    auto [boolean5, boolean6] = Xi_boolexpr("true && false || true").value();
+    REQUIRE(boolean5 ==
+            Xi_Binop{Xi_Binop{Xi_Boolean{true}, Xi_Boolean{false}, Xi_Op::And},
+                     Xi_Boolean{true}, Xi_Op::Or});
+
+    auto [boolean7, boolean8] = Xi_boolexpr("true || false && true").value();
+    REQUIRE(boolean7 ==
+            Xi_Binop{Xi_Boolean{true},
+                     Xi_Binop{Xi_Boolean{false}, Xi_Boolean{true}, Xi_Op::And},
+                     Xi_Op::Or});
+
+    auto [boolean9, boolean10] =
+        Xi_boolexpr("true && false || true && false").value();
+    REQUIRE(boolean9 ==
+            Xi_Binop{Xi_Binop{Xi_Boolean{true}, Xi_Boolean{false}, Xi_Op::And},
+                     Xi_Binop{Xi_Boolean{true}, Xi_Boolean{false}, Xi_Op::And},
+                     Xi_Op::Or});
+
+    // test paren
+    auto [boolean11, boolean12] =
+        Xi_boolexpr("(true || false) && true").value();
+    REQUIRE(boolean11 ==
+            Xi_Binop{Xi_Binop{Xi_Boolean{true}, Xi_Boolean{false}, Xi_Op::Or},
+                     Xi_Boolean{true}, Xi_Op::And});
+
+    auto [boolean13, boolean14] =
+        Xi_boolexpr("true && (false || true)").value();
+    REQUIRE(boolean13 ==
+            Xi_Binop{Xi_Boolean{true},
+                     Xi_Binop{Xi_Boolean{false}, Xi_Boolean{true}, Xi_Op::Or},
+                     Xi_Op::And});
+
+    // test mathbool
+    auto [boolean15, boolean16] = Xi_boolexpr("1 + 2 > 3 * 4").value();
+    REQUIRE(boolean15 ==
+            Xi_Binop{Xi_Binop{Xi_Integer{1}, Xi_Integer{2}, Xi_Op::Add},
+                     Xi_Binop{Xi_Integer{3}, Xi_Integer{4}, Xi_Op::Mul},
+                     Xi_Op::Gt});
+
+    auto [boolean17, boolean18] =
+        Xi_boolexpr("(1 + (2 + 3) < 3 * 4) || true").value();
+    REQUIRE(
+        boolean17 ==
+        Xi_Binop{
+            Xi_Binop{
+                Xi_Binop{Xi_Integer{1},
+                         Xi_Binop{Xi_Integer{2}, Xi_Integer{3}, Xi_Op::Add},
+                         Xi_Op::Add},
+                Xi_Binop{Xi_Integer{3}, Xi_Integer{4}, Xi_Op::Mul}, Xi_Op::Lt},
+            Xi_Boolean{true}, Xi_Op::Or});
+}
+
+TEST_CASE("Parse Xi_If", "[Xi_If]") {
+    auto [if1, if2] = Xi_if("if true then 1 else 2").value();
+    REQUIRE(if1 == Xi_If{Xi_Boolean{true}, Xi_Integer{1}, Xi_Integer{2}});
+    REQUIRE(if2 == "");
+
+    auto [if3, if4] = Xi_if("if true || false then 1 + 2 else 3 * 4").value();
+    REQUIRE(if3 ==
+            Xi_If{Xi_Binop{Xi_Boolean{true}, Xi_Boolean{false}, Xi_Op::Or},
+                  Xi_Binop{Xi_Integer{1}, Xi_Integer{2}, Xi_Op::Add},
+                  Xi_Binop{Xi_Integer{3}, Xi_Integer{4}, Xi_Op::Mul}});
+}
+
 // NOLINTEND(cppcoreguidelines-*, readability*)
 
 } // namespace xi
