@@ -117,18 +117,8 @@ TEST_CASE("Test expr", "[Xi_Expr]") {
 }
 
 TEST_CASE("Test mathexpr", "[Xi_Expr]") {
-    auto x1 = recursive_wrapper<Xi_Binop>(
-        Xi_Binop{Xi_Integer{1}, Xi_Integer{2}, Xi_Op::Add});
-    auto x2 = recursive_wrapper<Xi_Binop>(
-        Xi_Binop{Xi_Integer{1}, Xi_Integer{2}, Xi_Op::Add});
-    REQUIRE(x1 == x2);
-
-    // auto [integer1, integer2] = Xi_mathexpr("1 + 2").value();
-    // REQUIRE(GetText(integer1) == "12");
-    // REQUIRE(integer1 ==
-    //         Xi_Binop{Xi_Integer{1}, Xi_Integer{2}, Xi_Op::Add});
-    // auto integer1 = Xi_mathexpr("1 + 2");
-    // REQUIRE(integer1 == std::nullopt);
+    auto [integer1, integer2] = Xi_mathexpr("1 + 2").value();
+    REQUIRE(integer1 == Xi_Binop{Xi_Integer{1}, Xi_Integer{2}, Xi_Op::Add});
 }
 
 } // namespace xi

@@ -29,15 +29,6 @@ auto operator==(const std::variant<Types...> &v, T const &t) noexcept
     }
 }
 
-//
-// template <typename... Types, typename T>
-// auto operator==(const std::variant<Types...> &v,
-//                 recursive_wrapper<T> const   &t) noexcept
-//     requires is_one_of<T, Types...>
-// {
-//     return std::get<T>(v) == t;
-// }
-
 struct Xi_Boolean {
     bool value;
     auto operator<=>(const Xi_Boolean &) const = default;
@@ -103,18 +94,17 @@ struct Xi_Binop {
     Xi_Expr lhs;
     Xi_Expr rhs;
     Xi_Op   op;
-    // I don't know why this work
-    auto operator==(const Xi_Binop &b) const {
-        return this->lhs == b.lhs && this->rhs == b.rhs;
+    auto    operator==(const Xi_Binop &b) const -> bool {
+        return *this <=> b == nullptr;
     }
 };
 
 auto operator<=>(const Xi_Binop &a, const Xi_Binop &b)
     -> std::partial_ordering {
-    if (auto cmp = a.lhs <=> b.lhs; cmp != 0) {
+    if (auto cmp = a.lhs <=> b.lhs; cmp != nullptr) {
         return cmp;
     }
-    if (auto cmp = a.rhs <=> b.rhs; cmp != 0) {
+    if (auto cmp = a.rhs <=> b.rhs; cmp != nullptr) {
         return cmp;
     }
     return a.op <=> b.op;
@@ -125,13 +115,6 @@ struct Xi_Iden {
     // Xi_Expr     expr;
     // auto        operator<=>(const Xi_Iden &) const = default;
 };
-
-void test() {
-    auto x1 = recursive_wrapper<Xi_Binop>(
-        Xi_Binop{Xi_Integer{1}, Xi_Integer{2}, Xi_Op::Add});
-    auto x2 = recursive_wrapper<Xi_Binop>(
-        Xi_Binop{Xi_Integer{1}, Xi_Integer{2}, Xi_Op::Add});
-}
 
 auto GetText(const Xi_Expr &expr) -> std::string {
     return std::visit(

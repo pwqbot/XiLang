@@ -62,14 +62,14 @@ class recursive_wrapper {
 
     auto get_pointer() -> T * { return p_; }
     auto get_pointer() const -> const T * { return p_; }
-    auto operator==(const recursive_wrapper &b) const {
-        return get() == b.get();
-    }
 
     auto operator<=>(const recursive_wrapper &b) const {
         return get() <=> b.get();
     }
     // auto operator<=>(const T &b) const { return std::strong_ordering::equal;
+    auto operator==(const recursive_wrapper &b) const {
+        return get() <=> b.get() == nullptr;
+    }
     // }
 };
 
