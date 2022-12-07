@@ -145,150 +145,264 @@ TEST_CASE("Parse Xi_Op", "[Xi_Op]")
 TEST_CASE("Parse mathexpr", "[Xi_Expr]")
 {
     auto [integer1, integer2] = Xi_mathexpr("1 + 2").value();
-    REQUIRE(integer1 == Xi_Binop{Xi_Integer{1}, Xi_Integer{2}, Xi_Op::Add});
+    REQUIRE(
+        integer1 == Xi_Binop{
+                        Xi_Integer{1},
+                        Xi_Integer{2},
+                        Xi_Op::Add,
+                    });
 
     // test multiply
     auto [integer3, integer4] = Xi_mathexpr(" 1*2").value();
-    REQUIRE(integer3 == Xi_Binop{Xi_Integer{1}, Xi_Integer{2}, Xi_Op::Mul});
+    REQUIRE(
+        integer3 == Xi_Binop{
+                        Xi_Integer{1},
+                        Xi_Integer{2},
+                        Xi_Op::Mul,
+                    });
 
     // test add and multiply
     auto [integer5, integer6] = Xi_mathexpr(" 1 + 2 * 3").value();
     REQUIRE(
         integer5 == Xi_Binop{
                         Xi_Integer{1},
-                        Xi_Binop{Xi_Integer{2}, Xi_Integer{3}, Xi_Op::Mul},
-                        Xi_Op::Add});
+                        Xi_Binop{
+                            Xi_Integer{2},
+                            Xi_Integer{3},
+                            Xi_Op::Mul,
+                        },
+                        Xi_Op::Add,
+                    });
 
     auto [integer7, integer8] = Xi_mathexpr(" 1 + 2 + 3").value();
     REQUIRE(
         integer7 == Xi_Binop{
                         Xi_Integer{1},
-                        Xi_Binop{Xi_Integer{2}, Xi_Integer{3}, Xi_Op::Add},
-                        Xi_Op::Add});
+                        Xi_Binop{
+                            Xi_Integer{2},
+                            Xi_Integer{3},
+                            Xi_Op::Add,
+                        },
+                        Xi_Op::Add,
+                    });
 
     // test paren
     auto [integer9, integer10] = Xi_mathexpr(" (1 + 2) * 3").value();
     REQUIRE(
         integer9 == Xi_Binop{
-                        Xi_Binop{Xi_Integer{1}, Xi_Integer{2}, Xi_Op::Add},
+                        Xi_Binop{
+                            Xi_Integer{1},
+                            Xi_Integer{2},
+                            Xi_Op::Add,
+                        },
                         Xi_Integer{3},
-                        Xi_Op::Mul});
+                        Xi_Op::Mul,
+                    });
 
     auto [integer11, integer12] = Xi_mathexpr(" (1 * 2) * 3 + 4").value();
     REQUIRE(
         integer11 == Xi_Binop{
                          Xi_Binop{
-                             Xi_Binop{Xi_Integer{1}, Xi_Integer{2}, Xi_Op::Mul},
+                             Xi_Binop{
+                                 Xi_Integer{1},
+                                 Xi_Integer{2},
+                                 Xi_Op::Mul,
+                             },
                              Xi_Integer{3},
                              Xi_Op::Mul},
                          Xi_Integer{4},
-                         Xi_Op::Add});
+                         Xi_Op::Add,
+                     });
 }
 
 TEST_CASE("Parse mathexpr with identify", "[Xi_Expr]")
 {
     auto [integer1, integer2] = Xi_mathexpr("a + 2").value();
-    REQUIRE(integer1 == Xi_Binop{Xi_Iden{"a"}, Xi_Integer{2}, Xi_Op::Add});
+    REQUIRE(
+        integer1 == Xi_Binop{
+                        Xi_Iden{"a"},
+                        Xi_Integer{2},
+                        Xi_Op::Add,
+                    });
 
     auto [integer3, integer4] = Xi_mathexpr("a + b").value();
-    REQUIRE(integer3 == Xi_Binop{Xi_Iden{"a"}, Xi_Iden{"b"}, Xi_Op::Add});
+    REQUIRE(
+        integer3 == Xi_Binop{
+                        Xi_Iden{"a"},
+                        Xi_Iden{"b"},
+                        Xi_Op::Add,
+                    });
 
     auto [integer5, integer6] = Xi_mathexpr("(a_1 + b) * 3").value();
     REQUIRE(
         integer5 == Xi_Binop{
-                        Xi_Binop{Xi_Iden{"a_1"}, Xi_Iden{"b"}, Xi_Op::Add},
+                        Xi_Binop{
+                            Xi_Iden{"a_1"},
+                            Xi_Iden{"b"},
+                            Xi_Op::Add,
+                        },
                         Xi_Integer{3},
-                        Xi_Op::Mul});
+                        Xi_Op::Mul,
+                    });
 }
 
 TEST_CASE("Parse boolexpr", "[Xi_Expr]")
 {
     auto [boolean1, boolean2] = Xi_boolexpr("true && false").value();
-    REQUIRE(boolean1 == Xi_Binop{Xi_Boolean{true}, Xi_Boolean{false}, Xi_Op::And});
+    REQUIRE(
+        boolean1 == Xi_Binop{
+                        Xi_Boolean{true},
+                        Xi_Boolean{false},
+                        Xi_Op::And,
+                    });
 
     auto [boolean3, boolean4] = Xi_boolexpr("true || false").value();
-    REQUIRE(boolean3 == Xi_Binop{Xi_Boolean{true}, Xi_Boolean{false}, Xi_Op::Or});
+    REQUIRE(
+        boolean3 == Xi_Binop{
+                        Xi_Boolean{true},
+                        Xi_Boolean{false},
+                        Xi_Op::Or,
+                    });
 
     auto [boolean5, boolean6] = Xi_boolexpr("true && false || true").value();
     REQUIRE(
-        boolean5 ==
-        Xi_Binop{
-            Xi_Binop{Xi_Boolean{true}, Xi_Boolean{false}, Xi_Op::And},
-            Xi_Boolean{true},
-            Xi_Op::Or});
+        boolean5 == Xi_Binop{
+                        Xi_Binop{
+                            Xi_Boolean{true},
+                            Xi_Boolean{false},
+                            Xi_Op::And,
+                        },
+                        Xi_Boolean{true},
+                        Xi_Op::Or,
+                    });
 
     auto [boolean7, boolean8] = Xi_boolexpr("true || false && true").value();
     REQUIRE(
-        boolean7 ==
-        Xi_Binop{
-            Xi_Boolean{true},
-            Xi_Binop{Xi_Boolean{false}, Xi_Boolean{true}, Xi_Op::And},
-            Xi_Op::Or});
+        boolean7 == Xi_Binop{
+                        Xi_Boolean{true},
+                        Xi_Binop{
+                            Xi_Boolean{false},
+                            Xi_Boolean{true},
+                            Xi_Op::And,
+                        },
+                        Xi_Op::Or,
+                    });
 
     auto [boolean9, boolean10] =
         Xi_boolexpr("true && false || true && false").value();
     REQUIRE(
-        boolean9 ==
-        Xi_Binop{
-            Xi_Binop{Xi_Boolean{true}, Xi_Boolean{false}, Xi_Op::And},
-            Xi_Binop{Xi_Boolean{true}, Xi_Boolean{false}, Xi_Op::And},
-            Xi_Op::Or});
+        boolean9 == Xi_Binop{
+                        Xi_Binop{
+                            Xi_Boolean{true},
+                            Xi_Boolean{false},
+                            Xi_Op::And,
+                        },
+                        Xi_Binop{
+                            Xi_Boolean{true},
+                            Xi_Boolean{false},
+                            Xi_Op::And,
+                        },
+                        Xi_Op::Or,
+                    });
 
     // test paren
     auto [boolean11, boolean12] =
         Xi_boolexpr("(true || false) && true").value();
     REQUIRE(
-        boolean11 ==
-        Xi_Binop{
-            Xi_Binop{Xi_Boolean{true}, Xi_Boolean{false}, Xi_Op::Or},
-            Xi_Boolean{true},
-            Xi_Op::And});
+        boolean11 == Xi_Binop{
+                         Xi_Binop{
+                             Xi_Boolean{true},
+                             Xi_Boolean{false},
+                             Xi_Op::Or,
+                         },
+                         Xi_Boolean{true},
+                         Xi_Op::And,
+                     });
 
     auto [boolean13, boolean14] =
         Xi_boolexpr("true && (false || true)").value();
     REQUIRE(
-        boolean13 ==
-        Xi_Binop{
-            Xi_Boolean{true},
-            Xi_Binop{Xi_Boolean{false}, Xi_Boolean{true}, Xi_Op::Or},
-            Xi_Op::And});
+        boolean13 == Xi_Binop{
+                         Xi_Boolean{true},
+                         Xi_Binop{
+                             Xi_Boolean{false},
+                             Xi_Boolean{true},
+                             Xi_Op::Or,
+                         },
+                         Xi_Op::And});
 
     // test mathbool
     auto [boolean15, boolean16] = Xi_boolexpr("1 + 2 > 3 * 4").value();
     REQUIRE(
         boolean15 == Xi_Binop{
-                         Xi_Binop{Xi_Integer{1}, Xi_Integer{2}, Xi_Op::Add},
-                         Xi_Binop{Xi_Integer{3}, Xi_Integer{4}, Xi_Op::Mul},
-                         Xi_Op::Gt});
+                         Xi_Binop{
+                             Xi_Integer{1},
+                             Xi_Integer{2},
+                             Xi_Op::Add,
+                         },
+                         Xi_Binop{
+                             Xi_Integer{3},
+                             Xi_Integer{4},
+                             Xi_Op::Mul,
+                         },
+                         Xi_Op::Gt,
+                     });
 
     auto [boolean17, boolean18] =
         Xi_boolexpr("(1 + (2 + 3) < 3 * 4) || true").value();
     REQUIRE(
-        boolean17 ==
-        Xi_Binop{
-            Xi_Binop{
-                Xi_Binop{
-                    Xi_Integer{1},
-                    Xi_Binop{Xi_Integer{2}, Xi_Integer{3}, Xi_Op::Add},
-                    Xi_Op::Add},
-                Xi_Binop{Xi_Integer{3}, Xi_Integer{4}, Xi_Op::Mul},
-                Xi_Op::Lt},
-            Xi_Boolean{true},
-            Xi_Op::Or});
+        boolean17 == Xi_Binop{
+                         Xi_Binop{
+                             Xi_Binop{
+                                 Xi_Integer{1},
+                                 Xi_Binop{
+                                     Xi_Integer{2},
+                                     Xi_Integer{3},
+                                     Xi_Op::Add,
+                                 },
+                                 Xi_Op::Add,
+                             },
+                             Xi_Binop{
+                                 Xi_Integer{3},
+                                 Xi_Integer{4},
+                                 Xi_Op::Mul,
+                             },
+                             Xi_Op::Lt},
+                         Xi_Boolean{true},
+                         Xi_Op::Or,
+                     });
 }
 
 TEST_CASE("Parse Xi_If", "[Xi_If]")
 {
     auto [if1, if2] = Xi_if("if true then 1 else 2").value();
-    REQUIRE(if1 == Xi_If{Xi_Boolean{true}, Xi_Integer{1}, Xi_Integer{2}});
+    REQUIRE(
+        if1 == Xi_If{
+                   Xi_Boolean{true},
+                   Xi_Integer{1},
+                   Xi_Integer{2},
+               });
     REQUIRE(if2 == "");
 
-    // auto [if3, if4] =
-    //     Xi_if("if true || false then 1 + 2 else 3 *
-    //           4 ").value(); REQUIRE(if3 ==
-    //           Xi_If{Xi_Binop{Xi_Boolean{true}, Xi_Boolean{false}, Xi_Op::Or},
-    //                 Xi_Binop{Xi_Integer{1}, Xi_Integer{2}, Xi_Op::Add},
-    //                 Xi_Binop{Xi_Integer{3}, Xi_Integer{4}, Xi_Op::Mul}});
+    auto [if3, if4] = Xi_if("if true || false then 1 + 2 else 3 * 4 ").value();
+    REQUIRE(
+        if3 == Xi_If{
+                   Xi_Binop{
+                       Xi_Boolean{true},
+                       Xi_Boolean{false},
+                       Xi_Op::Or,
+                   },
+                   Xi_Binop{
+                       Xi_Integer{1},
+                       Xi_Integer{2},
+                       Xi_Op::Add,
+                   },
+                   Xi_Binop{
+                       Xi_Integer{3},
+                       Xi_Integer{4},
+                       Xi_Op::Mul,
+                   },
+               });
 }
 
 TEST_CASE("Parse Xi_Iden", "[Xi_Iden]")
@@ -306,7 +420,6 @@ TEST_CASE("Parse Xi_Iden", "[Xi_Iden]")
     REQUIRE(iden6 == "");
 
     auto [iden7, iden8] = Xi_iden("abc 123").value();
-    // REQUIRE(fmt::format("{}", iden7) == "abc");
     REQUIRE(iden7 == Xi_Iden{"abc"});
     REQUIRE(iden8 == " 123");
 }
@@ -317,37 +430,68 @@ TEST_CASE("Parse Xi_Lam", "[Xi_Expr]")
         auto [lam, left] = Xi_lam("? x y -> (x + y + 1)").value();
         REQUIRE(
             lam == Xi_Lam{
-                       {Xi_Iden{"x"}, Xi_Iden{"y"}},
+                       {
+                           Xi_Iden{"x"},
+                           Xi_Iden{"y"},
+                       },
                        Xi_Binop{
                            Xi_Iden{"x"},
-                           Xi_Binop{Xi_Iden{"y"}, Xi_Integer{1}, Xi_Op::Add}}});
+                           Xi_Binop{
+                               Xi_Iden{"y"},
+                               Xi_Integer{1},
+                               Xi_Op::Add,
+                           },
+                       },
+                   });
     }
 
     {
         auto [lam, left] = Xi_lam("? x -> (x + y + 1) - (5 * 2)").value();
         REQUIRE(
-            lam ==
-            Xi_Lam{
-                {Xi_Iden{"x"}},
-                Xi_Binop{
-                    Xi_Binop{
-                        Xi_Iden{"x"},
-                        Xi_Binop{Xi_Iden{"y"}, Xi_Integer{1}, Xi_Op::Add}},
-                    Xi_Binop{Xi_Integer{5}, Xi_Integer{2}, Xi_Op::Mul},
-                    Xi_Op::Sub}});
+            lam == Xi_Lam{
+                       {
+                           Xi_Iden{"x"},
+                       },
+                       Xi_Binop{
+                           Xi_Binop{
+                               Xi_Iden{"x"},
+                               Xi_Binop{
+                                   Xi_Iden{"y"},
+                                   Xi_Integer{1},
+                                   Xi_Op::Add,
+                               },
+                           },
+                           Xi_Binop{
+                               Xi_Integer{5},
+                               Xi_Integer{2},
+                               Xi_Op::Mul,
+                           },
+                           Xi_Op::Sub,
+                       },
+                   });
     }
 
     {
         auto [lam, left] = Xi_lam("? x y -> ?z -> x + y + z").value();
         REQUIRE(
             lam == Xi_Lam{
-                       {Xi_Iden{"x"}, Xi_Iden{"y"}},
+                       {
+                           Xi_Iden{"x"},
+                           Xi_Iden{"y"},
+                       },
                        Xi_Lam{
                            {Xi_Iden{"z"}},
                            Xi_Binop{
                                Xi_Iden{"x"},
-                               Xi_Binop{Xi_Iden{"y"}, Xi_Iden{"z"}, Xi_Op::Add},
-                               Xi_Op::Add}}});
+                               Xi_Binop{
+                                   Xi_Iden{"y"},
+                                   Xi_Iden{"z"},
+                                   Xi_Op::Add,
+                               },
+                               Xi_Op::Add,
+                           },
+                       },
+                   });
     }
 }
 

@@ -20,22 +20,25 @@ AlwaysBreakTemplateDeclarations: Yes
 SpaceAfterTemplateKeyword: true
 BinPackArguments: false
 BinPackParameters: false
+
 BreakBeforeBinaryOperators: None
 BreakBeforeConceptDeclarations: Always
 BreakConstructorInitializers: AfterColon
 BreakBeforeBraces: Allman
 BreakBeforeTernaryOperators: true
 BreakStringLiterals: true
+
 IncludeBlocks: Regroup
-# LambdaBodyIndentation: OuterScope
 
 IndentPPDirectives: BeforeHash
 IndentRequiresClause: true
 
 InsertBraces: true
+InsertTrailingCommas: Wrapped
 QualifierAlignment: Left
 RequiresClausePosition: OwnLine
 
 PenaltyBreakAssignment: 0
 PenaltyBreakTemplateDeclaration: 0
-PenaltyBreakOpenParenthesis: 10000000
+PenaltyBreakBeforeFirstCallParameter: 0
+PenaltyBreakOpenParenthesis: 1000
