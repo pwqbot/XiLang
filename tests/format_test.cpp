@@ -40,8 +40,8 @@ TEST_CASE("Test recursive_wrapper", "[recursive_wrapper]") {
 TEST_CASE("Test Xi_Binop", "[Xi_Binop]") {
     auto result = Xi_Binop{Xi_Integer{123}, Xi_Integer{456}, Xi_Op::Add};
     REQUIRE(fmt::format("{}", result) == "Xi_Binop +\n"
-                                         "\tXi_Integer 123\n"
-                                         "\tXi_Integer 456");
+                                         "\tL Xi_Integer 123\n"
+                                         "\tR Xi_Integer 456");
 }
 // NOLINTEND(cppcoreguidelines-*, readability*)
 

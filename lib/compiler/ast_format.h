@@ -72,9 +72,9 @@ struct fmt::formatter<xi::Xi_Binop> : fmt::formatter<xi::Xi_Expr> {
         auto out = ctx.out();
         out      = fmt::format_to(out, "Xi_Binop ");
         out      = fmt::format_to(out, "{}\n", xi::Xi_Op_To_OpStr(b.op));
-        out      = fmt::format_to(out, "\t");
+        out      = fmt::format_to(out, "\tL ");
         out      = fmt::formatter<xi::Xi_Expr>::format(b.lhs, ctx);
-        out      = fmt::format_to(out, "\n\t");
+        out      = fmt::format_to(out, "\n\tR ");
         out      = fmt::formatter<xi::Xi_Expr>::format(b.rhs, ctx);
         return out;
     }
@@ -86,8 +86,7 @@ struct fmt::formatter<xi::Xi_Unop> : fmt::formatter<xi::Xi_Expr> {
     auto format(const xi::Xi_Unop &u, FormatContext &ctx) {
         auto out = ctx.out();
         out      = fmt::format_to(out, "Xi_Unop ");
-        out      = fmt::format_to(out, "{}\n", xi::Xi_Op_To_OpStr(u.op));
-        out      = fmt::format_to(out, "\t");
+        out      = fmt::format_to(out, "{} ", xi::Xi_Op_To_OpStr(u.op));
         out      = fmt::formatter<xi::Xi_Expr>::format(u.expr, ctx);
         return out;
     }
@@ -117,8 +116,8 @@ struct fmt::formatter<xi::Xi_Lam> : fmt::formatter<xi::Xi_Expr> {
         out      = fmt::format_to(out, "Xi_Lam\n");
         out      = fmt::format_to(out, "\t");
         // out      = fmt::formatter<xi::Xi_Expr>::format(l.args, ctx);
-        out      = fmt::format_to(out, "\n\t");
-        out      = fmt::formatter<xi::Xi_Expr>::format(l.body, ctx);
+        out = fmt::format_to(out, "\n\t");
+        out = fmt::formatter<xi::Xi_Expr>::format(l.body, ctx);
         return out;
     }
 };

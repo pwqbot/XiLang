@@ -120,7 +120,7 @@ struct Xi_Lam;
 auto operator<=>(const Xi_Lam &lhs, const Xi_Lam &rhs) -> std::partial_ordering;
 
 using Xi_Expr =
-    std::variant<Xi_Integer, Xi_Boolean, Xi_Real, Xi_String,
+    std::variant<std::monostate, Xi_Integer, Xi_Boolean, Xi_Real, Xi_String,
                  Xi_Iden, recursive_wrapper<Xi_Unop>,
                  recursive_wrapper<Xi_Binop>, recursive_wrapper<Xi_If>,
                  recursive_wrapper<Xi_Lam>>;

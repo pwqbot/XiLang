@@ -140,4 +140,6 @@ inline const Parser auto Xi_real = Xi_integer >> [](const Xi_Integer &integer) {
     };
 };
 
+inline const Parser auto Xi_number = Xi_real || Xi_integer;
+
 } // namespace xi

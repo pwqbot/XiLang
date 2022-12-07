@@ -166,11 +166,17 @@ class reduce_many {
 
 // Repeat a char parser 0+ times and concatenate the result into a string
 // TODO(ding.wang): refactor to constexpr after std::string is constepxr
+// actually it is fold...
 template <Parser P>
     requires std::same_as<Parser_value_t<P>, char>
 auto many(P parser) -> Parser auto{
     return reduce_many(std::string{}, parser,
                        [](auto acc, auto c) { return acc + c; });
+}
+
+template <Parser P, typename F, typename T = Parser_value_t<P>>
+auto many(P parser, F func, T init = T{}) -> Parser auto{
+    return reduce_many<T, P, F>(init, parser, func);
 }
 
 // Repeat a char parser 1+ times and concatenate the result into a string
@@ -181,6 +187,14 @@ constexpr auto some(P parser) -> Parser auto{
         return many(parser) >> [first](auto rest) {
             return unit(std::string{first} + rest);
         };
+    };
+}
+
+template <Parser P, typename F>
+constexpr auto some(P parser, F func) -> Parser auto{
+    using T = Parser_value_t<P>;
+    return parser >> [parser, func](T first) {
+        return many(parser, func, first);
     };
 }
 
