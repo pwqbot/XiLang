@@ -10,7 +10,8 @@
 #include <fmt/std.h>
 #include <utility>
 template <typename T>
-class recursive_wrapper {
+class recursive_wrapper
+{
   public: // typedefs
     using type = T;
 
@@ -31,28 +32,33 @@ class recursive_wrapper {
     void assign(const T &rhs);
 
   public: // modifiers
-    auto operator=(const recursive_wrapper &rhs) -> recursive_wrapper & {
+    auto operator=(const recursive_wrapper &rhs) -> recursive_wrapper &
+    {
         assign(rhs.get());
         return *this;
     }
 
-    auto operator=(const T &rhs) -> recursive_wrapper & {
+    auto operator=(const T &rhs) -> recursive_wrapper &
+    {
         assign(rhs);
         return *this;
     }
 
-    void swap(recursive_wrapper &operand) noexcept {
+    void swap(recursive_wrapper &operand) noexcept
+    {
         T *temp    = operand.p_;
         operand.p_ = p_;
         p_         = temp;
     }
 
-    auto operator=(recursive_wrapper &&rhs) noexcept -> recursive_wrapper & {
+    auto operator=(recursive_wrapper &&rhs) noexcept -> recursive_wrapper &
+    {
         swap(rhs);
         return *this;
     }
 
-    auto operator=(T &&rhs) -> recursive_wrapper & {
+    auto operator=(T &&rhs) -> recursive_wrapper &
+    {
         get() = std::move(rhs);
         return *this;
     }
@@ -64,44 +70,58 @@ class recursive_wrapper {
     auto get_pointer() -> T * { return p_; }
     auto get_pointer() const -> const T * { return p_; }
 
-    auto operator<=>(const recursive_wrapper &b) const {
+    auto operator<=>(const recursive_wrapper &b) const
+    {
         return get() <=> b.get();
     }
     // auto operator<=>(const T &b) const { return std::strong_ordering::equal;
-    auto operator==(const recursive_wrapper &b) const {
+    auto operator==(const recursive_wrapper &b) const
+    {
         return get() <=> b.get() == nullptr;
     }
     // }
 };
 
 template <typename T>
-constexpr recursive_wrapper<T>::~recursive_wrapper() {
+constexpr recursive_wrapper<T>::~recursive_wrapper()
+{
     delete p_;
 }
 
 template <typename T>
-constexpr recursive_wrapper<T>::recursive_wrapper() : p_(new T) {}
+constexpr recursive_wrapper<T>::recursive_wrapper() : p_(new T)
+{
+}
 
 template <typename T>
-constexpr recursive_wrapper<T>::recursive_wrapper(
-    const recursive_wrapper &operand)
-    : p_(new T(operand.get())) {}
+constexpr recursive_wrapper<T>::recursive_wrapper(const recursive_wrapper
+                                                      &operand) :
+    p_(new T(operand.get()))
+{
+}
 
 template <typename T>
-constexpr recursive_wrapper<T>::recursive_wrapper(const T &operand)
-    : p_(new T(operand)) {}
+constexpr recursive_wrapper<T>::recursive_wrapper(const T &operand) :
+    p_(new T(operand))
+{
+}
 
 template <typename T>
-constexpr recursive_wrapper<T>::recursive_wrapper(
-    recursive_wrapper &&operand) noexcept
-    : p_(new T(std::move(operand.get()))) {}
+constexpr recursive_wrapper<T>::recursive_wrapper(recursive_wrapper
+                                                      &&operand) noexcept :
+    p_(new T(std::move(operand.get())))
+{
+}
 
 template <typename T>
-constexpr recursive_wrapper<T>::recursive_wrapper(T &&operand)
-    : p_(new T(std::move(operand))) {}
+constexpr recursive_wrapper<T>::recursive_wrapper(T &&operand) :
+    p_(new T(std::move(operand)))
+{
+}
 
 template <typename T>
-void recursive_wrapper<T>::assign(const T &rhs) {
+void recursive_wrapper<T>::assign(const T &rhs)
+{
     this->get() = rhs;
 }
 
@@ -110,16 +130,18 @@ void recursive_wrapper<T>::assign(const T &rhs) {
 // Swaps two recursive_wrapper<T> objects of the same type T.
 //
 template <typename T>
-inline void swap(recursive_wrapper<T> &lhs,
-                 recursive_wrapper<T> &rhs) noexcept {
+inline void swap(recursive_wrapper<T> &lhs, recursive_wrapper<T> &rhs) noexcept
+{
     lhs.swap(rhs);
 }
 
 template <typename T>
     requires fmt::is_formattable<T>::value
-struct fmt::formatter<recursive_wrapper<T>> : fmt::formatter<T> {
+struct fmt::formatter<recursive_wrapper<T>> : fmt::formatter<T>
+{
     template <typename FormatContext>
-    auto format(const recursive_wrapper<T> &t, FormatContext &ctx) {
+    auto format(const recursive_wrapper<T> &t, FormatContext &ctx)
+    {
         return fmt::formatter<T>::format(t.get(), ctx);
     }
 };

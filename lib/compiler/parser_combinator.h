@@ -6,7 +6,8 @@
 #include <utility>
 #include <variant>
 
-namespace xi {
+namespace xi
+{
 
 // A parser of Things
 // Is a function from strings
@@ -46,8 +47,10 @@ using Parser_combinator_value_t = std::invoke_result_t<F, Args...>;
 // Return a Parser that returns an instance of T and the unconsumed input
 // return in monad
 template <typename T>
-constexpr auto unit(T thing) -> Parser auto{
-    return [thing](std::string_view input) -> Parsed_t<T> {
+constexpr auto unit(T thing) -> Parser auto
+{
+    return [thing](std::string_view input) -> Parsed_t<T>
+    {
         return std::make_pair(thing, input);
     };
 }
@@ -59,17 +62,22 @@ concept is_variant = requires(V v) {
                      };
 
 template <typename F>
-concept no_overload = requires(
-    F f) { typename decltype(std::function{std::declval<F>()})::result_type; };
+concept no_overload =
+    requires(F f) {
+        typename decltype(std::function{std::declval<F>()})::result_type;
+    };
 
 template <Parser P, Parser_combinator<Parser_value_t<P>> F>
     requires(!is_variant<Parser_value_t<P>> || !no_overload<F>)
-constexpr auto operator>>(P parser, F func) -> Parser auto{
+constexpr auto operator>>(P parser, F func) -> Parser auto
+{
     using Parser_t = Parser_combinator_value_t<F, Parser_value_t<P>>;
-    return [=](std::string_view input) -> Parser_result_t<Parser_t> {
-        if (auto result = std::invoke(parser, input)) {
-            return std::invoke(std::invoke(func, result->first),
-                               result->second);
+    return [=](std::string_view input) -> Parser_result_t<Parser_t>
+    {
+        if (auto result = std::invoke(parser, input))
+        {
+            return std::
+                invoke(std::invoke(func, result->first), result->second);
         }
         return std::nullopt;
     };
@@ -83,7 +91,8 @@ template <typename Callable>
 struct trait_return_type;
 
 template <typename Ret, typename... Args>
-struct trait_return_type<Ret(Args...)> {
+struct trait_return_type<Ret(Args...)>
+{
     using type = Ret;
 };
 
@@ -92,7 +101,9 @@ struct _call_on_variant;
 
 template <typename F, typename... V>
 struct _call_on_variant<F, std::variant<V...>>
-    : std::disjunction<std::is_invocable<F, V>...> {};
+    : std::disjunction<std::is_invocable<F, V>...>
+{
+};
 
 template <typename F, typename V>
 concept call_on_variant = _call_on_variant<F, V>::value;
@@ -103,25 +114,32 @@ constexpr auto operator>>(P parser, F func) -> auto
     requires is_variant<Parser_value_t<P>> &&
              call_on_variant<F, Parser_value_t<P>> && no_overload<F>
 {
-    return [=](std::string_view input) -> Parser_result_t<return_type_of_t<F>> {
-        if (auto result = std::invoke(parser, input)) {
+    return [=](std::string_view input) -> Parser_result_t<return_type_of_t<F>>
+    {
+        if (auto result = std::invoke(parser, input))
+        {
             auto n_parser = std::visit(
-                [&](auto &&thing) -> std::optional<return_type_of_t<F>> {
-                    if constexpr (std::invocable<F, decltype(thing)>) {
+                [&](auto &&thing) -> std::optional<return_type_of_t<F>>
+                {
+                    if constexpr (std::invocable<F, decltype(thing)>)
+                    {
                         return std::optional(std::invoke(func, thing));
                     }
                     return std::nullopt;
                 },
                 result->first);
-            return n_parser.and_then(
-                [result](auto f) { return std::invoke(f, result->second); });
+            return n_parser
+                .and_then([result](auto f)
+                          { return std::invoke(f, result->second); });
         }
         return std::nullopt;
     };
 }
 
-constexpr auto operator>(Parser auto p, Parser auto q) -> Parser auto{
-    return p >> [q](auto) {
+constexpr auto operator>(Parser auto p, Parser auto q) -> Parser auto
+{
+    return p >> [q](auto)
+    {
         return q;
     };
 }
@@ -133,8 +151,10 @@ template <Parser P, Parser Q>
 constexpr auto operator||(P p, Q q) -> Parser auto
     requires std::convertible_to<Parser_value_t<P>, Parser_value_t<Q>>
 {
-    return [p, q](std::string_view input) -> Parser_result_t<P> {
-        if (auto result = std::invoke(p, input)) {
+    return [p, q](std::string_view input) -> Parser_result_t<P>
+    {
+        if (auto result = std::invoke(p, input))
+        {
             return result;
         }
         return std::invoke(q, input);
@@ -143,24 +163,33 @@ constexpr auto operator||(P p, Q q) -> Parser auto
 
 // Parse thing 0+ times
 template <typename T, Parser P, std::regular_invocable<T, Parser_value_t<P>> F>
-    requires std::convertible_to<std::invoke_result_t<F, T, Parser_value_t<P>>,
-                                 T>
-class reduce_many {
+    requires std::
+        convertible_to<std::invoke_result_t<F, T, Parser_value_t<P>>, T>
+    class reduce_many
+{
     T init;
     P parser;
     F func;
 
   public:
-    constexpr reduce_many(T init, P parser, F fn)
-        : init(init), parser(parser), func{fn} {}
+    constexpr reduce_many(T init, P parser, F fn) :
+        init(init), parser(parser), func{fn}
+    {
+    }
 
-    constexpr auto operator()(std::string_view input) const -> Parsed_t<T> {
-        return ((parser >>
-                 [this](auto first) {
-                     return reduce_many{std::invoke(func, init, first), parser,
-                                        func};
-                 }) ||
-                unit(init))(input);
+    constexpr auto operator()(std::string_view input) const -> Parsed_t<T>
+    {
+        return (
+            (parser >>
+             [this](auto first)
+             {
+                 return reduce_many{
+                     std::invoke(func, init, first),
+                     parser,
+                     func,
+                 };
+             }) ||
+            unit(init))(input);
     }
 };
 
@@ -169,38 +198,54 @@ class reduce_many {
 // actually it is fold...
 template <Parser P>
     requires std::same_as<Parser_value_t<P>, char>
-auto many(P parser) -> Parser auto{
-    return reduce_many(std::string{}, parser,
-                       [](auto acc, auto c) { return acc + c; });
+auto many(P parser) -> Parser auto
+{
+    return reduce_many{
+        std::string{},
+        parser,
+        [](auto acc, auto c) { return acc + c; },
+    };
 }
 
 template <Parser P, typename F, typename T = Parser_value_t<P>>
-auto many(P parser, F func, T init = T{}) -> Parser auto{
-    return reduce_many<T, P, F>(init, parser, func);
+auto many(P parser, F func, T init = T{}) -> Parser auto
+{
+    return reduce_many<T, P, F>{
+        init,
+        parser,
+        func,
+    };
 }
 
 // Repeat a char parser 1+ times and concatenate the result into a string
 template <Parser P>
     requires std::same_as<Parser_value_t<P>, char>
-constexpr auto some(P parser) -> Parser auto{
-    return parser >> [parser](auto first) {
-        return many(parser) >> [first](auto rest) {
+constexpr auto some(P parser) -> Parser auto
+{
+    return parser >> [parser](auto first)
+    {
+        return many(parser) >> [first](auto rest)
+        {
             return unit(std::string{first} + rest);
         };
     };
 }
 
 template <Parser P, typename F>
-constexpr auto some(P parser, F func) -> Parser auto{
+constexpr auto some(P parser, F func) -> Parser auto
+{
     using T = Parser_value_t<P>;
-    return parser >> [parser, func](T first) {
+    return parser >> [parser, func](T first)
+    {
         return many(parser, func, first);
     };
 }
 
 template <Parser P>
-auto maybe(P parser) -> Parser auto{
-    return parser >> [](auto thing) {
+auto maybe(P parser) -> Parser auto
+{
+    return parser >> [](auto thing)
+    {
         return unit(std::optional{thing});
     } || unit(std::optional<Parser_value_t<P>>{});
 }

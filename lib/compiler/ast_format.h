@@ -6,9 +6,11 @@
 
 // format Xi_Integer
 template <>
-struct fmt::formatter<xi::Xi_Integer> : fmt::formatter<int> {
+struct fmt::formatter<xi::Xi_Integer> : fmt::formatter<int>
+{
     template <typename FormatContext>
-    auto format(const xi::Xi_Integer &i, FormatContext &ctx) {
+    auto format(const xi::Xi_Integer &i, FormatContext &ctx)
+    {
         auto out = ctx.out();
         out      = fmt::format_to(out, "Xi_Integer ");
         out      = fmt::formatter<int>::format(i.value, ctx);
@@ -18,9 +20,11 @@ struct fmt::formatter<xi::Xi_Integer> : fmt::formatter<int> {
 
 // format Xi_Real
 template <>
-struct fmt::formatter<xi::Xi_Real> : fmt::formatter<double> {
+struct fmt::formatter<xi::Xi_Real> : fmt::formatter<double>
+{
     template <typename FormatContext>
-    auto format(const xi::Xi_Real &r, FormatContext &ctx) {
+    auto format(const xi::Xi_Real &r, FormatContext &ctx)
+    {
         auto out = ctx.out();
         out      = fmt::format_to(out, "Xi_Real ");
         out      = fmt::formatter<double>::format(r.value, ctx);
@@ -29,9 +33,11 @@ struct fmt::formatter<xi::Xi_Real> : fmt::formatter<double> {
 };
 
 template <>
-struct fmt::formatter<xi::Xi_Boolean> : fmt::formatter<bool> {
+struct fmt::formatter<xi::Xi_Boolean> : fmt::formatter<bool>
+{
     template <typename FormatContext>
-    auto format(const xi::Xi_Boolean &b, FormatContext &ctx) {
+    auto format(const xi::Xi_Boolean &b, FormatContext &ctx)
+    {
         auto out = ctx.out();
         out      = fmt::format_to(out, "Xi_Boolean ");
         out      = fmt::formatter<bool>::format(b.value, ctx);
@@ -40,9 +46,11 @@ struct fmt::formatter<xi::Xi_Boolean> : fmt::formatter<bool> {
 };
 
 template <>
-struct fmt::formatter<xi::Xi_String> : fmt::formatter<std::string> {
+struct fmt::formatter<xi::Xi_String> : fmt::formatter<std::string>
+{
     template <typename FormatContext>
-    auto format(const xi::Xi_String &s, FormatContext &ctx) {
+    auto format(const xi::Xi_String &s, FormatContext &ctx)
+    {
         auto out = ctx.out();
         out      = fmt::format_to(out, "Xi_String \"");
         out      = fmt::formatter<std::string>::format(s.value, ctx);
@@ -52,23 +60,26 @@ struct fmt::formatter<xi::Xi_String> : fmt::formatter<std::string> {
 };
 
 template <>
-struct fmt::formatter<xi::Xi_Expr> : fmt::formatter<std::string> {
+struct fmt::formatter<xi::Xi_Expr> : fmt::formatter<std::string>
+{
     template <typename FormatContext>
-    auto format(xi::Xi_Expr c, FormatContext &ctx) const
-        -> decltype(ctx.out()) {
+    auto format(xi::Xi_Expr c, FormatContext &ctx) const -> decltype(ctx.out())
+    {
         return std::visit(
             [&](auto &&arg) -> decltype(auto) {
-                return fmt::formatter<std::string>::format(
-                    fmt::format("{}", arg), ctx);
+                return fmt::formatter<
+                    std::string>::format(fmt::format("{}", arg), ctx);
             },
             c);
     }
 };
 
 template <>
-struct fmt::formatter<xi::Xi_Binop> : fmt::formatter<xi::Xi_Expr> {
+struct fmt::formatter<xi::Xi_Binop> : fmt::formatter<xi::Xi_Expr>
+{
     template <typename FormatContext>
-    auto format(const xi::Xi_Binop &b, FormatContext &ctx) {
+    auto format(const xi::Xi_Binop &b, FormatContext &ctx)
+    {
         auto out = ctx.out();
         out      = fmt::format_to(out, "Xi_Binop ");
         out      = fmt::format_to(out, "{}\n", xi::Xi_Op_To_OpStr(b.op));
@@ -81,9 +92,11 @@ struct fmt::formatter<xi::Xi_Binop> : fmt::formatter<xi::Xi_Expr> {
 };
 
 template <>
-struct fmt::formatter<xi::Xi_Unop> : fmt::formatter<xi::Xi_Expr> {
+struct fmt::formatter<xi::Xi_Unop> : fmt::formatter<xi::Xi_Expr>
+{
     template <typename FormatContext>
-    auto format(const xi::Xi_Unop &u, FormatContext &ctx) {
+    auto format(const xi::Xi_Unop &u, FormatContext &ctx)
+    {
         auto out = ctx.out();
         out      = fmt::format_to(out, "Xi_Unop ");
         out      = fmt::format_to(out, "{} ", xi::Xi_Op_To_OpStr(u.op));
@@ -93,9 +106,11 @@ struct fmt::formatter<xi::Xi_Unop> : fmt::formatter<xi::Xi_Expr> {
 };
 
 template <>
-struct fmt::formatter<xi::Xi_If> : fmt::formatter<xi::Xi_Expr> {
+struct fmt::formatter<xi::Xi_If> : fmt::formatter<xi::Xi_Expr>
+{
     template <typename FormatContext>
-    auto format(const xi::Xi_If &i, FormatContext &ctx) {
+    auto format(const xi::Xi_If &i, FormatContext &ctx)
+    {
         auto out = ctx.out();
         out      = fmt::format_to(out, "Xi_If\n");
         out      = fmt::format_to(out, "\t");
@@ -109,9 +124,11 @@ struct fmt::formatter<xi::Xi_If> : fmt::formatter<xi::Xi_Expr> {
 };
 
 template <>
-struct fmt::formatter<xi::Xi_Lam> : fmt::formatter<xi::Xi_Expr> {
+struct fmt::formatter<xi::Xi_Lam> : fmt::formatter<xi::Xi_Expr>
+{
     template <typename FormatContext>
-    auto format(const xi::Xi_Lam &l, FormatContext &ctx) {
+    auto format(const xi::Xi_Lam &l, FormatContext &ctx)
+    {
         auto out = ctx.out();
         out      = fmt::format_to(out, "Xi_Lam\n");
         out      = fmt::format_to(out, "\t");
@@ -123,9 +140,11 @@ struct fmt::formatter<xi::Xi_Lam> : fmt::formatter<xi::Xi_Expr> {
 };
 
 template <>
-struct fmt::formatter<xi::Xi_Iden> : fmt::formatter<xi::Xi_Expr> {
+struct fmt::formatter<xi::Xi_Iden> : fmt::formatter<xi::Xi_Expr>
+{
     template <typename FormatContext>
-    auto format(const xi::Xi_Iden &i, FormatContext &ctx) {
+    auto format(const xi::Xi_Iden &i, FormatContext &ctx)
+    {
         auto out = ctx.out();
         out      = fmt::format_to(out, "Xi_Iden ");
         out      = fmt::formatter<std::string>::format(i.name, ctx);

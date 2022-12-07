@@ -5,13 +5,37 @@ ColumnLimit: 80
 
 Language: Cpp 
 Standard: c++20
+
 AlignOperands: true 
-AllowShortLambdasOnASingleLine: Inline
-AllowShortFunctionsOnASingleLine: Inline
+AlignAfterOpenBracket: AlwaysBreak
 AlignTrailingComments: true
 AlignConsecutiveMacros: AcrossEmptyLinesAndComments
 AlignConsecutiveDeclarations: Consecutive
 AlignConsecutiveAssignments: Consecutive
+
+AllowShortLambdasOnASingleLine: Inline
+AllowShortFunctionsOnASingleLine: Inline
 EmptyLineBeforeAccessModifier: Always
 AlwaysBreakTemplateDeclarations: Yes
 SpaceAfterTemplateKeyword: true
+BinPackArguments: false
+BinPackParameters: false
+BreakBeforeBinaryOperators: None
+BreakBeforeConceptDeclarations: Always
+BreakConstructorInitializers: AfterColon
+BreakBeforeBraces: Allman
+BreakBeforeTernaryOperators: true
+BreakStringLiterals: true
+IncludeBlocks: Regroup
+# LambdaBodyIndentation: OuterScope
+
+IndentPPDirectives: BeforeHash
+IndentRequiresClause: true
+
+InsertBraces: true
+QualifierAlignment: Left
+RequiresClausePosition: OwnLine
+
+PenaltyBreakAssignment: 0
+PenaltyBreakTemplateDeclaration: 0
+PenaltyBreakOpenParenthesis: 10000000
