@@ -67,10 +67,12 @@ struct fmt::formatter<xi::Xi_Expr> : fmt::formatter<std::string>
     {
         return std::visit(
             [&](auto &&arg) -> decltype(auto) {
-                return fmt::formatter<
-                    std::string>::format(fmt::format("{}", arg), ctx);
+                return fmt::formatter<std::string>::format(
+                    fmt::format("{}", arg), ctx
+                );
             },
-            c);
+            c
+        );
     }
 };
 

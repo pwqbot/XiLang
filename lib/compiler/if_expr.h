@@ -44,8 +44,8 @@ auto Xi_args(std::string_view input) -> Parsed_t<Xi_Args>
                  return unit(Xi_Args{args});
              };
          }) ||
-        Xi_iden >> [](Xi_Iden arg)
-            { return unit(Xi_Args{std::move(arg)}); })(input);
+        Xi_iden >> [](Xi_Iden arg) { return unit(Xi_Args{std::move(arg)}); }
+    )(input);
 }
 
 const auto Xi_lam = token(s_question) > Xi_args >> [](auto args)
@@ -63,7 +63,8 @@ auto Xi_expr(std::string_view input) -> Parsed_t<Xi_Expr>
 {
     return (
         Xi_true || Xi_false || Xi_string || Xi_mathexpr || Xi_if ||
-        Xi_boolexpr || Xi_lam)(input);
+        Xi_boolexpr || Xi_lam
+    )(input);
 }
 
 } // namespace xi

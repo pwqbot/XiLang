@@ -32,8 +32,8 @@ const auto Xi_parenmathexpr = token(s_lparen) > Xi_mathexpr >> [](auto expr)
     };
 };
 
-inline const auto Unwarp_Unop =
-    [](const Xi_Expr &expr) -> std::pair<Xi_Op, Xi_Expr>
+inline const auto Unwarp_Unop = [](const Xi_Expr &expr
+                                ) -> std::pair<Xi_Op, Xi_Expr>
 {
     return std::visit(
         []<typename T>(const T &expr) -> std::pair<Xi_Op, Xi_Expr>
@@ -44,7 +44,8 @@ inline const auto Unwarp_Unop =
             }
             return {Xi_Op::Add, expr};
         },
-        expr);
+        expr
+    );
 };
 
 const auto binop_fold = [](const Xi_Expr &lhs, const Xi_Expr &rhs)
@@ -128,7 +129,8 @@ auto Xi_mathexpr(std::string_view input) -> Parsed_t<Xi_Expr>
                         });
                     }) ||
                    unit(lhs);
-        })(input);
+        }
+    )(input);
 }
 
 // <boolexpr> ::= <boolterm> | <boolterm> "||" <boolterm>
@@ -211,7 +213,8 @@ auto Xi_boolexpr(std::string_view input) -> Parsed_t<Xi_Expr>
                  };
              };
          }) ||
-        Xi_boolterm)(input);
+        Xi_boolterm
+    )(input);
 };
 
 } // namespace xi

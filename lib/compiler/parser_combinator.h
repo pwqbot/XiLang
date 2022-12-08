@@ -62,10 +62,8 @@ concept is_variant = requires(V v) {
                      };
 
 template <typename F>
-concept no_overload =
-    requires(F f) {
-        typename decltype(std::function{std::declval<F>()})::result_type;
-    };
+concept no_overload = requires(F f
+) { typename decltype(std::function{std::declval<F>()})::result_type; };
 
 template <Parser P, Parser_combinator<Parser_value_t<P>> F>
     requires(!is_variant<Parser_value_t<P>> || !no_overload<F>)
@@ -76,8 +74,9 @@ constexpr auto operator>>(P parser, F func) -> Parser auto
     {
         if (auto result = std::invoke(parser, input))
         {
-            return std::
-                invoke(std::invoke(func, result->first), result->second);
+            return std::invoke(
+                std::invoke(func, result->first), result->second
+            );
         }
         return std::nullopt;
     };
@@ -127,10 +126,11 @@ constexpr auto operator>>(P parser, F func) -> auto
                     }
                     return std::nullopt;
                 },
-                result->first);
-            return n_parser
-                .and_then([result](auto f)
-                          { return std::invoke(f, result->second); });
+                result->first
+            );
+            return n_parser.and_then([result](auto f)
+                                     { return std::invoke(f, result->second); }
+            );
         }
         return std::nullopt;
     };
@@ -189,7 +189,8 @@ template <typename T, Parser P, std::regular_invocable<T, Parser_value_t<P>> F>
                      func,
                  };
              }) ||
-            unit(init))(input);
+            unit(init)
+        )(input);
     }
 };
 

@@ -94,8 +94,9 @@ constexpr recursive_wrapper<T>::recursive_wrapper() : p_(new T)
 }
 
 template <typename T>
-constexpr recursive_wrapper<T>::recursive_wrapper(const recursive_wrapper
-                                                      &operand) :
+constexpr recursive_wrapper<T>::recursive_wrapper(
+    const recursive_wrapper &operand
+) :
     p_(new T(operand.get()))
 {
 }
@@ -107,8 +108,8 @@ constexpr recursive_wrapper<T>::recursive_wrapper(const T &operand) :
 }
 
 template <typename T>
-constexpr recursive_wrapper<T>::recursive_wrapper(recursive_wrapper
-                                                      &&operand) noexcept :
+constexpr recursive_wrapper<T>::recursive_wrapper(recursive_wrapper &&operand
+) noexcept :
     p_(new T(std::move(operand.get())))
 {
 }

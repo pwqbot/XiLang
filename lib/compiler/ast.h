@@ -1,4 +1,5 @@
 #pragma once
+
 #include <compare>
 #include <compiler/utils.h>
 #include <fmt/format.h>

@@ -133,7 +133,8 @@ template <typename T, Parser P, std::regular_invocable<T, Parser_value_t<P>> F>
                  return reduce_many{
                      std::invoke(func, init, first), parser, func};
              }) ||
-            unit(init))(input);
+            unit(init)
+        )(input);
     }
 };
 
@@ -144,7 +145,8 @@ template <Parser P>
 auto many(P parser) -> Parser auto
 {
     return reduce_many(
-        std::string{}, parser, [](auto acc, auto c) { return acc + c; });
+        std::string{}, parser, [](auto acc, auto c) { return acc + c; }
+    );
 }
 
 // Repeat a char parser 1+ times and concatenate the result into a string
