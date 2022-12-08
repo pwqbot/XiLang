@@ -1,28 +1,30 @@
 #pragma once
+
 #include <compiler/ast.h>
 #include <compiler/basic_parsers.h>
 #include <compiler/parsers.h>
-#include <utility>
 
 namespace xi
 {
 
 // parse if expression: if cond then expr else expr
-const auto Xi_if = token(s_if) >> [](auto)
+const auto Xi_if = token(s_if) > Xi_boolexpr >> [](const Xi_Expr &cond)
 {
-    return Xi_boolexpr >> [](auto cond)
+    return token(s_then) >> [cond](auto)
     {
-        return token(s_then) >> [cond](auto)
+        return Xi_mathexpr >> [cond](const Xi_Expr &then)
         {
-            return Xi_mathexpr >> [cond](auto then)
+            return token(s_else) >> [cond, then](auto)
             {
-                return token(s_else) >> [cond, then](auto)
+                return Xi_mathexpr >> [cond, then](const Xi_Expr &els)
                 {
-                    return Xi_mathexpr >> [cond, then](auto els)
-                    {
-                        return unit(Xi_Expr{
-                            Xi_If{.cond{cond}, .then{then}, .els{els}}});
-                    };
+                    return unit(Xi_Expr{
+                        Xi_If{
+                            .cond = cond,
+                            .then = then,
+                            .els  = els,
+                        },
+                    });
                 };
             };
         };
@@ -54,7 +56,12 @@ const auto Xi_lam = token(s_question) > Xi_args >> [](auto args)
     {
         return Xi_expr >> [args](auto expr)
         {
-            return unit(Xi_Expr{Xi_Lam{.args{args}, .body{expr}}});
+            return unit(Xi_Expr{
+                Xi_Lam{
+                    .args = args,
+                    .body = expr,
+                },
+            });
         };
     };
 };
