@@ -7,7 +7,7 @@ Language: Cpp
 Standard: c++20
 
 AlignOperands: true 
-AlignAfterOpenBracket: AlwaysBreak
+AlignAfterOpenBracket: BlockIndent
 AlignTrailingComments: true
 AlignConsecutiveMacros: AcrossEmptyLinesAndComments
 AlignConsecutiveDeclarations: Consecutive
@@ -41,4 +41,4 @@ RequiresClausePosition: OwnLine
 PenaltyBreakAssignment: 0
 PenaltyBreakTemplateDeclaration: 0
 PenaltyBreakBeforeFirstCallParameter: 0
-PenaltyBreakOpenParenthesis: 1000
+PenaltyBreakOpenParenthesis: 100
