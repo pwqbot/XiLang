@@ -1,4 +1,5 @@
-#include <catch2/catch_test_macros.hpp>
+#include "test_header.h"
+
 #include <compiler/ast.h>
 #include <compiler/ast_format.h>
 #include <compiler/utils.h>
@@ -49,7 +50,8 @@ TEST_CASE("Test Xi_Binop", "[Xi_Binop]")
     REQUIRE(
         fmt::format("{}", result) == "Xi_Binop +\n"
                                      "\tL Xi_Integer 123\n"
-                                     "\tR Xi_Integer 456");
+                                     "\tR Xi_Integer 456"
+    );
 }
 // NOLINTEND(cppcoreguidelines-*, readability*)
 
