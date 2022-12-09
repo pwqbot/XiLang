@@ -2,7 +2,8 @@
 
 #include <compiler/ast.h>
 #include <compiler/basic_parsers.h>
-#include <compiler/parsers.h>
+#include <compiler/bool_expr_parser.h>
+#include <compiler/math_expr_parser.h>
 
 namespace xi
 {

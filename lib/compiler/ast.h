@@ -2,6 +2,7 @@
 
 #include <compare>
 #include <compiler/utils.h>
+#include <cstddef>
 #include <fmt/format.h>
 #include <magic_enum.hpp>
 #include <range/v3/algorithm/find_if.hpp>
@@ -98,6 +99,14 @@ constexpr auto OpMaps = std::
         {"||", Xi_Op::Or},
         {"!", Xi_Op::Not},
     }};
+
+constexpr auto KeyWords = std::array<std::string_view, 3>{"if", "then", "else"};
+
+constexpr auto IsKeyWords(std::string_view str) -> bool
+{
+    return ranges::find_if(KeyWords, [&](auto kw) { return kw == str; }) !=
+           KeyWords.end();
+}
 
 constexpr auto OpStr_To_Xi_Op(std::string_view s) -> Xi_Op
 {

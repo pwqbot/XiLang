@@ -1,17 +1,13 @@
 #pragma once
 
 #include <compiler/ast.h>
-#include <compiler/ast_format.h>
 #include <compiler/basic_parsers.h>
 
 namespace xi
 {
-
-const auto Xi_iden = token(some(s_alphanum || s_underscore)) >> [](auto name)
-{
-    return unit(Xi_Expr{Xi_Iden{.name{name}}});
-};
 auto Xi_expr(std::string_view input) -> Parsed_t<Xi_Expr>;
+
+// auto Xi_expr(std::string_view input) -> Parsed_t<Xi_Expr>;
 
 // <mathexpr> ::= <term> | <mathexpr> "+-" <term>
 // <term> ::= <factor> | <term> "*/" <factor>
@@ -23,6 +19,32 @@ auto Xi_expr(std::string_view input) -> Parsed_t<Xi_Expr>;
 // <term> ::= <factor> ("*/" <factor>)*
 // <factor> ::= "(" <mathexpr> ")" | <number>
 auto Xi_mathexpr(std::string_view input) -> Parsed_t<Xi_Expr>;
+
+inline const Parser auto s_natural = some(s_digit);
+
+inline const Parser auto Xi_integer = token(maybe(symbol('-'))) >> [](auto x)
+{
+    return token(s_natural) >> [x](auto nat)
+    {
+        if (x)
+        {
+            return unit(Xi_Expr{Xi_Integer{.value{-std::stoi(nat)}}});
+        }
+        return unit(Xi_Expr{Xi_Integer{.value{std::stoi(nat)}}});
+    };
+};
+
+// real = integer "." integer
+inline const Parser auto Xi_real = Xi_integer >> [](const Xi_Integer &integer)
+{
+    return token(s_dot) > token(s_natural) >> [integer](auto nat)
+    {
+        return unit(Xi_Expr{Xi_Real{
+            .value{std::stod(std::to_string(integer.value) + "." + nat)}}});
+    };
+};
+
+inline const Parser auto Xi_number = Xi_real || Xi_integer;
 
 const auto Xi_parenmathexpr = token(s_lparen) > Xi_mathexpr >> [](auto expr)
 {
@@ -132,89 +154,4 @@ auto Xi_mathexpr(std::string_view input) -> Parsed_t<Xi_Expr>
         }
     )(input);
 }
-
-// <boolexpr> ::= <boolterm> | <boolterm> "||" <boolterm>
-// <boolterm> ::= <boolfactor> | <boolfactor> "&&" <boolfactor>
-// <boolfactor> ::= <boolvalue> | "!" <boolvalue>
-// <boolvalue> ::= <boolean> | <mathexpr> <cmpop> <mathexpr> | "(" <boolexpr>
-// ")"
-auto Xi_boolexpr(std::string_view input) -> Parsed_t<Xi_Expr>;
-
-const auto Xi_mathbool = Xi_mathexpr >> [](auto lhs)
-{
-    return (Xi_eq || Xi_lt || Xi_le || Xi_gt || Xi_ge || Xi_ne) >>
-           [lhs](auto op)
-    {
-        return Xi_mathexpr >> [lhs, op](auto rhs)
-        {
-            return unit(Xi_Expr{Xi_Binop{
-                .lhs = lhs,
-                .rhs = rhs,
-                .op  = op,
-            }});
-        };
-    };
-};
-
-const auto Xi_boolvalue = Xi_boolean || Xi_mathbool || Xi_iden ||
-                          (token(s_lparen) > Xi_boolexpr >>
-                           [](auto expr)
-                           {
-                               return token(s_rparen) >> [expr](auto)
-                               {
-                                   return unit(expr);
-                               };
-                           });
-
-const auto Xi_boolfactor = Xi_boolvalue || (Xi_not > Xi_boolvalue >>
-                                            [](auto expr)
-                                            {
-                                                return unit(Xi_Expr{Xi_Unop{
-                                                    .expr = expr,
-                                                    .op   = Xi_Op::Not,
-                                                }});
-                                            });
-
-const auto Xi_boolterm = (Xi_boolfactor >>
-                          [](auto lhs)
-                          {
-                              return Xi_and >> [lhs](auto)
-                              {
-                                  return Xi_boolfactor >> [lhs](auto rhs)
-                                  {
-                                      return unit(Xi_Expr{Xi_Binop{
-                                          .lhs = lhs,
-                                          .rhs = rhs,
-                                          .op  = Xi_Op::And,
-                                      }});
-                                  };
-                              };
-                          }) ||
-                         Xi_boolfactor;
-
-// parse bool expression
-auto Xi_boolexpr(std::string_view input) -> Parsed_t<Xi_Expr>
-{
-    return (
-        (Xi_boolterm >>
-         [](auto lhs)
-         {
-             return (Xi_and || Xi_or) >> [lhs](auto op)
-             {
-                 return Xi_boolterm >> [lhs, op](auto rhs)
-                 {
-                     return unit(Xi_Expr{
-                         Xi_Binop{
-                             .lhs = lhs,
-                             .rhs = rhs,
-                             .op  = op,
-                         },
-                     });
-                 };
-             };
-         }) ||
-        Xi_boolterm
-    )(input);
-};
-
 } // namespace xi

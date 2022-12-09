@@ -49,6 +49,23 @@ constexpr auto satisfy(Pr pred, P parser = item) -> Parser auto
     };
 }
 
+// return a parser combinator that filter result of parser
+template <typename Pr>
+constexpr auto filter(Pr pred)
+{
+    return [pred]<typename T>(T c) -> Parser auto
+    {
+        return [pred, c](std::string_view input) -> Parsed_t<T>
+        {
+            if (std::invoke(pred, c))
+            {
+                return {std::make_pair(c, input)};
+            }
+            return {};
+        };
+    };
+}
+
 inline constexpr Parser auto s_space      = satisfy(::isspace);
 inline const Parser auto     s_whitespace = many(s_space);
 
@@ -75,19 +92,6 @@ inline const Parser auto s_lower      = satisfy(::islower);
 inline const Parser auto s_upper      = satisfy(::isupper);
 inline const Parser auto s_alpha      = satisfy(::isalpha);
 inline const Parser auto s_alphanum   = s_alpha || s_digit;
-inline const Parser auto Xi_add       = op("+");
-inline const Parser auto Xi_minus     = op("-");
-inline const Parser auto Xi_mul       = op("*");
-inline const Parser auto Xi_divide    = op("/");
-inline const Parser auto Xi_eq        = op("==");
-inline const Parser auto Xi_lt        = op("<");
-inline const Parser auto Xi_le        = op("<=");
-inline const Parser auto Xi_gt        = op(">");
-inline const Parser auto Xi_ge        = op(">=");
-inline const Parser auto Xi_ne        = op("!=");
-inline const Parser auto Xi_and       = op("&&");
-inline const Parser auto Xi_or        = op("||");
-inline const Parser auto Xi_not       = op("!");
 inline const Parser auto s_lparen     = symbol('(');
 inline const Parser auto s_rparen     = symbol(')');
 inline const Parser auto s_lbracket   = symbol('[');
@@ -117,6 +121,28 @@ inline const Parser auto s_if         = str("if");
 inline const Parser auto s_then       = str("then");
 inline const Parser auto s_else       = str("else");
 
+inline const Parser auto Xi_add    = op("+");
+inline const Parser auto Xi_minus  = op("-");
+inline const Parser auto Xi_mul    = op("*");
+inline const Parser auto Xi_divide = op("/");
+inline const Parser auto Xi_eq     = op("==");
+inline const Parser auto Xi_lt     = op("<");
+inline const Parser auto Xi_le     = op("<=");
+inline const Parser auto Xi_gt     = op(">");
+inline const Parser auto Xi_ge     = op(">=");
+inline const Parser auto Xi_ne     = op("!=");
+inline const Parser auto Xi_and    = op("&&");
+inline const Parser auto Xi_or     = op("||");
+inline const Parser auto Xi_not    = op("!");
+
+const auto Xi_iden = token(some(s_alphanum || s_underscore)) >>
+                     filter([](std::string_view s) { return !IsKeyWords(s); }
+                     ) >>
+                     [](auto name)
+{
+    return unit(Xi_Expr{Xi_Iden{.name{name}}});
+};
+
 // string literal
 inline const Parser auto Xi_string = token(s_quote) >
                                      many(s_alphanum || s_space) >> [](auto s)
@@ -126,43 +152,5 @@ inline const Parser auto Xi_string = token(s_quote) >
         return unit(Xi_Expr{Xi_String{s}});
     };
 };
-
-inline const Parser auto Xi_true = token(str("true")) >> [](auto)
-{
-    return unit(Xi_Expr{Xi_Boolean{true}});
-};
-
-inline const Parser auto Xi_false = token(str("false")) >> [](auto)
-{
-    return unit(Xi_Expr{Xi_Boolean{false}});
-};
-
-inline const Parser auto Xi_boolean = Xi_true || Xi_false;
-
-inline const Parser auto s_natural = some(s_digit);
-
-inline const Parser auto Xi_integer = token(maybe(symbol('-'))) >> [](auto x)
-{
-    return token(s_natural) >> [x](auto nat)
-    {
-        if (x)
-        {
-            return unit(Xi_Expr{Xi_Integer{.value{-std::stoi(nat)}}});
-        }
-        return unit(Xi_Expr{Xi_Integer{.value{std::stoi(nat)}}});
-    };
-};
-
-// real = integer "." integer
-inline const Parser auto Xi_real = Xi_integer >> [](const Xi_Integer &integer)
-{
-    return token(s_dot) > token(s_natural) >> [integer](auto nat)
-    {
-        return unit(Xi_Expr{Xi_Real{
-            .value{std::stod(std::to_string(integer.value) + "." + nat)}}});
-    };
-};
-
-inline const Parser auto Xi_number = Xi_real || Xi_integer;
 
 } // namespace xi
