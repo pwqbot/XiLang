@@ -1,8 +1,8 @@
 #include "test_header.h"
 
-#include <compiler/if_expr.h>
-#include <compiler/bool_expr_parser.h>
-#include <compiler/math_expr_parser.h>
+#include <compiler/parser/if_expr.h>
+#include <compiler/parser/bool_expr_parser.h>
+#include <compiler/parser/math_expr_parser.h>
 
 namespace xi
 {

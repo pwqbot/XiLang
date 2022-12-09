@@ -2,7 +2,6 @@
 
 #include <compare>
 #include <compiler/utils.h>
-#include <cstddef>
 #include <fmt/format.h>
 #include <magic_enum.hpp>
 #include <range/v3/algorithm/find_if.hpp>

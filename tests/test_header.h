@@ -1,7 +1,7 @@
 #pragma once
 
 // clang-format off
-#include <compiler/ast_format.h>
+#include <compiler/ast/ast_format.h>
 //clang-format on
 #include <catch2/matchers/catch_matchers_templated.hpp>
 #include <catch2/catch_test_macros.hpp>

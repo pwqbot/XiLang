@@ -1,6 +1,6 @@
 #pragma once
 
-#include <compiler/ast.h>
+#include <compiler/ast/ast.h>
 #include <fmt/core.h>
 #include <fmt/format.h>
 

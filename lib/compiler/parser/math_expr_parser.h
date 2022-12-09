@@ -1,7 +1,7 @@
 #pragma once
 
-#include <compiler/ast.h>
-#include <compiler/basic_parsers.h>
+#include <compiler/ast/ast.h>
+#include <compiler/parser/basic_parsers.h>
 
 namespace xi
 {

@@ -1,9 +1,9 @@
 #pragma once
 
-#include <compiler/ast.h>
-#include <compiler/basic_parsers.h>
-#include <compiler/bool_expr_parser.h>
-#include <compiler/math_expr_parser.h>
+#include <compiler/ast/ast.h>
+#include <compiler/parser/basic_parsers.h>
+#include <compiler/parser/bool_expr_parser.h>
+#include <compiler/parser/math_expr_parser.h>
 
 namespace xi
 {

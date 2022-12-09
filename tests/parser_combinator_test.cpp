@@ -1,7 +1,6 @@
-
 #include <catch2/catch_test_macros.hpp>
-#include <compiler/parser_combinator.h>
-#include <compiler/basic_parsers.h>
+#include <compiler/parser/parser_combinator.h>
+#include <compiler/parser/basic_parsers.h>
 
 namespace xi
 {

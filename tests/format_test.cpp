@@ -1,7 +1,7 @@
 #include "test_header.h"
 
-#include <compiler/ast.h>
-#include <compiler/ast_format.h>
+#include <compiler/ast/ast.h>
+#include <compiler/ast/ast_format.h>
 #include <compiler/utils.h>
 
 namespace xi
