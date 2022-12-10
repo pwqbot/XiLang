@@ -1,5 +1,6 @@
 #include "test_header.h"
 
+#include <catch2/catch_test_macros.hpp>
 #include <compiler/ast/ast.h>
 #include <compiler/ast/ast_format.h>
 #include <compiler/utils.h>
@@ -44,14 +45,119 @@ TEST_CASE("Test recursive_wrapper", "[recursive_wrapper]")
     REQUIRE(fmt::format("{}", result) == "Xi_Integer 123");
 }
 
+TEST_CASE("Test Xi_Unop", "[Xi_Unop]")
+{
+    {
+        auto result = Xi_Unop{Xi_Integer{123}, Xi_Op::Add};
+        REQUIRE(
+            fmt::format("{}", result) == "Xi_Unop +\n"
+                                         "\tXi_Integer 123"
+        );
+    }
+}
+
 TEST_CASE("Test Xi_Binop", "[Xi_Binop]")
 {
-    auto result = Xi_Binop{Xi_Integer{123}, Xi_Integer{456}, Xi_Op::Add};
-    REQUIRE(
-        fmt::format("{}", result) == "Xi_Binop +\n"
-                                     "\tL Xi_Integer 123\n"
-                                     "\tR Xi_Integer 456"
-    );
+    {
+        auto result = Xi_Binop{Xi_Integer{123}, Xi_Integer{456}, Xi_Op::Add};
+        REQUIRE(
+            fmt::format("{}", result) == "Xi_Binop +\n"
+                                         "\tXi_Integer 123\n"
+                                         "\tXi_Integer 456"
+        );
+    }
+
+    {
+        auto result = Xi_Binop{
+            Xi_Integer{123},
+            Xi_Binop{Xi_Integer{123}, Xi_Integer{456}, Xi_Op::Add},
+            Xi_Op::Sub};
+        REQUIRE(
+            fmt::format("{}", result) == "Xi_Binop -\n"
+                                         "\tXi_Integer 123\n"
+                                         "\tXi_Binop +\n"
+                                         "\t\tXi_Integer 123\n"
+                                         "\t\tXi_Integer 456"
+        );
+    }
+
+    {
+        auto resut = Xi_Binop{
+            Xi_Unop{Xi_Integer{123}, Xi_Op::Add},
+            Xi_Unop{
+                Xi_Binop{Xi_Integer{123}, Xi_Integer{456}, Xi_Op::Add},
+                Xi_Op::Sub},
+        };
+        REQUIRE(
+            fmt::format("{}", resut) == "Xi_Binop +\n"
+                                        "\tXi_Unop +\n"
+                                        "\t\tXi_Integer 123\n"
+                                        "\tXi_Unop -\n"
+                                        "\t\tXi_Binop +\n"
+                                        "\t\t\tXi_Integer 123\n"
+                                        "\t\t\tXi_Integer 456"
+        );
+    };
+}
+
+TEST_CASE("Test Xi_If", "[Xi_If]")
+{
+    {
+        auto result = Xi_If{Xi_Boolean{true}, Xi_Integer{456}, Xi_Integer{789}};
+        REQUIRE(
+            fmt::format("{}", result) == "Xi_If\n"
+                                         "\tXi_Boolean true\n"
+                                         "\tXi_Integer 456\n"
+                                         "\tXi_Integer 789"
+        );
+    }
+
+    {
+        auto result = Xi_If{
+            Xi_Boolean{true},
+            Xi_Unop{Xi_Integer{456}, Xi_Op::Add},
+            Xi_If{Xi_Boolean{true}, Xi_Integer{456}, Xi_Integer{789}}};
+        REQUIRE(
+            fmt::format("{}", result) == "Xi_If\n"
+                                         "\tXi_Boolean true\n"
+                                         "\tXi_Unop +\n"
+                                         "\t\tXi_Integer 456\n"
+                                         "\tXi_If\n"
+                                         "\t\tXi_Boolean true\n"
+                                         "\t\tXi_Integer 456\n"
+                                         "\t\tXi_Integer 789"
+        );
+    }
+}
+
+TEST_CASE("Test Xi_Iden", "[Xi_Iden]")
+{
+    {
+        auto result = Xi_Iden{"hello"};
+        REQUIRE(fmt::format("{}", result) == "Xi_Iden hello");
+    }
+}
+
+TEST_CASE("Test Xi_Lam", "[Xi_Lam]")
+{
+    {
+        auto result = Xi_Lam{{Xi_Iden{"x"}}, Xi_Integer{456}};
+        REQUIRE(
+            fmt::format("{}", result) == "Xi_Lam\n"
+                                         "\tA Xi_Iden x\n"
+                                         "\tB Xi_Integer 456"
+        );
+    }
+
+    {
+        auto result =
+            Xi_Lam{{Xi_Iden{"x"}, Xi_Iden{"y"}, Xi_Iden{"z"}}, Xi_Integer{456}};
+        REQUIRE(
+            fmt::format("{}", result) == "Xi_Lam\n"
+                                         "\tA Xi_Iden x, Xi_Iden y, Xi_Iden z\n"
+                                         "\tB Xi_Integer 456"
+        );
+    }
 }
 // NOLINTEND(cppcoreguidelines-*, readability*)
 
