@@ -1,0 +1,10 @@
+{
+    "name": "xi-lang",
+    "version": "8.9.6.4",
+    "dependencies": [
+        "catch2",
+        "fmt",
+        "range-v3",
+        "magic-enum"
+    ]
+}
