@@ -2,7 +2,7 @@
 
 #include <compiler/ast/ast.h>
 #include <compiler/parser/basic_parsers.h>
-#include <compiler/parser/math_expr_parser.h>
+#include <compiler/parser/math_expr.h>
 
 namespace xi
 {

@@ -2,8 +2,8 @@
 
 #include <compiler/ast/ast.h>
 #include <compiler/parser/basic_parsers.h>
-#include <compiler/parser/bool_expr_parser.h>
-#include <compiler/parser/math_expr_parser.h>
+#include <compiler/parser/bool_expr.h>
+#include <compiler/parser/math_expr.h>
 
 namespace xi
 {
@@ -31,48 +31,5 @@ const auto Xi_if = token(s_if) > Xi_boolexpr >> [](const Xi_Expr &cond)
         };
     };
 };
-
-// parse lambda: "?" <args> "->" <expr>
-// <args> ::= <iden> | <iden> <args>
-
-auto Xi_args(std::string_view input) -> Parsed_t<Xi_Args>
-{
-    return (
-        (Xi_iden >>
-         [](Xi_Iden arg)
-         {
-             return Xi_args >> [arg](auto args)
-             {
-                 args.insert(args.begin(), arg);
-                 return unit(Xi_Args{args});
-             };
-         }) ||
-        Xi_iden >> [](Xi_Iden arg) { return unit(Xi_Args{std::move(arg)}); }
-    )(input);
-}
-
-const auto Xi_lam = token(s_question) > Xi_args >> [](auto args)
-{
-    return token(s_arrow) >> [args](auto)
-    {
-        return Xi_expr >> [args](auto expr)
-        {
-            return unit(Xi_Expr{
-                Xi_Lam{
-                    .args = args,
-                    .body = expr,
-                },
-            });
-        };
-    };
-};
-
-auto Xi_expr(std::string_view input) -> Parsed_t<Xi_Expr>
-{
-    return (
-        Xi_true || Xi_false || Xi_string || Xi_mathexpr || Xi_if ||
-        Xi_boolexpr || Xi_lam
-    )(input);
-}
 
 } // namespace xi

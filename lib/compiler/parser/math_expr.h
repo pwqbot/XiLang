@@ -2,10 +2,10 @@
 
 #include <compiler/ast/ast.h>
 #include <compiler/parser/basic_parsers.h>
+#include <compiler/parser/expr.h>
 
 namespace xi
 {
-auto Xi_expr(std::string_view input) -> Parsed_t<Xi_Expr>;
 
 // auto Xi_expr(std::string_view input) -> Parsed_t<Xi_Expr>;
 

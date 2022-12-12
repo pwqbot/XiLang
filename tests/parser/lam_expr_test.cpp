@@ -1,7 +1,6 @@
 #include "test_header.h"
 
-#include <compiler/parser/if_expr.h>
-#include <compiler/parser/math_expr_parser.h>
+#include <compiler/parser/lam_expr.h>
 
 namespace xi
 {

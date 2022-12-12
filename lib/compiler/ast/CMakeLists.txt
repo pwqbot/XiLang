@@ -6,5 +6,5 @@ find_package(range-v3 REQUIRED)
 
 add_library(ast INTERFACE ${srcs})
 
-target_link_libraries(parser INTERFACE magic_enum::magic_enum fmt::fmt
+target_link_libraries(ast INTERFACE magic_enum::magic_enum fmt::fmt
                                        range-v3::range-v3)
