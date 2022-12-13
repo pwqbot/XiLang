@@ -20,7 +20,6 @@ set(CMAKE_CXX_FLAGS
     -Woverloaded-virtual \
     -Wcast-align \
     -Wdouble-promotion \
-    -Wnull-dereference \
     -Werror \
 ")
 

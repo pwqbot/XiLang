@@ -15,7 +15,7 @@ inline auto Xi_args(std::string_view input) -> Parsed_t<Xi_Args>
 {
     return (
         (Xi_iden >>
-         [](const Xi_Iden& arg)
+         [](const Xi_Iden &arg)
          {
              return Xi_args >> [arg](Xi_Args args)
              {
@@ -23,7 +23,7 @@ inline auto Xi_args(std::string_view input) -> Parsed_t<Xi_Args>
                  return unit(Xi_Args{args});
              };
          }) ||
-        Xi_iden >> [](Xi_Iden arg) { return unit(Xi_Args{std::move(arg)}); }
+        Xi_iden >> [](const Xi_Iden &arg) { return unit(Xi_Args{arg}); }
     )(input);
 }
 
