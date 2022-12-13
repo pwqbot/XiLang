@@ -10,7 +10,19 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall ")
+set(CMAKE_CXX_FLAGS
+    "${CMAKE_CXX_FLAGS} \
+    -Wall -Wextra -Wshadow -pedantic \
+    -Wnon-virtual-dtor \
+    -Wconversion \
+    -Wunused \
+    -Wlogical-op \
+    -Woverloaded-virtual \
+    -Wcast-align \
+    -Wdouble-promotion \
+    -Wnull-dereference \
+    -Werror \
+")
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_BINARY_DIR})

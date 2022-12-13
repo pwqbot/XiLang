@@ -23,7 +23,7 @@ template <>
 struct fmt::formatter<xi::Xi_Integer> : fmt::formatter<int>
 {
     template <typename FormatContext>
-    auto format(const xi::Xi_Integer &i, FormatContext &ctx, int indent = 0)
+    auto format(const xi::Xi_Integer &i, FormatContext &ctx)
     {
         return fmt::format_to(ctx.out(), "Xi_Integer {}", i.value);
     }
@@ -83,7 +83,7 @@ template <>
 struct fmt::formatter<xi::Xi_Binop> : fmt::formatter<std::string>
 {
     template <typename FormatContext>
-    auto format(const xi::Xi_Binop &b, FormatContext &ctx, int indent = 0)
+    auto format(const xi::Xi_Binop &b, FormatContext &ctx)
     {
         const auto lhs = fmt::format("{}", b.lhs) | wd;
         const auto rhs = fmt::format("{}", b.rhs) | wd;
@@ -165,7 +165,7 @@ template <>
 struct fmt::formatter<xi::Xi_Iden> : fmt::formatter<xi::Xi_Expr>
 {
     template <typename FormatContext>
-    auto format(const xi::Xi_Iden &i, FormatContext &ctx, int indent = 0)
+    auto format(const xi::Xi_Iden &i, FormatContext &ctx)
     {
         return fmt::format_to(ctx.out(), "Xi_Iden {}", i.name);
     }

@@ -169,29 +169,29 @@ template <typename T, Parser P, std::regular_invocable<T, Parser_value_t<P>> F>
         convertible_to<std::invoke_result_t<F, T, Parser_value_t<P>>, T>
     class reduce_many
 {
-    T init;
-    P parser;
-    F func;
+    T init_;
+    P parser_;
+    F func_;
 
   public:
     constexpr reduce_many(T init, P parser, F fn) :
-        init(init), parser(parser), func{fn}
+        init_(init), parser_(parser), func_{fn}
     {
     }
 
     constexpr auto operator()(std::string_view input) const -> Parsed_t<T>
     {
         return (
-            (parser >>
+            (parser_ >>
              [this](auto first)
              {
                  return reduce_many{
-                     std::invoke(func, init, first),
-                     parser,
-                     func,
+                     std::invoke(func_, init_, first),
+                     parser_,
+                     func_,
                  };
              }) ||
-            unit(init)
+            unit(init_)
         )(input);
     }
 };

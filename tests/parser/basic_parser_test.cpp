@@ -79,22 +79,22 @@ TEST_CASE("Parse String", "[Xi_String]")
 {
     auto [result1, result2] = Xi_string("\"abcccb\"").value();
     REQUIRE(result1 == Xi_String{"abcccb"});
-    REQUIRE(result2 == "");
+    REQUIRE(result2.empty());
 }
 
 TEST_CASE("Parse Xi_Iden", "[Xi_Iden]")
 {
     auto [iden1, iden2] = Xi_iden("abc").value();
     REQUIRE(iden1 == Xi_Iden{"abc"});
-    REQUIRE(iden2 == "");
+    REQUIRE(iden2.empty());
 
     auto [iden3, iden4] = Xi_iden("abc123").value();
     REQUIRE(iden3 == Xi_Iden{"abc123"});
-    REQUIRE(iden4 == "");
+    REQUIRE(iden4.empty());
 
     auto [iden5, iden6] = Xi_iden("abc_123").value();
     REQUIRE(iden5 == Xi_Iden{"abc_123"});
-    REQUIRE(iden6 == "");
+    REQUIRE(iden6.empty());
 
     auto [iden7, iden8] = Xi_iden("abc 123").value();
     REQUIRE(iden7 == Xi_Iden{"abc"});

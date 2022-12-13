@@ -22,6 +22,7 @@ TEST_CASE("Parse Xi_Lam", "[Xi_Expr]")
                         Xi_Integer{1},
                         Xi_Op::Add,
                     },
+                    Xi_Op::Add,
                 },
             },
             ""
@@ -43,6 +44,7 @@ TEST_CASE("Parse Xi_Lam", "[Xi_Expr]")
                             Xi_Integer{1},
                             Xi_Op::Add,
                         },
+                        Xi_Op::Add,
                     },
                     Xi_Binop{
                         Xi_Integer{5},

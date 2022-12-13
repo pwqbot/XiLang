@@ -86,6 +86,7 @@ TEST_CASE("Test Xi_Binop", "[Xi_Binop]")
             Xi_Unop{
                 Xi_Binop{Xi_Integer{123}, Xi_Integer{456}, Xi_Op::Add},
                 Xi_Op::Sub},
+            Xi_Op::Add,
         };
         REQUIRE(
             fmt::format("{}", resut) == "Xi_Binop +\n"

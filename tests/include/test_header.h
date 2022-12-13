@@ -69,18 +69,18 @@ struct AstNodeMatcher : Catch::Matchers::MatcherGenericBase
 template <typename T>
 struct FormatMatcher : Catch::Matchers::MatcherGenericBase
 {
-    T expected;
+    T expected_;
 
-    explicit FormatMatcher(T expected) : expected{expected} {}
+    explicit FormatMatcher(T expected) : expected_{expected} {}
 
     template <typename V>
     auto match(V v) const -> bool
     {
-        return fmt::format("{}", v) == expected;
+        return fmt::format("{}", v) == expected_;
     }
 
     auto describe() const -> std::string override
     {
-        return fmt::format("is equal to {}", expected);
+        return fmt::format("is equal to {}", expected_);
     }
 };

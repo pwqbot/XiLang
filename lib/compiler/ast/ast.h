@@ -201,7 +201,8 @@ struct Xi_If
     Xi_Expr els;
 };
 
-inline auto operator<=>(const Xi_If &lhs, const Xi_If &rhs) -> std::partial_ordering
+inline auto operator<=>(const Xi_If &lhs, const Xi_If &rhs)
+    -> std::partial_ordering
 {
     if (auto cmp = lhs.cond <=> rhs.cond; cmp != nullptr)
     {
@@ -222,7 +223,8 @@ struct Xi_Lam
     Xi_Expr              body;
 };
 
-inline auto operator<=>(const Xi_Lam &lhs, const Xi_Lam &rhs) -> std::partial_ordering
+inline auto operator<=>(const Xi_Lam &lhs, const Xi_Lam &rhs)
+    -> std::partial_ordering
 {
     if (auto cmp = lhs.args <=> rhs.args; cmp != nullptr)
     {

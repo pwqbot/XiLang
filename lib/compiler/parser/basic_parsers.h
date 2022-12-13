@@ -79,11 +79,11 @@ constexpr auto symbol(char x) -> Parser auto
     return satisfy([x](char c) { return c == x; });
 }
 
-constexpr auto op(std::string_view s) -> Parser auto
+constexpr auto op(std::string_view op) -> Parser auto
 {
-    return token(str(s)) >> [](auto s)
+    return token(str(op)) >> [](auto op_s)
     {
-        return unit(OpStr_To_Xi_Op(s));
+        return unit(OpStr_To_Xi_Op(op_s));
     };
 }
 

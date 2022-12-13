@@ -58,13 +58,13 @@ inline const auto Unwarp_Unop = [](const Xi_Expr &expr
                                 ) -> std::pair<Xi_Op, Xi_Expr>
 {
     return std::visit(
-        []<typename T>(const T &expr) -> std::pair<Xi_Op, Xi_Expr>
+        []<typename T>(const T &expr_) -> std::pair<Xi_Op, Xi_Expr>
         {
             if constexpr (std::same_as<T, recursive_wrapper<Xi_Unop>>)
             {
-                return {expr.get().op, expr.get().expr};
+                return {expr_.get().op, expr_.get().expr};
             }
-            return {Xi_Op::Add, expr};
+            return {Xi_Op::Add, expr_};
         },
         expr
     );
