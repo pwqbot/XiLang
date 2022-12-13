@@ -5,6 +5,13 @@
         "catch2",
         "fmt",
         "range-v3",
-        "magic-enum"
+        "magic-enum",
+        {
+            "name": "llvm",
+            "default-features": false,
+            "features": [
+                "target-x86"
+            ]
+        }
     ]
 }
