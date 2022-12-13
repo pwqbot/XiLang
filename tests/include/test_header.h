@@ -62,7 +62,7 @@ struct AstNodeMatcher : Catch::Matchers::MatcherGenericBase
 
     auto describe() const -> std::string override
     {
-        return "\n==\n" + fmt::format("{}", expected_first_);
+        return "\n==\n" + fmt::format("first: {}\nsecond: {}", expected_first_, expected_second_);
     }
 };
 
