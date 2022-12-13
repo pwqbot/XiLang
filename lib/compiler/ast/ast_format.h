@@ -170,3 +170,79 @@ struct fmt::formatter<xi::Xi_Iden> : fmt::formatter<xi::Xi_Expr>
         return fmt::format_to(ctx.out(), "Xi_Iden {}", i.name);
     }
 };
+
+template <>
+struct fmt::formatter<xi::Xi_Call> : fmt::formatter<xi::Xi_Expr>
+{
+    template <typename FormatContext>
+    auto format(const xi::Xi_Call &i, FormatContext &ctx)
+    {
+        const auto name = fmt::format("{}", i.name) | wd;
+        const auto args = []()
+        {
+            std::string args_;
+            for (auto &arg : args_)
+            {
+                args_ += fmt::format("{}\n", arg) | wd;
+            }
+            return args_;
+        };
+        return fmt::format_to(
+            ctx.out(),
+            "Xi_Call {}\n"
+            "{}\n",
+            name,
+            args
+        );
+    }
+};
+
+template <>
+struct fmt::formatter<xi::Xi_Xi> : fmt::formatter<xi::Xi_Expr>
+{
+    template <typename FormatContext>
+    auto format(const xi::Xi_Xi &i, FormatContext &ctx)
+    {
+        const auto name = fmt::format("{}", i.name) | wd;
+        const auto expr = fmt::format("{}", i.expr) | wd;
+        return fmt::format_to(
+            ctx.out(),
+            "Xi_Xi\n"
+            "{}\n"
+            "{}",
+            name,
+            expr
+        );
+    }
+};
+
+template <>
+struct fmt::formatter<xi::Xi_Stmt> : fmt::formatter<xi::Xi_Expr>
+{
+    template <typename FormatContext>
+    auto format(const xi::Xi_Stmt &i, FormatContext &ctx)
+    {
+        return std::visit(
+            [&ctx](auto &&stmt)
+            { return fmt::format_to(ctx.out(), "Xi_Stmt {}", stmt); },
+            i
+        );
+    }
+};
+
+template <>
+struct fmt::formatter<xi::Xi_Program> : fmt::formatter<xi::Xi_Expr>
+{
+    template <typename FormatContext>
+    auto format(const xi::Xi_Program &i, FormatContext &ctx)
+    {
+        auto out = ctx.out();
+        fmt::format_to(out, "Xi_Program qwq\n");
+        for (auto &&stmt : i.stmts)
+        {
+            auto indent_stmt = fmt::format("{}", stmt) | wd;
+            fmt::format_to(out, "{}\n", indent_stmt);
+        }
+        return out;
+    }
+};

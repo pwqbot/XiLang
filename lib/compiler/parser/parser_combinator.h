@@ -210,6 +210,24 @@ auto many(P parser) -> Parser auto
     };
 }
 
+// Repeat a char parser 0+ times and concatenate the result into a string
+// TODO(ding.wang): refactor to constexpr after std::string is constepxr
+// actually it is fold...
+template <Parser P>
+auto many(P parser) -> Parser auto
+{
+    using T = Parser_value_t<P>;
+    return reduce_many{
+        std::vector<T>{},
+        parser,
+        [](std::vector<T> lhs, T rhs)
+        {
+            lhs.push_back(rhs);
+            return lhs;
+        },
+    };
+}
+
 template <Parser P, typename F, typename T = Parser_value_t<P>>
 auto many(P parser, F func, T init = T{}) -> Parser auto
 {
@@ -234,6 +252,19 @@ constexpr auto some(P parser) -> Parser auto
     };
 }
 
+template <Parser P>
+constexpr auto some(P parser) -> Parser auto
+{
+    return parser >> [parser](auto first)
+    {
+        return many(parser) >> [first](auto rest)
+        {
+            rest.insert(rest.begin(), first);
+            return unit(rest);
+        };
+    };
+}
+
 template <Parser P, typename F>
 constexpr auto some(P parser, F func) -> Parser auto
 {
@@ -241,6 +272,16 @@ constexpr auto some(P parser, F func) -> Parser auto
     return parser >> [parser, func](T first)
     {
         return many(parser, func, first);
+    };
+}
+
+template <Parser P, typename F, typename Ti>
+constexpr auto some(P parser, F func, Ti init) -> Parser auto
+{
+    using T = Parser_value_t<P>;
+    return parser >> [parser, func, init](T first)
+    {
+        return many<P, F, Ti>(parser, func, func(init, first));
     };
 }
 

@@ -27,6 +27,12 @@ TEST_CASE("Parse digit", "[string]")
         auto digit = s_digit("abc");
         REQUIRE(digit == std::nullopt);
     }
+
+    SECTION("whitespace")
+    {
+        auto digit = s_digit(" abc");
+        REQUIRE(digit == std::nullopt);
+    }
 }
 
 TEST_CASE("Parse space", "[string]")

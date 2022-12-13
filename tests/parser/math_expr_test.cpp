@@ -41,7 +41,7 @@ TEST_CASE("Parse real", "[Xi_Real]")
     REQUIRE(result5 == std::nullopt);
 }
 
-TEST_CASE("Parse mathexpr", "[Xi_Expr]")
+TEST_CASE("Parse mathexpr", "[Xi_MathExpr]")
 {
     auto [integer1, integer2] = Xi_mathexpr("1 + 2").value();
     REQUIRE(
@@ -126,7 +126,7 @@ TEST_CASE("Parse mathexpr", "[Xi_Expr]")
     );
 }
 
-TEST_CASE("Parse mathexpr with identify", "[Xi_Expr]")
+TEST_CASE("Parse mathexpr with identify", "[Xi_MathExpr]")
 {
     auto [integer1, integer2] = Xi_mathexpr("a + 2").value();
     REQUIRE(
@@ -148,19 +148,38 @@ TEST_CASE("Parse mathexpr with identify", "[Xi_Expr]")
         }
     );
 
-    auto [integer5, integer6] = Xi_mathexpr("(a_1 + b) * 3").value();
-    REQUIRE(
-        integer5 ==
-        Xi_Binop{
+    REQUIRE_THAT(
+        Xi_mathexpr("(a_1 + b) * 3"),
+        AstNodeMatcher(
             Xi_Binop{
-                Xi_Iden{"a_1"},
-                Xi_Iden{"b"},
-                Xi_Op::Add,
+                Xi_Binop{
+                    Xi_Iden{"a_1"},
+                    Xi_Iden{"b"},
+                    Xi_Op::Add,
+                },
+                Xi_Integer{3},
+                Xi_Op::Mul,
             },
-            Xi_Integer{3},
-            Xi_Op::Mul,
-        }
+            ""
+        )
     );
+
+    REQUIRE_THAT(
+        Xi_mathexpr(" (x + y - 1)"),
+        AstNodeMatcher(
+            Xi_Binop{Xi_Binop{
+                Xi_Iden{"x"},
+                Xi_Binop{
+                    Xi_Iden{"y"},
+                    Xi_Integer{1},
+                    Xi_Op::Sub,
+                },
+                Xi_Op::Add,
+            }},
+            ""
+        )
+    );
+    REQUIRE(Xi_mathexpr(" (x + y - 1)") == Xi_expr(" (x + y - 1)"));
 }
 
 } // namespace xi

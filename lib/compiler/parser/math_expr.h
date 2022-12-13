@@ -3,6 +3,7 @@
 #include <compiler/ast/ast.h>
 #include <compiler/parser/basic_parsers.h>
 #include <compiler/parser/expr.h>
+#include <compiler/parser/call.h>
 
 namespace xi
 {
@@ -46,7 +47,8 @@ inline const Parser auto Xi_real = Xi_integer >> [](const Xi_Integer &integer)
 
 inline const Parser auto Xi_number = Xi_real || Xi_integer;
 
-const auto Xi_parenmathexpr = token(s_lparen) > Xi_mathexpr >> [](auto expr)
+inline const auto Xi_parenmathexpr = token(s_lparen) > Xi_mathexpr >>
+                                     [](auto expr)
 {
     return token(s_rparen) >> [expr](auto)
     {
@@ -70,7 +72,7 @@ inline const auto Unwarp_Unop = [](const Xi_Expr &expr
     );
 };
 
-const auto binop_fold = [](const Xi_Expr &lhs, const Xi_Expr &rhs)
+inline const auto binop_fold = [](const Xi_Expr &lhs, const Xi_Expr &rhs)
 {
     auto [lhs_op, lhs_expr] = Unwarp_Unop(lhs);
     auto [rhs_op, rhs_expr] = Unwarp_Unop(rhs);
@@ -86,9 +88,9 @@ const auto binop_fold = [](const Xi_Expr &lhs, const Xi_Expr &rhs)
     };
 };
 
-auto Xi_factor(std::string_view input) -> Parsed_t<Xi_Expr>
+inline auto Xi_factor(std::string_view input) -> Parsed_t<Xi_Expr>
 {
-    return (Xi_number || Xi_iden || Xi_parenmathexpr)(input);
+    return (Xi_parenmathexpr || Xi_number || Xi_call || Xi_iden)(input);
 }
 
 inline const Parser auto Xi_mulop = (Xi_mul || Xi_divide) >> [](auto op)
@@ -132,7 +134,7 @@ inline const Parser auto Xi_addop = (Xi_add || Xi_minus) >> [](auto op)
     };
 };
 
-auto Xi_mathexpr(std::string_view input) -> Parsed_t<Xi_Expr>
+inline auto Xi_mathexpr(std::string_view input) -> Parsed_t<Xi_Expr>
 {
     return (
         Xi_term >>

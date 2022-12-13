@@ -1,7 +1,7 @@
 #pragma once
 
 #include <compare>
-#include <compiler/utils.h>
+#include <compiler/parser/utils.h>
 #include <fmt/format.h>
 #include <magic_enum.hpp>
 #include <range/v3/algorithm/find_if.hpp>
@@ -99,7 +99,8 @@ constexpr auto OpMaps = std::
         {"!", Xi_Op::Not},
     }};
 
-constexpr auto KeyWords = std::array<std::string_view, 3>{"if", "then", "else"};
+constexpr auto KeyWords = std::array<std::string_view, 6>{
+    "if", "then", "else", "true", "false", "xi"};
 
 constexpr auto IsKeyWords(std::string_view str) -> bool
 {
@@ -140,6 +141,10 @@ auto operator<=>(const Xi_Unop &lhs, const Xi_Unop &rhs)
 struct Xi_Lam;
 auto operator<=>(const Xi_Lam &lhs, const Xi_Lam &rhs) -> std::partial_ordering;
 
+struct Xi_Call;
+auto operator<=>(const Xi_Call &lhs, const Xi_Call &rhs)
+    -> std::partial_ordering;
+
 using Xi_Expr = std::variant<
     std::monostate,
     Xi_Integer,
@@ -150,7 +155,23 @@ using Xi_Expr = std::variant<
     recursive_wrapper<Xi_Unop>,
     recursive_wrapper<Xi_Binop>,
     recursive_wrapper<Xi_If>,
-    recursive_wrapper<Xi_Lam>>;
+    recursive_wrapper<Xi_Lam>,
+    recursive_wrapper<Xi_Call>>;
+
+struct Xi_Xi
+{
+    Xi_Iden name;
+    Xi_Expr expr;
+    auto    operator<=>(const Xi_Xi &rhs) const = default;
+};
+
+using Xi_Stmt = std::variant<Xi_Expr, Xi_Xi>;
+
+struct Xi_Program
+{
+    std::vector<Xi_Stmt> stmts;
+    auto                 operator<=>(const Xi_Program &rhs) const = default;
+};
 
 // binary expression
 struct Xi_Binop
@@ -233,4 +254,19 @@ inline auto operator<=>(const Xi_Lam &lhs, const Xi_Lam &rhs)
     return lhs.body <=> rhs.body;
 }
 
+struct Xi_Call
+{
+    Xi_Iden              name;
+    std::vector<Xi_Expr> args;
+};
+
+inline auto operator<=>(const Xi_Call &lhs, const Xi_Call &rhs)
+    -> std::partial_ordering
+{
+    if (auto cmp = lhs.args <=> rhs.args; cmp != nullptr)
+    {
+        return cmp;
+    }
+    return lhs.name <=> rhs.name;
+}
 } // namespace xi

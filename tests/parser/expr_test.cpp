@@ -1,26 +1,24 @@
 #include "test_header.h"
 
 #include <compiler/parser/expr.h>
+#include <iostream>
 
 namespace xi
 {
 
 TEST_CASE("Parse expr", "[Xi_Expr]")
 {
-    auto [integer1, integer2] = Xi_expr("123abc").value();
-    REQUIRE(integer1 == Xi_Integer{123});
-    REQUIRE(integer2 == "abc");
+    REQUIRE_THAT(Xi_expr("123 abc"), AstNodeMatcher(Xi_Integer{123}, " abc"));
 
-    auto [real1, real2] = Xi_expr("123.456abc").value();
-    REQUIRE(real1 == Xi_Real{123.456});
-    REQUIRE(real2 == "abc");
+    REQUIRE_THAT(
+        Xi_expr("123.456 abc"), AstNodeMatcher(Xi_Real{123.456}, " abc")
+    );
 
-    auto [boolean1, boolean2] = Xi_expr("trueabc").value();
-    REQUIRE(boolean1 == Xi_Boolean{true});
-    REQUIRE(boolean2 == "abc");
+    REQUIRE_THAT(Xi_expr("true abc"), AstNodeMatcher(Xi_Boolean{true}, " abc"));
 
-    auto [string1, string2] = Xi_expr("\"abc\"abc").value();
-    REQUIRE(string1 == Xi_String{"abc"});
+    REQUIRE_THAT(
+        Xi_expr("\"abc\"abc"), AstNodeMatcher(Xi_String{"abc"}, "abc")
+    );
 }
 
 } // namespace xi

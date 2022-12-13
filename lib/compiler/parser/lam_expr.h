@@ -2,8 +2,9 @@
 
 #include <compiler/ast/ast.h>
 #include <compiler/parser/basic_parsers.h>
-#include <compiler/parser/parser_combinator.h>
 #include <compiler/parser/expr.h>
+#include <compiler/parser/parser_combinator.h>
+#include <utility>
 
 namespace xi
 {
@@ -14,9 +15,9 @@ inline auto Xi_args(std::string_view input) -> Parsed_t<Xi_Args>
 {
     return (
         (Xi_iden >>
-         [](Xi_Iden arg)
+         [](const Xi_Iden& arg)
          {
-             return Xi_args >> [arg](auto args)
+             return Xi_args >> [arg](Xi_Args args)
              {
                  args.insert(args.begin(), arg);
                  return unit(Xi_Args{args});

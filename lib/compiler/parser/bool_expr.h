@@ -26,7 +26,7 @@ inline const Parser auto Xi_false = token(str("false")) >> [](auto)
 
 inline const Parser auto Xi_boolean = Xi_true || Xi_false;
 
-const auto Xi_mathbool = Xi_mathexpr >> [](auto lhs)
+inline const auto Xi_mathbool = Xi_mathexpr >> [](auto lhs)
 {
     return (Xi_eq || Xi_lt || Xi_le || Xi_gt || Xi_ge || Xi_ne) >>
            [lhs](auto op)
@@ -42,44 +42,45 @@ const auto Xi_mathbool = Xi_mathexpr >> [](auto lhs)
     };
 };
 
-const auto Xi_boolvalue = Xi_boolean || Xi_mathbool || Xi_iden ||
-                          (token(s_lparen) > Xi_boolexpr >>
-                           [](auto expr)
-                           {
-                               return token(s_rparen) >> [expr](auto)
-                               {
-                                   return unit(expr);
-                               };
-                           });
-
-const auto Xi_boolfactor = Xi_boolvalue || (Xi_not > Xi_boolvalue >>
-                                            [](auto expr)
-                                            {
-                                                return unit(Xi_Expr{Xi_Unop{
-                                                    .expr = expr,
-                                                    .op   = Xi_Op::Not,
-                                                }});
-                                            });
-
-const auto Xi_boolterm = (Xi_boolfactor >>
-                          [](auto lhs)
-                          {
-                              return Xi_and >> [lhs](auto)
-                              {
-                                  return Xi_boolfactor >> [lhs](auto rhs)
+inline const auto Xi_boolvalue = Xi_boolean || Xi_mathbool || Xi_iden ||
+                                 (token(s_lparen) > Xi_boolexpr >>
+                                  [](auto expr)
                                   {
-                                      return unit(Xi_Expr{Xi_Binop{
-                                          .lhs = lhs,
-                                          .rhs = rhs,
-                                          .op  = Xi_Op::And,
-                                      }});
-                                  };
-                              };
-                          }) ||
-                         Xi_boolfactor;
+                                      return token(s_rparen) >> [expr](auto)
+                                      {
+                                          return unit(expr);
+                                      };
+                                  });
+
+inline const auto Xi_boolfactor =
+    Xi_boolvalue || (Xi_not > Xi_boolvalue >>
+                     [](auto expr)
+                     {
+                         return unit(Xi_Expr{Xi_Unop{
+                             .expr = expr,
+                             .op   = Xi_Op::Not,
+                         }});
+                     });
+
+inline const auto Xi_boolterm = (Xi_boolfactor >>
+                                 [](auto lhs)
+                                 {
+                                     return Xi_and >> [lhs](auto)
+                                     {
+                                         return Xi_boolfactor >> [lhs](auto rhs)
+                                         {
+                                             return unit(Xi_Expr{Xi_Binop{
+                                                 .lhs = lhs,
+                                                 .rhs = rhs,
+                                                 .op  = Xi_Op::And,
+                                             }});
+                                         };
+                                     };
+                                 }) ||
+                                Xi_boolfactor;
 
 // parse bool expression
-auto Xi_boolexpr(std::string_view input) -> Parsed_t<Xi_Expr>
+inline auto Xi_boolexpr(std::string_view input) -> Parsed_t<Xi_Expr>
 {
     return (
         (Xi_boolterm >>
