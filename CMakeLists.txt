@@ -28,6 +28,7 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_BINARY_DIR})
 list(APPEND CMAKE_PREFIX_PATH ${CMAKE_BINARY_DIR})
 
 add_subdirectory(lib)
+add_subdirectory(app)
 
 include(CTest)
 enable_testing()
