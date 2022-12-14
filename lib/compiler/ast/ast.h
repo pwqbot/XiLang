@@ -43,7 +43,7 @@ struct Xi_Boolean
 
 struct Xi_Integer
 {
-    int  value;
+    int64_t  value;
     auto operator<=>(const Xi_Integer &) const = default;
 };
 
