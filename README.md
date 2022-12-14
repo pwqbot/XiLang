@@ -2,20 +2,24 @@
 
 ## compile
 
-use conan as package manager.
-
-```bash
-pip install conan
-```
+use vcpkg as package manager
+`https://vcpkg.io/en/index.html`
 
 build with cmake
 
 ``` bash
 mkdir build
 cd build
-conan install ..
-cmake ..
+cmake .. -DCMAKE_TOOL_CHAIN_FILE=...
 cmake --build .
+```
+
+## syntax
+
+```haskell
+xi sb = ?x y -> x + y
+xi sbb = sb(1 2)
+
 ```
 
 ## reference
