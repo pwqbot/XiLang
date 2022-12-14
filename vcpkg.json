@@ -6,6 +6,7 @@
         "fmt",
         "range-v3",
         "magic-enum",
+        "spdlog",
         {
             "name": "llvm",
             "default-features": false,
