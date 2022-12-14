@@ -1,9 +1,11 @@
 #pragma once
 
 #include <compiler/ast/ast.h>
+#include <compiler/ast/enum_format.h>
 #include <fmt/core.h>
 #include <fmt/format.h>
 #include <fmt/ranges.h>
+#include <magic_enum.hpp>
 #include <range/v3/action.hpp>
 #include <range/v3/view.hpp>
 #include <variant>
@@ -243,6 +245,23 @@ struct fmt::formatter<xi::Xi_Program> : fmt::formatter<xi::Xi_Expr>
             auto indent_stmt = fmt::format("{}", stmt) | wd;
             fmt::format_to(out, "{}\n", indent_stmt);
         }
+        return out;
+    }
+};
+
+template <>
+struct fmt::formatter<xi::Xi_Decl> : fmt::formatter<xi::Xi_Expr>
+{
+    template <typename FormatContext>
+    auto format(const xi::Xi_Decl &i, FormatContext &ctx)
+    {
+        auto out = ctx.out();
+        fmt::format_to(out, "Xi_Decl {} ", i.name);
+        for (auto &&p_type : i.params_type)
+        {
+            fmt::format_to(out, "{} -> ", p_type);
+        }
+        fmt::format_to(out, "{}", i.return_type);
         return out;
     }
 };

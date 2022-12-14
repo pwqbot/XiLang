@@ -43,8 +43,8 @@ struct Xi_Boolean
 
 struct Xi_Integer
 {
-    int64_t  value;
-    auto operator<=>(const Xi_Integer &) const = default;
+    int64_t value;
+    auto    operator<=>(const Xi_Integer &) const = default;
 };
 
 struct Xi_Real
@@ -125,6 +125,22 @@ struct Xi_Iden
     std::string name;
     // Xi_Expr     expr;
     auto operator<=>(const Xi_Iden &) const = default;
+};
+
+enum class Xi_Type
+{
+    i64,
+    real,
+    array,
+    _user,
+};
+
+struct Xi_Decl
+{
+    Xi_Iden              name;
+    Xi_Type              return_type;
+    std::vector<Xi_Type> params_type;
+    auto                 operator<=>(const Xi_Decl &) const = default;
 };
 
 struct Xi_Binop;
