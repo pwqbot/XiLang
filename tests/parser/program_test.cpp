@@ -1,3 +1,4 @@
+#include "compiler/ast/ast.h"
 #include "test_header.h"
 
 #include <compiler/parser/program.h>
@@ -5,7 +6,7 @@
 namespace xi
 {
 
-TEST_CASE("Parse expr", "[Xi_Expr]")
+TEST_CASE("Parse program", "[Xi_Expr]")
 {
     REQUIRE_THAT(
         Xi_expr("1 + 1"),
@@ -20,12 +21,41 @@ TEST_CASE("Parse expr", "[Xi_Expr]")
     );
 
     REQUIRE_THAT(
+        Xi_program("fn add :: i64 -> i64 -> i64\n"
+                   "add x y = x + y"),
+        AstNodeMatcher(
+            Xi_Program{std::vector<Xi_Stmt>{
+                Xi_Decl{
+                    Xi_Iden{"add"},
+                    Xi_Type::i64,
+                    {
+                        Xi_Type::i64,
+                        Xi_Type::i64,
+                    },
+                },
+                Xi_Func{
+                    Xi_Iden{"add"},
+                    {
+                        Xi_Iden{"x"},
+                        Xi_Iden{"y"},
+                    },
+                    Xi_Binop{
+                        Xi_Iden{"x"},
+                        Xi_Iden{"y"},
+                        Xi_Op::Add,
+                    },
+                },
+            }},
+            ""
+        )
+    );
+
+    REQUIRE_THAT(
         Xi_program("1 + 2\n"
                    "2 * 3\n"
                    "true\n"
                    "?x y -> (x + y - 1)\n"
-                   "f(1 b true)"
-                   ),
+                   "f(1 b true)"),
         AstNodeMatcher(
             Xi_Program{std::vector<Xi_Stmt>{
                 Xi_Binop{

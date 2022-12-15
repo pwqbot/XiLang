@@ -183,7 +183,7 @@ struct Xi_Func
     auto                 operator<=>(const Xi_Func &rhs) const = default;
 };
 
-using Xi_Stmt = std::variant<Xi_Expr, Xi_Func>;
+using Xi_Stmt = std::variant<Xi_Expr, Xi_Func, Xi_Decl>;
 
 struct Xi_Program
 {

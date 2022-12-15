@@ -32,14 +32,18 @@ inline const Parser auto Xi_decl_term = Xi_type >> [](auto t)
 // decl ::= "fn" <iden> "::" <arg_type>* <type>
 // <arg_type> = <type> "->"
 inline const auto Xi_decl = token(str("fn")) > Xi_iden >>
-                            [](const Xi_Iden &iden)
+                            [](const Xi_Iden &name)
 {
     return token(str("::")) > many(Xi_decl_term) >>
-           [iden](const std::vector<Xi_Type> &arg_types)
+           [name](const std::vector<Xi_Type> &param_types)
     {
-        return Xi_type >> [iden, arg_types](auto return_type)
+        return Xi_type >> [name, param_types](Xi_Type return_type)
         {
-            return unit(Xi_Decl{iden, return_type, arg_types});
+            return unit(Xi_Stmt{Xi_Decl{
+                .name        = name,
+                .return_type = return_type,
+                .params_type = param_types,
+            }});
         };
     };
 };
