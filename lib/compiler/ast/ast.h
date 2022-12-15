@@ -124,6 +124,7 @@ struct Xi_Iden
 {
     std::string name;
     // Xi_Expr     expr;
+         operator std::string() const { return name; }
     auto operator<=>(const Xi_Iden &) const = default;
 };
 
@@ -174,14 +175,15 @@ using Xi_Expr = std::variant<
     recursive_wrapper<Xi_Lam>,
     recursive_wrapper<Xi_Call>>;
 
-struct Xi_Xi
+struct Xi_Func
 {
-    Xi_Iden name;
-    Xi_Expr expr;
-    auto    operator<=>(const Xi_Xi &rhs) const = default;
+    Xi_Iden              name;
+    std::vector<Xi_Iden> params;
+    Xi_Expr              expr;
+    auto                 operator<=>(const Xi_Func &rhs) const = default;
 };
 
-using Xi_Stmt = std::variant<Xi_Expr, Xi_Xi>;
+using Xi_Stmt = std::variant<Xi_Expr, Xi_Func>;
 
 struct Xi_Program
 {

@@ -140,9 +140,13 @@ const auto Xi_iden = token(some(s_alphanum || s_underscore)) >>
                      ) >>
                      [](auto name)
 {
-    return unit(Xi_Expr{Xi_Iden{.name{name}}});
+    return unit(Xi_Iden{.name{name}});
 };
 
+const auto Xi_idenexpr = Xi_iden >> [](auto iden)
+{
+    return unit(Xi_Expr(iden));
+};
 // string literal
 inline const Parser auto Xi_string = token(s_quote) >
                                      many(s_alphanum || s_space) >> [](auto s)

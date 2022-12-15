@@ -42,7 +42,7 @@ inline const auto Xi_mathbool = Xi_mathexpr >> [](auto lhs)
     };
 };
 
-inline const auto Xi_boolvalue = Xi_boolean || Xi_mathbool || Xi_iden ||
+inline const auto Xi_boolvalue = Xi_boolean || Xi_mathbool || Xi_idenexpr ||
                                  (token(s_lparen) > Xi_boolexpr >>
                                   [](auto expr)
                                   {

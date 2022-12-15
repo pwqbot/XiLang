@@ -34,16 +34,7 @@ inline const Parser auto Xi_decl_term = Xi_type >> [](auto t)
 inline const auto Xi_decl = token(str("fn")) > Xi_iden >>
                             [](const Xi_Iden &iden)
 {
-    return token(str("::")) >
-           many(
-               Xi_decl_term,
-               [](std::vector<Xi_Type> lhs, const Xi_Type &rhs)
-               {
-                   lhs.push_back(rhs);
-                   return lhs;
-               },
-               std::vector<Xi_Type>{}
-           ) >>
+    return token(str("::")) > many(Xi_decl_term) >>
            [iden](const std::vector<Xi_Type> &arg_types)
     {
         return Xi_type >> [iden, arg_types](auto return_type)

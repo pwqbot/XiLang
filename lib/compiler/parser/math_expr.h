@@ -2,8 +2,8 @@
 
 #include <compiler/ast/ast.h>
 #include <compiler/parser/basic_parsers.h>
-#include <compiler/parser/expr.h>
 #include <compiler/parser/call.h>
+#include <compiler/parser/expr.h>
 
 namespace xi
 {
@@ -90,7 +90,7 @@ inline const auto binop_fold = [](const Xi_Expr &lhs, const Xi_Expr &rhs)
 
 inline auto Xi_factor(std::string_view input) -> Parsed_t<Xi_Expr>
 {
-    return (Xi_parenmathexpr || Xi_number || Xi_call || Xi_iden)(input);
+    return (Xi_parenmathexpr || Xi_number || Xi_call || Xi_idenexpr)(input);
 }
 
 inline const Parser auto Xi_mulop = (Xi_mul || Xi_divide) >> [](auto op)

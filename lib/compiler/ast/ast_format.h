@@ -5,6 +5,7 @@
 #include <fmt/core.h>
 #include <fmt/format.h>
 #include <fmt/ranges.h>
+#include <fmt/std.h>
 #include <magic_enum.hpp>
 #include <range/v3/action.hpp>
 #include <range/v3/view.hpp>
@@ -36,7 +37,7 @@ template <>
 struct fmt::formatter<xi::Xi_Real> : fmt::formatter<double>
 {
     template <typename FormatContext>
-    auto format(const xi::Xi_Real &r, FormatContext &ctx)
+    auto format(const xi::Xi_Real &r, FormatContext &ctx) const
     {
         return fmt::format_to(ctx.out(), "Xi_Real {}", r.value);
     }
@@ -46,7 +47,7 @@ template <>
 struct fmt::formatter<xi::Xi_Boolean> : fmt::formatter<bool>
 {
     template <typename FormatContext>
-    auto format(const xi::Xi_Boolean &b, FormatContext &ctx)
+    auto format(const xi::Xi_Boolean &b, FormatContext &ctx) const
     {
         return fmt::format_to(ctx.out(), "Xi_Boolean {}", b.value);
     }
@@ -56,7 +57,7 @@ template <>
 struct fmt::formatter<xi::Xi_String> : fmt::formatter<std::string>
 {
     template <typename FormatContext>
-    auto format(const xi::Xi_String &s, FormatContext &ctx)
+    auto format(const xi::Xi_String &s, FormatContext &ctx) const
     {
         auto out = ctx.out();
         out      = fmt::format_to(out, "Xi_String \"{}\"", s.value);
@@ -85,7 +86,7 @@ template <>
 struct fmt::formatter<xi::Xi_Binop> : fmt::formatter<std::string>
 {
     template <typename FormatContext>
-    auto format(const xi::Xi_Binop &b, FormatContext &ctx)
+    auto format(const xi::Xi_Binop &b, FormatContext &ctx) const
     {
         const auto lhs = fmt::format("{}", b.lhs) | wd;
         const auto rhs = fmt::format("{}", b.rhs) | wd;
@@ -105,7 +106,7 @@ template <>
 struct fmt::formatter<xi::Xi_Unop> : fmt::formatter<xi::Xi_Expr>
 {
     template <typename FormatContext>
-    auto format(const xi::Xi_Unop &u, FormatContext &ctx)
+    auto format(const xi::Xi_Unop &u, FormatContext &ctx) const
     {
         const auto expr = fmt::format("{}", u.expr) | wd;
         return fmt::format_to(
@@ -118,7 +119,7 @@ template <>
 struct fmt::formatter<xi::Xi_If> : fmt::formatter<xi::Xi_Expr>
 {
     template <typename FormatContext>
-    auto format(const xi::Xi_If &i, FormatContext &ctx)
+    auto format(const xi::Xi_If &i, FormatContext &ctx) const
     {
         const auto cond = fmt::format("{}", i.cond) | wd;
         const auto then = fmt::format("{}", i.then) | wd;
@@ -140,7 +141,7 @@ template <>
 struct fmt::formatter<xi::Xi_Lam> : fmt::formatter<xi::Xi_Expr>
 {
     template <typename FormatContext>
-    auto format(const xi::Xi_Lam &l, FormatContext &ctx)
+    auto format(const xi::Xi_Lam &l, FormatContext &ctx) const
     {
 
         auto args =
@@ -167,7 +168,7 @@ template <>
 struct fmt::formatter<xi::Xi_Iden> : fmt::formatter<xi::Xi_Expr>
 {
     template <typename FormatContext>
-    auto format(const xi::Xi_Iden &i, FormatContext &ctx)
+    auto format(const xi::Xi_Iden &i, FormatContext &ctx) const
     {
         return fmt::format_to(ctx.out(), "Xi_Iden {}", i.name);
     }
@@ -177,21 +178,14 @@ template <>
 struct fmt::formatter<xi::Xi_Call> : fmt::formatter<xi::Xi_Expr>
 {
     template <typename FormatContext>
-    auto format(const xi::Xi_Call &i, FormatContext &ctx)
+    auto format(const xi::Xi_Call &i, FormatContext &ctx) const
     {
         const auto name = fmt::format("{}", i.name) | wd;
-        const auto args = []()
-        {
-            std::string args_;
-            for (auto &arg : args_)
-            {
-                args_ += fmt::format("{}\n", arg) | wd;
-            }
-            return args_;
-        };
+        const auto args = fmt::format("{}", i.args) | wd;
         return fmt::format_to(
             ctx.out(),
-            "Xi_Call {}\n"
+            "Xi_Call\n"
+            "{}\n"
             "{}\n",
             name,
             args
@@ -200,19 +194,21 @@ struct fmt::formatter<xi::Xi_Call> : fmt::formatter<xi::Xi_Expr>
 };
 
 template <>
-struct fmt::formatter<xi::Xi_Xi> : fmt::formatter<xi::Xi_Expr>
+struct fmt::formatter<xi::Xi_Func> : fmt::formatter<xi::Xi_Expr>
 {
     template <typename FormatContext>
-    auto format(const xi::Xi_Xi &i, FormatContext &ctx)
+    auto format(const xi::Xi_Func &i, FormatContext &ctx) const
     {
-        const auto name = fmt::format("{}", i.name) | wd;
-        const auto expr = fmt::format("{}", i.expr) | wd;
+        const auto name   = fmt::format("{}", i.name) | wd;
+        const auto params = fmt::format("{}", i.params);
+        const auto expr   = fmt::format("{}", i.expr) | wd;
         return fmt::format_to(
             ctx.out(),
-            "Xi_Xi\n"
-            "{}\n"
+            "Xi_Xi \n"
+            "{} {}\n"
             "{}",
             name,
+            params,
             expr
         );
     }
@@ -222,7 +218,7 @@ template <>
 struct fmt::formatter<xi::Xi_Stmt> : fmt::formatter<xi::Xi_Expr>
 {
     template <typename FormatContext>
-    auto format(const xi::Xi_Stmt &i, FormatContext &ctx)
+    auto format(const xi::Xi_Stmt &i, FormatContext &ctx) const
     {
         return std::visit(
             [&ctx](auto &&stmt)
@@ -236,7 +232,7 @@ template <>
 struct fmt::formatter<xi::Xi_Program> : fmt::formatter<xi::Xi_Expr>
 {
     template <typename FormatContext>
-    auto format(const xi::Xi_Program &i, FormatContext &ctx)
+    auto format(const xi::Xi_Program &i, FormatContext &ctx) const
     {
         auto out = ctx.out();
         fmt::format_to(out, "Xi_Program qwq\n");
@@ -253,7 +249,7 @@ template <>
 struct fmt::formatter<xi::Xi_Decl> : fmt::formatter<xi::Xi_Expr>
 {
     template <typename FormatContext>
-    auto format(const xi::Xi_Decl &i, FormatContext &ctx)
+    auto format(const xi::Xi_Decl &i, FormatContext &ctx) const
     {
         auto out = ctx.out();
         fmt::format_to(out, "Xi_Decl {} ", i.name);
