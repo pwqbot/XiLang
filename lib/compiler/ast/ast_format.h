@@ -204,7 +204,7 @@ struct fmt::formatter<xi::Xi_Func> : fmt::formatter<xi::Xi_Expr>
         const auto expr   = fmt::format("{}", i.expr) | wd;
         return fmt::format_to(
             ctx.out(),
-            "Xi_Xi \n"
+            "Xi_Func \n"
             "{} {}\n"
             "{}",
             name,
