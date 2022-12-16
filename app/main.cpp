@@ -16,30 +16,33 @@ int main()
         {
             input += '\n';
         }
-        std::cout << "input: " << input << std::endl;
         if (input == "exit()")
         {
             return 0;
         }
-        std::cout << "input: " << input << std::endl;
         total_input += input;
 
         auto total_result = xi::Xi_program(total_input);
         if (total_result)
         {
-            if (total_result.value().second.empty())
+            if (total_result.value().second == "\n")
             {
                 fmt::print("Parse successfully\n");
-                fmt::print("AST:\n {}\n", total_result.value());
+                fmt::print("AST:\n {}\n", total_result.value().first);
+                fmt::print(
+                    "LLVM IR:\n {}\n", xi::CodeGen(total_result.value().first)
+                );
             }
             else
             {
-                fmt::print("Parse fail!\n {} not parsed", total_result.value().second);
+                fmt::print(
+                    "Parse fail!\n {} not parsed\n", total_result.value().second
+                );
             }
         }
         else
         {
-            std::cout << "Failed to parse\n";
+            fmt::print("Failed to parse\n");
         }
     }
 }
