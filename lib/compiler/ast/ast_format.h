@@ -215,6 +215,23 @@ struct fmt::formatter<xi::Xi_Func> : fmt::formatter<xi::Xi_Expr>
 };
 
 template <>
+struct fmt::formatter<xi::Xi_Decl> : fmt::formatter<xi::Xi_Expr>
+{
+    template <typename FormatContext>
+    auto format(const xi::Xi_Decl &i, FormatContext &ctx) const
+    {
+        auto out = ctx.out();
+        fmt::format_to(out, "Xi_Decl {} ", i.name);
+        for (auto &&p_type : i.params_type)
+        {
+            fmt::format_to(out, "{} -> ", p_type);
+        }
+        fmt::format_to(out, "{}", i.return_type);
+        return out;
+    }
+};
+
+template <>
 struct fmt::formatter<xi::Xi_Stmt> : fmt::formatter<xi::Xi_Expr>
 {
     template <typename FormatContext>
@@ -241,23 +258,6 @@ struct fmt::formatter<xi::Xi_Program> : fmt::formatter<xi::Xi_Expr>
             auto indent_stmt = fmt::format("{}", stmt) | wd;
             fmt::format_to(out, "{}\n", indent_stmt);
         }
-        return out;
-    }
-};
-
-template <>
-struct fmt::formatter<xi::Xi_Decl> : fmt::formatter<xi::Xi_Expr>
-{
-    template <typename FormatContext>
-    auto format(const xi::Xi_Decl &i, FormatContext &ctx) const
-    {
-        auto out = ctx.out();
-        fmt::format_to(out, "Xi_Decl {} ", i.name);
-        for (auto &&p_type : i.params_type)
-        {
-            fmt::format_to(out, "{} -> ", p_type);
-        }
-        fmt::format_to(out, "{}", i.return_type);
         return out;
     }
 };
