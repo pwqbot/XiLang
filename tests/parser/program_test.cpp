@@ -1,6 +1,6 @@
-#include "compiler/ast/ast.h"
 #include "test_header.h"
 
+#include <compiler/ast/ast.h>
 #include <compiler/parser/program.h>
 
 namespace xi
@@ -42,6 +42,70 @@ TEST_CASE("Parse program", "[Xi_Expr]")
                     Xi_Binop{
                         Xi_Iden{"x"},
                         Xi_Iden{"y"},
+                        Xi_Op::Add,
+                    },
+                },
+            }},
+            ""
+        )
+    );
+
+    REQUIRE_THAT(
+        Xi_program("fn add :: i64 -> i64 -> i64\n"
+                   "add x y = x + y\n"
+                   "fn add2 :: i64 -> i64 -> i64\n"
+                   "add2 x y = add(x y) + add (x y)"),
+        AstNodeMatcher(
+            Xi_Program{std::vector<Xi_Stmt>{
+                Xi_Decl{
+                    Xi_Iden{"add"},
+                    Xi_Type::i64,
+                    {
+                        Xi_Type::i64,
+                        Xi_Type::i64,
+                    },
+                },
+                Xi_Func{
+                    Xi_Iden{"add"},
+                    {
+                        Xi_Iden{"x"},
+                        Xi_Iden{"y"},
+                    },
+                    Xi_Binop{
+                        Xi_Iden{"x"},
+                        Xi_Iden{"y"},
+                        Xi_Op::Add,
+                    },
+                },
+                Xi_Decl{
+                    Xi_Iden{"add2"},
+                    Xi_Type::i64,
+                    {
+                        Xi_Type::i64,
+                        Xi_Type::i64,
+                    },
+                },
+                Xi_Func{
+                    Xi_Iden{"add2"},
+                    {
+                        Xi_Iden{"x"},
+                        Xi_Iden{"y"},
+                    },
+                    Xi_Binop{
+                        Xi_Call{
+                            Xi_Iden{"add"},
+                            {
+                                Xi_Iden{"x"},
+                                Xi_Iden{"y"},
+                            },
+                        },
+                        Xi_Call{
+                            Xi_Iden{"add"},
+                            {
+                                Xi_Iden{"x"},
+                                Xi_Iden{"y"},
+                            },
+                        },
                         Xi_Op::Add,
                     },
                 },

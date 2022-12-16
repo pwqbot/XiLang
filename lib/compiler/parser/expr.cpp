@@ -9,10 +9,7 @@ namespace xi
 
 auto Xi_expr(std::string_view input) -> Parsed_t<Xi_Expr>
 {
-    return (
-        Xi_string || Xi_call || Xi_mathexpr || Xi_if ||
-        Xi_boolexpr || Xi_lam
-    )(input);
+    return (Xi_string || Xi_mathexpr || Xi_if || Xi_boolexpr || Xi_lam)(input);
 }
 
 } // namespace xi
