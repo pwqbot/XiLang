@@ -1,7 +1,9 @@
 file(GLOB_RECURSE srcs CONFIGURE_DEPENDS *.cpp *.h)
 
 find_package(LLVM CONFIG REQUIRED)
+find_package(range-v3 REQUIRED)
 find_package(spdlog REQUIRED)
+find_package(magic_enum REQUIRED)
 find_package(tl-expected CONFIG REQUIRED)
 
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
@@ -16,4 +18,6 @@ message(STATUS "LLVM libs: ${llvm_libs}")
 
 add_library(generator STATIC ${srcs})
 target_include_directories(generator PRIVATE ${LLVM_INCLUDE_DIRS})
-target_link_libraries(generator PUBLIC ${llvm_libs} spdlog::spdlog tl::expected)
+target_link_libraries(
+  generator PUBLIC ${llvm_libs} spdlog::spdlog tl::expected range-v3::range-v3
+                   magic_enum::magic_enum)

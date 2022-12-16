@@ -1,5 +1,8 @@
-#include <vector>
 #include <compiler/functional/fold.h>
+#include <range/v3/action/transform.hpp>
+#include <range/v3/algorithm.hpp>
+#include <range/v3/view.hpp>
+#include <vector>
 
 namespace xi
 {
@@ -43,5 +46,12 @@ auto sequence(std::vector<M<T, Args...>> monads)
         Unit<M, Args...>(std::vector<T>()),
         monads
     );
+}
+
+template <typename T, typename Func>
+auto flatmap(std::vector<T> v, Func &&f)
+{
+    const auto mapped = v | ranges::views::transform(f) | ranges::to_vector;
+    return sequence(mapped);
 }
 } // namespace xi

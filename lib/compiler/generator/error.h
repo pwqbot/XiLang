@@ -1,5 +1,6 @@
 #include <compiler/functional/monad.h>
 #include <fmt/core.h>
+#include <magic_enum.hpp>
 #include <numeric>
 #include <string>
 #include <tl/expected.hpp>
@@ -28,14 +29,16 @@ struct ErrorCodeGen
     };
     ErrorType   type_;
     std::string message_;
-    ErrorCodeGen(ErrorType type, std::string message) :
-        type_(type), message_(std::move(message))
+    ErrorCodeGen(ErrorType type, std::string_view message) :
+        type_(type), message_(message)
     {
     }
 
     [[nodiscard]] auto what() const -> std::string
     {
-        return fmt::format("ErrorCodeGen: {}", message_);
+        return fmt::format(
+            "ErrorCodeGen: {} {}", magic_enum::enum_name(type_), message_
+        );
     }
 };
 
