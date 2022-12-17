@@ -86,6 +86,13 @@ TEST_CASE("Parse String", "[Xi_String]")
     auto [result1, result2] = Xi_string("\"abcccb\"").value();
     REQUIRE(result1 == Xi_String{"abcccb"});
     REQUIRE(result2.empty());
+    REQUIRE_THAT(
+        Xi_string("\"abcccb\""), AstNodeMatcher(Xi_String{"abcccb"}, "")
+    );
+    REQUIRE_THAT(
+        Xi_string("\"Hello, World\""),
+        AstNodeMatcher(Xi_String{"Hello, World"}, "")
+    );
 }
 
 TEST_CASE("Parse Xi_Iden", "[Xi_Iden]")

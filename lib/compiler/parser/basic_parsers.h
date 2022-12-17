@@ -148,8 +148,9 @@ const auto Xi_idenexpr = Xi_iden >> [](auto iden)
     return unit(Xi_Expr(iden));
 };
 // string literal
-inline const Parser auto Xi_string = token(s_quote) >
-                                     many(s_alphanum || s_space) >> [](auto s)
+inline const Parser auto
+    Xi_string = token(s_quote) >
+                many(satisfy([](char c) { return c != '\"'; })) >> [](auto s)
 {
     return s_quote >> [s](auto)
     {
