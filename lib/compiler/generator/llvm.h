@@ -62,10 +62,44 @@ auto CodeGen(Xi_Boolean boolean) -> codegen_result_t
     );
 }
 
-auto CodeGen(Xi_If) -> codegen_result_t
+auto CodeGen(Xi_If if_expr) -> codegen_result_t
 {
-    return tl::unexpected(ErrorCodeGen(ErrorCodeGen::NotImplemented, "If Expr")
-    );
+    return CodeGen(if_expr.cond) >>=
+           [=](llvm::Value *cond_code) -> codegen_result_t
+    {
+        auto *function = builder->GetInsertBlock()->getParent();
+        auto *then_bb  = llvm::BasicBlock::Create(*context, "then", function);
+        auto *else_bb  = llvm::BasicBlock::Create(*context, "else");
+        builder->CreateCondBr(cond_code, then_bb, else_bb);
+
+        builder->SetInsertPoint(then_bb);
+        return CodeGen(if_expr.then) >>=
+               [&](llvm::Value *then_code) -> codegen_result_t
+        {
+            auto *merge_bb = llvm::BasicBlock::Create(*context, "ifcont");
+            builder->CreateBr(merge_bb);
+            then_bb = builder->GetInsertBlock();
+
+            function->getBasicBlockList().push_back(else_bb);
+            builder->SetInsertPoint(else_bb);
+
+            return CodeGen(if_expr.els) >>=
+                   [&](llvm::Value *else_code) -> codegen_result_t
+            {
+                builder->CreateBr(merge_bb);
+                else_bb = builder->GetInsertBlock();
+
+                function->getBasicBlockList().push_back(merge_bb);
+                builder->SetInsertPoint(merge_bb);
+
+                auto *phi =
+                    builder->CreatePHI(then_code->getType(), 2, "iftmp");
+                phi->addIncoming(then_code, then_bb);
+                phi->addIncoming(else_code, else_bb);
+                return phi;
+            };
+        };
+    };
 }
 
 auto CodeGen(Xi_Iden iden) -> codegen_result_t
