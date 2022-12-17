@@ -17,9 +17,10 @@ cmake --build .
 ## syntax
 
 ```haskell
-xi sb = ?x y -> x + y
-xi sbb = sb(1 2)
+fn pow :: i64 -> i64 -> i64
+pow x y = if y <= 0 then 1 else x * pow(x y - 1)
 
+set point = ((x i64) (y i64))
 ```
 
 ## reference
