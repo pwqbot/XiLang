@@ -110,14 +110,16 @@ constexpr auto IsKeyWords(std::string_view str) -> bool
 
 constexpr auto OpStr_To_Xi_Op(std::string_view s) -> Xi_Op
 {
-    return ranges::find_if(OpMaps, [&](auto p) { return p.first == s; })
-        ->second;
+    return ranges::find_if(
+               OpMaps, [&](auto p) { return p.first == s; }
+    )->second;
 }
 
 constexpr auto Xi_Op_To_OpStr(Xi_Op op) -> std::string_view
 {
-    return ranges::find_if(OpMaps, [&](auto p) { return p.second == op; })
-        ->first;
+    return ranges::find_if(
+               OpMaps, [&](auto p) { return p.second == op; }
+    )->first;
 }
 
 struct Xi_Iden
@@ -133,6 +135,7 @@ enum class Xi_Type
     i64,
     real,
     array,
+    string,
     _user,
 };
 
