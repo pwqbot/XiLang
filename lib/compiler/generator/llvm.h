@@ -80,6 +80,8 @@ auto XiTypeToLLVMType(Xi_Type xi_t) -> ExpectedCodeGen<llvm::Type *>
         return llvm::Type::getInt64Ty(*context);
     case Xi_Type::string:
         return llvm::PointerType::get(llvm::Type::getInt8Ty(*context), 0);
+    case Xi_Type::buer:
+        return llvm::PointerType::get(llvm::Type::getInt1Ty(*context), 0);
     case Xi_Type::_set:
         return llvm::StructType::getTypeByName(*context, xi_t.name_);
     default:
