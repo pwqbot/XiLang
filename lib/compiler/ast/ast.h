@@ -122,14 +122,6 @@ constexpr auto Xi_Op_To_OpStr(Xi_Op op) -> std::string_view
     )->first;
 }
 
-struct Xi_Iden
-{
-    std::string name;
-    // Xi_Expr     expr;
-         operator std::string() const { return name; }
-    auto operator<=>(const Xi_Iden &) const = default;
-};
-
 enum class Xi_Type
 {
     i64,
@@ -137,7 +129,24 @@ enum class Xi_Type
     array,
     string,
     _vararg,
-    _user,
+    _set,
+    _unknown,
+};
+
+struct Xi_Iden
+{
+    std::string name;
+    Xi_Type     type = Xi_Type::_unknown;
+    // Xi_Expr     expr;
+         operator std::string() const { return name; }
+    auto operator<=>(const Xi_Iden &) const = default;
+};
+
+struct Xi_Set
+{
+    std::string          name;
+    std::vector<Xi_Iden> members;
+    auto                 operator<=>(const Xi_Set &) const = default;
 };
 
 struct Xi_Decl

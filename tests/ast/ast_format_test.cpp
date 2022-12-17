@@ -134,7 +134,7 @@ TEST_CASE("Test Xi_Iden", "[Xi_Iden]")
 {
     {
         auto result = Xi_Iden{"hello"};
-        REQUIRE(fmt::format("{}", result) == "Xi_Iden hello");
+        REQUIRE(fmt::format("{}", result) == "Xi_Iden hello _unknown");
     }
 }
 
@@ -144,7 +144,7 @@ TEST_CASE("Test Xi_Lam", "[Xi_Lam]")
         auto result = Xi_Lam{{Xi_Iden{"x"}}, Xi_Integer{456}};
         REQUIRE(
             fmt::format("{}", result) == "Xi_Lam\n"
-                                         "\tA Xi_Iden x\n"
+                                         "\tA Xi_Iden x _unknown\n"
                                          "\tB Xi_Integer 456"
         );
     }
@@ -153,9 +153,10 @@ TEST_CASE("Test Xi_Lam", "[Xi_Lam]")
         auto result =
             Xi_Lam{{Xi_Iden{"x"}, Xi_Iden{"y"}, Xi_Iden{"z"}}, Xi_Integer{456}};
         REQUIRE(
-            fmt::format("{}", result) == "Xi_Lam\n"
-                                         "\tA Xi_Iden x, Xi_Iden y, Xi_Iden z\n"
-                                         "\tB Xi_Integer 456"
+            fmt::format("{}", result) ==
+            "Xi_Lam\n"
+            "\tA Xi_Iden x _unknown, Xi_Iden y _unknown, Xi_Iden z _unknown\n"
+            "\tB Xi_Integer 456"
         );
     }
 }

@@ -170,7 +170,7 @@ struct fmt::formatter<xi::Xi_Iden> : fmt::formatter<xi::Xi_Expr>
     template <typename FormatContext>
     auto format(const xi::Xi_Iden &i, FormatContext &ctx) const
     {
-        return fmt::format_to(ctx.out(), "Xi_Iden {}", i.name);
+        return fmt::format_to(ctx.out(), "Xi_Iden {} {}", i.name, i.type);
     }
 };
 
@@ -228,6 +228,22 @@ struct fmt::formatter<xi::Xi_Decl> : fmt::formatter<xi::Xi_Expr>
         }
         fmt::format_to(out, "{}", i.return_type);
         return out;
+    }
+};
+
+template <>
+struct fmt::formatter<xi::Xi_Set> : fmt::formatter<xi::Xi_Expr>
+{
+    template <typename FormatContext>
+    auto format(const xi::Xi_Set &i, FormatContext &ctx) const
+    {
+        return fmt::format_to(
+            ctx.out(),
+            " Xi_Set {}\n"
+            "{}",
+            i.name,
+            i.members
+        );
     }
 };
 

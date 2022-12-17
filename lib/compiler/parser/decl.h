@@ -20,7 +20,7 @@ inline const Parser auto Xi_type =
              return unit(t.value());
          }
 
-         return unit(Xi_Type::_user);
+         return unit(Xi_Type::_set);
      });
 
 inline const Parser auto Xi_decl_term = Xi_type >> [](auto t)
