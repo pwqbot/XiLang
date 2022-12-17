@@ -32,6 +32,7 @@ TEST_CASE("Parse program", "[Xi_Expr]")
                         Xi_Type::i64,
                         Xi_Type::i64,
                     },
+                    false,
                 },
                 Xi_Func{
                     Xi_Iden{"add"},
@@ -64,6 +65,7 @@ TEST_CASE("Parse program", "[Xi_Expr]")
                         Xi_Type::i64,
                         Xi_Type::i64,
                     },
+                    false,
                 },
                 Xi_Func{
                     Xi_Iden{"add"},
@@ -84,6 +86,7 @@ TEST_CASE("Parse program", "[Xi_Expr]")
                         Xi_Type::i64,
                         Xi_Type::i64,
                     },
+                    false,
                 },
                 Xi_Func{
                     Xi_Iden{"add2"},

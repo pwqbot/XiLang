@@ -136,6 +136,7 @@ enum class Xi_Type
     real,
     array,
     string,
+    _vararg,
     _user,
 };
 
@@ -144,6 +145,7 @@ struct Xi_Decl
     Xi_Iden              name;
     Xi_Type              return_type;
     std::vector<Xi_Type> params_type;
+    bool                 is_vararg;
     auto                 operator<=>(const Xi_Decl &) const = default;
 };
 

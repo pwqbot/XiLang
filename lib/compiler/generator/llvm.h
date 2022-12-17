@@ -186,18 +186,21 @@ auto CodeGen(Xi_Call call_expr) -> codegen_result_t
             ErrorCodeGen(ErrorCodeGen::UnknownFunction, call_expr.name.name)
         );
     }
-    if (calleeF->arg_size() != call_expr.args.size())
+    if (!calleeF->isVarArg() && calleeF->arg_size() != call_expr.args.size())
     {
         return tl::unexpected(ErrorCodeGen(
             ErrorCodeGen::InvalidArgumentCount,
             fmt::format(
-                "want {}, get {}", calleeF->arg_size(), call_expr.args.size()
+                "call {}, want {}, get {}",
+                calleeF->getName(),
+                calleeF->arg_size(),
+                call_expr.args.size()
             )
         ));
     }
 
     return flatmap(call_expr.args, [](auto arg) { return CodeGen(arg); }) >>=
-           [calleeF](auto argsV) -> codegen_result_t
+           [calleeF](std::vector<llvm::Value *> argsV) -> codegen_result_t
     {
         return builder->CreateCall(calleeF, argsV, "calltmp");
     };
@@ -236,10 +239,10 @@ auto CodeGen(Xi_Decl decl) -> codegen_result_t
            [decl](auto arg_types) -> codegen_result_t
     {
         return XiTypeToLLVMType(decl.return_type) >>=
-               [decl, arg_types](auto return_type) -> codegen_result_t
+               [decl, arg_types](auto return_type) mutable -> codegen_result_t
         {
             auto *func_type =
-                llvm::FunctionType::get(return_type, arg_types, false);
+                llvm::FunctionType::get(return_type, arg_types, decl.is_vararg);
 
             auto *function = llvm::Function::Create(
                 func_type,
@@ -274,11 +277,16 @@ auto checkFunc(Xi_Func xi) -> ExpectedCodeGen<llvm::Function *>
             ErrorCodeGen(ErrorCodeGen::Redefinition, xi.name.name)
         );
     }
-    if (xi.params.size() != func->arg_size())
+    if (!func->isVarArg() && xi.params.size() != func->arg_size())
     {
         return tl::unexpected(ErrorCodeGen(
             ErrorCodeGen::InvalidArgumentCount,
-            fmt::format("want {}, get {}", func->arg_size(), xi.params.size())
+            fmt::format(
+                "func {}, want {}, get {}",
+                func->getName(),
+                func->arg_size(),
+                xi.params.size()
+            )
         ));
     }
     return func;

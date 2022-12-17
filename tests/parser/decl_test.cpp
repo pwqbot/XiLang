@@ -15,18 +15,20 @@ TEST_CASE("Parser Xi_Decl", "[Xi_DeclExpr]")
                 Xi_Iden{"func"},
                 Xi_Type::i64,
                 {},
+                false,
             },
             ""
         )
     );
 
     REQUIRE_THAT(
-        Xi_decl("fn func :: real -> i64"),
+        Xi_decl("fn func :: real -> ... -> i64"),
         AstNodeMatcher(
             Xi_Decl{
                 Xi_Iden{"func"},
                 Xi_Type::i64,
                 {Xi_Type::real},
+                true,
             },
             ""
         )
