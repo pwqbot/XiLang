@@ -27,10 +27,10 @@ TEST_CASE("Parse program", "[Xi_Expr]")
             Xi_Program{std::vector<Xi_Stmt>{
                 Xi_Decl{
                     Xi_Iden{"add"},
-                    Xi_Type::i64,
+                    Xi_Type(Xi_Type::i64),
                     {
-                        Xi_Type::i64,
-                        Xi_Type::i64,
+                        Xi_Type(Xi_Type::i64),
+                        Xi_Type(Xi_Type::i64),
                     },
                     false,
                 },
@@ -60,10 +60,10 @@ TEST_CASE("Parse program", "[Xi_Expr]")
             Xi_Program{std::vector<Xi_Stmt>{
                 Xi_Decl{
                     Xi_Iden{"add"},
-                    Xi_Type::i64,
+                    Xi_Type(Xi_Type::i64),
                     {
-                        Xi_Type::i64,
-                        Xi_Type::i64,
+                        Xi_Type(Xi_Type::i64),
+                        Xi_Type(Xi_Type::i64),
                     },
                     false,
                 },
@@ -81,10 +81,10 @@ TEST_CASE("Parse program", "[Xi_Expr]")
                 },
                 Xi_Decl{
                     Xi_Iden{"add2"},
-                    Xi_Type::i64,
+                    Xi_Type(Xi_Type::i64),
                     {
-                        Xi_Type::i64,
-                        Xi_Type::i64,
+                        Xi_Type(Xi_Type::i64),
+                        Xi_Type(Xi_Type::i64),
                     },
                     false,
                 },

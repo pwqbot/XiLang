@@ -10,17 +10,17 @@ namespace xi
 {
 
 inline const Parser auto Xi_type =
-    (token(str("...")) > unit(Xi_Type::_vararg)) ||
+    (token(str("...")) > unit(Xi_Type(Xi_Type::_vararg))) ||
     (token(some(s_alphanum || s_underscore)) >>
      [](const std::string &name)
      {
-         auto t = magic_enum::enum_cast<Xi_Type>(name);
+         auto t = magic_enum::enum_cast<Xi_Type::Xi_Type_>(name);
          if (t.has_value())
          {
-             return unit(t.value());
+             return unit(Xi_Type(t.value()));
          }
 
-         return unit(Xi_Type::_set);
+         return unit(Xi_Type(Xi_Type::_set, name));
      });
 
 inline const Parser auto Xi_decl_term = Xi_type >> [](auto t)
@@ -43,7 +43,7 @@ inline const auto Xi_decl = token(str("fn")) > Xi_iden >>
                 ) -> std::pair<bool, std::vector<Xi_Type>>
             {
                 if (!old_param_types.empty() &&
-                    old_param_types.back() == Xi_Type::_vararg)
+                    old_param_types.back().type_ == Xi_Type::_vararg)
                 {
                     return {
                         true,

@@ -13,7 +13,7 @@ TEST_CASE("Parser Xi_Decl", "[Xi_DeclExpr]")
         AstNodeMatcher(
             Xi_Decl{
                 Xi_Iden{"func"},
-                Xi_Type::i64,
+                Xi_Type(Xi_Type::i64),
                 {},
                 false,
             },
@@ -26,8 +26,8 @@ TEST_CASE("Parser Xi_Decl", "[Xi_DeclExpr]")
         AstNodeMatcher(
             Xi_Decl{
                 Xi_Iden{"func"},
-                Xi_Type::i64,
-                {Xi_Type::real},
+                Xi_Type(Xi_Type::i64),
+                {Xi_Type(Xi_Type::real)},
                 true,
             },
             ""

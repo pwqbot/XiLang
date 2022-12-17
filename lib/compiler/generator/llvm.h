@@ -7,6 +7,7 @@
 #include <compiler/generator/error.h>
 #include <llvm/ADT/APFloat.h>
 #include <llvm/IR/Constants.h>
+#include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/LegacyPassManager.h>
 #include <llvm/IR/Verifier.h>
@@ -67,6 +68,44 @@ auto CodeGen(Xi_Boolean boolean) -> codegen_result_t
     return llvm::ConstantInt::get(
         *context, llvm::APInt(1, static_cast<uint64_t>(boolean.value))
     );
+}
+
+auto XiTypeToLLVMType(Xi_Type xi_t) -> ExpectedCodeGen<llvm::Type *>
+{
+    switch (xi_t.type_)
+    {
+    case Xi_Type::real:
+        return llvm::Type::getDoubleTy(*context);
+    case Xi_Type::i64:
+        return llvm::Type::getInt64Ty(*context);
+    case Xi_Type::string:
+        return llvm::PointerType::get(llvm::Type::getInt8Ty(*context), 0);
+    case Xi_Type::_set:
+        return llvm::StructType::getTypeByName(*context, xi_t.name_);
+    default:
+        return tl::unexpected(ErrorCodeGen(
+            ErrorCodeGen::UnknownType, magic_enum::enum_name(xi_t.type_)
+        ));
+    }
+}
+
+// generate user defined type
+auto CodeGen(Xi_Set set) -> codegen_result_t
+{
+    auto *struct_type = llvm::StructType::create(*context, set.name);
+    auto member_types = set.members | ranges::views::transform(&Xi_Iden::type) |
+                        ranges::to_vector;
+    return flatmap(member_types, XiTypeToLLVMType) >>=
+           [&struct_type](std::vector<llvm::Type *> types
+           ) -> codegen_result_t 
+    {
+        ranges::for_each(
+            types,
+            [&struct_type](llvm::Type *type) { struct_type->setBody(type); }
+        );
+        // emit code
+        return {};
+    };
 }
 
 auto CodeGen(Xi_If if_expr) -> codegen_result_t
@@ -209,23 +248,6 @@ auto CodeGen(Xi_Call call_expr) -> codegen_result_t
 auto CodeGen(Xi_Lam) -> codegen_result_t
 {
     return tl::unexpected(ErrorCodeGen(ErrorCodeGen::NotImplemented, "Lambda"));
-}
-
-auto XiTypeToLLVMType(Xi_Type xi_t) -> ExpectedCodeGen<llvm::Type *>
-{
-    switch (xi_t)
-    {
-    case Xi_Type::real:
-        return llvm::Type::getDoubleTy(*context);
-    case Xi_Type::i64:
-        return llvm::Type::getInt64Ty(*context);
-    case Xi_Type::string:
-        return llvm::PointerType::get(llvm::Type::getInt8Ty(*context), 0);
-    default:
-        return tl::unexpected(
-            ErrorCodeGen(ErrorCodeGen::UnknownType, magic_enum::enum_name(xi_t))
-        );
-    }
 }
 
 auto CodeGen(Xi_String s) -> codegen_result_t

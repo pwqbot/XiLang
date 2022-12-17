@@ -165,6 +165,20 @@ struct fmt::formatter<xi::Xi_Lam> : fmt::formatter<xi::Xi_Expr>
 };
 
 template <>
+struct fmt::formatter<xi::Xi_Type> : fmt::formatter<xi::Xi_Expr>
+{
+    template <typename FormatContext>
+    auto format(const xi::Xi_Type &i, FormatContext &ctx) const
+    {
+        if (i.name_.empty())
+        {
+            return fmt::format_to(ctx.out(), "{}", i.type_);
+        }
+        return fmt::format_to(ctx.out(), "{} {}", i.type_, i.name_);
+    }
+};
+
+template <>
 struct fmt::formatter<xi::Xi_Iden> : fmt::formatter<xi::Xi_Expr>
 {
     template <typename FormatContext>

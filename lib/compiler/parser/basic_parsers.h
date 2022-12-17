@@ -142,7 +142,7 @@ const auto Xi_iden = token(some(s_alphanum || s_underscore)) >>
 {
     return unit(Xi_Iden{
         .name = name,
-        .type = Xi_Type::_unknown,
+        .type = Xi_Type(Xi_Type::_unknown),
     });
 };
 

@@ -8,6 +8,7 @@
 #include <range/v3/view.hpp>
 #include <string>
 #include <type_traits>
+#include <utility>
 #include <variant>
 
 namespace xi
@@ -122,21 +123,29 @@ constexpr auto Xi_Op_To_OpStr(Xi_Op op) -> std::string_view
     )->first;
 }
 
-enum class Xi_Type
+struct Xi_Type
 {
-    i64,
-    real,
-    array,
-    string,
-    _vararg,
-    _set,
-    _unknown,
+    enum Xi_Type_
+    {
+        i64,
+        real,
+        array,
+        string,
+        _vararg,
+        _set,
+        _unknown,
+    };
+    Xi_Type_    type_;
+    std::string name_;
+    auto        operator<=>(const Xi_Type &) const = default;
+    explicit Xi_Type(Xi_Type_ t) : type_(t) {}
+    Xi_Type(Xi_Type_ t, std::string name) : type_(t), name_(std::move(name)) {}
 };
 
 struct Xi_Iden
 {
     std::string name;
-    Xi_Type     type = Xi_Type::_unknown;
+    Xi_Type     type = Xi_Type(Xi_Type::_unknown);
     // Xi_Expr     expr;
          operator std::string() const { return name; }
     auto operator<=>(const Xi_Iden &) const = default;
@@ -197,7 +206,7 @@ struct Xi_Func
     auto                 operator<=>(const Xi_Func &rhs) const = default;
 };
 
-using Xi_Stmt = std::variant<Xi_Expr, Xi_Func, Xi_Decl>;
+using Xi_Stmt = std::variant<Xi_Expr, Xi_Func, Xi_Decl, Xi_Set>;
 
 struct Xi_Program
 {

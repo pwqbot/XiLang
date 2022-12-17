@@ -1,8 +1,9 @@
 #pragma once
 #include <compiler/ast/ast.h>
+#include <compiler/parser/decl.h>
 #include <compiler/parser/expr.h>
 #include <compiler/parser/func.h>
-#include <compiler/parser/decl.h>
+#include <compiler/parser/set.h>
 #include <string_view>
 #include <vector>
 
@@ -16,7 +17,7 @@ auto Xi_exprStmt = Xi_expr >> [](auto expr)
 
 auto Xi_stmt(std::string_view input)
 {
-    return (Xi_decl || Xi_func || Xi_exprStmt)(input);
+    return (Xi_decl || Xi_set || Xi_func || Xi_exprStmt)(input);
 }
 
 const auto Xi_program = many(Xi_stmt) >> [](auto progam)
