@@ -1,4 +1,5 @@
 #include <compiler/functional/fold.h>
+#include <range/v3/action/reverse.hpp>
 #include <range/v3/action/transform.hpp>
 #include <range/v3/algorithm.hpp>
 #include <range/v3/view.hpp>
@@ -31,21 +32,24 @@ template <
 auto sequence(std::vector<M<T, Args...>> monads)
 {
     return foldr(
-        [](M<T, Args...>              monad,
-           M<std::vector<T>, Args...> acc) -> M<std::vector<T>, Args...>
-        {
-            return monad >>= [acc](auto &&value)
-            {
-                return acc >>= [value](std::vector<T> acc_)
-                {
-                    acc_.push_back(value);
-                    return Unit<M, Args...>(acc_);
-                };
-            };
-        },
-        Unit<M, Args...>(std::vector<T>()),
-        monads
-    );
+               [](M<T, Args...>              monad,
+                  M<std::vector<T>, Args...> acc) -> M<std::vector<T>, Args...>
+               {
+                   return monad >>= [acc](auto &&value)
+                   {
+                       return acc >>= [value](std::vector<T> acc_)
+                       {
+                           acc_.push_back(value);
+                           return Unit<M, Args...>(acc_);
+                       };
+                   };
+               },
+               Unit<M, Args...>(std::vector<T>()),
+               monads
+           ) >>= [](auto &&ret) -> M<std::vector<T>, Args...>
+    {
+        return std::move(ret) | ranges::actions::reverse;
+    };
 }
 
 template <typename T, typename Func>
