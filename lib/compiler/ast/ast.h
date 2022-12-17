@@ -131,6 +131,7 @@ struct Xi_Type
         real,
         array,
         string,
+        buer,
         _vararg,
         _set,
         _unknown,

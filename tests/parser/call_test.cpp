@@ -81,6 +81,37 @@ TEST_CASE("Parser Xi_Lam call", "[Xi_CallExpr]")
             ""
         )
     );
+
+    REQUIRE_THAT(
+        Xi_call("printf(\" pow(2 10) = %d \" pow(check(2 == 3 1 2) 10))"),
+        AstNodeMatcher(
+            Xi_Call{
+                Xi_Iden{"printf"},
+                {
+                    Xi_String{" pow(2 10) = %d "},
+                    Xi_Call{
+                        Xi_Iden{"pow"},
+                        {
+                            Xi_Call{
+                                Xi_Iden{"check"},
+                                {
+                                    Xi_Binop{
+                                        Xi_Integer{2},
+                                        Xi_Integer{3},
+                                        Xi_Op::Eq,
+                                    },
+                                    Xi_Integer{1},
+                                    Xi_Integer{2},
+                                },
+                            },
+                            Xi_Integer{10},
+                        },
+                    },
+                },
+            },
+            ""
+        )
+    );
 }
 
 } // namespace xi

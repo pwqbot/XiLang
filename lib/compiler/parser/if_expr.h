@@ -2,14 +2,13 @@
 
 #include <compiler/ast/ast.h>
 #include <compiler/parser/basic_parsers.h>
-#include <compiler/parser/bool_expr.h>
 #include <compiler/parser/math_expr.h>
 
 namespace xi
 {
 
 // parse if expression: if cond then expr else expr
-const auto Xi_if = token(s_if) > Xi_boolexpr >> [](const Xi_Expr &cond)
+const auto Xi_if = token(s_if) > Xi_mathexpr >> [](const Xi_Expr &cond)
 {
     return token(s_then) >> [cond](auto)
     {

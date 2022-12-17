@@ -43,7 +43,7 @@ TEST_CASE("Parse real", "[Xi_Real]")
 
 TEST_CASE("Parse mathexpr", "[Xi_MathExpr]")
 {
-    auto [integer1, integer2] = Xi_mathexpr("1 + 2").value();
+    auto [integer1, integer2] = Xi_arithmeticexpr("1 + 2").value();
     REQUIRE(
         integer1 ==
         Xi_Binop{
@@ -54,7 +54,7 @@ TEST_CASE("Parse mathexpr", "[Xi_MathExpr]")
     );
 
     // test multiply
-    auto [integer3, integer4] = Xi_mathexpr(" 1*2").value();
+    auto [integer3, integer4] = Xi_arithmeticexpr(" 1*2").value();
     REQUIRE(
         integer3 ==
         Xi_Binop{
@@ -65,7 +65,7 @@ TEST_CASE("Parse mathexpr", "[Xi_MathExpr]")
     );
 
     // test add and multiply
-    auto [integer5, integer6] = Xi_mathexpr(" 1 + 2 * 3").value();
+    auto [integer5, integer6] = Xi_arithmeticexpr(" 1 + 2 * 3").value();
     REQUIRE(
         integer5 ==
         Xi_Binop{
@@ -79,7 +79,7 @@ TEST_CASE("Parse mathexpr", "[Xi_MathExpr]")
         }
     );
 
-    auto [integer7, integer8] = Xi_mathexpr(" 1 + 2 + 3").value();
+    auto [integer7, integer8] = Xi_arithmeticexpr(" 1 + 2 + 3").value();
     REQUIRE(
         integer7 ==
         Xi_Binop{
@@ -94,7 +94,7 @@ TEST_CASE("Parse mathexpr", "[Xi_MathExpr]")
     );
 
     // test paren
-    auto [integer9, integer10] = Xi_mathexpr(" (1 + 2) * 3").value();
+    auto [integer9, integer10] = Xi_arithmeticexpr(" (1 + 2) * 3").value();
     REQUIRE(
         integer9 ==
         Xi_Binop{
@@ -108,7 +108,7 @@ TEST_CASE("Parse mathexpr", "[Xi_MathExpr]")
         }
     );
 
-    auto [integer11, integer12] = Xi_mathexpr(" (1 * 2) * 3 + 4").value();
+    auto [integer11, integer12] = Xi_arithmeticexpr(" (1 * 2) * 3 + 4").value();
     REQUIRE(
         integer11 ==
         Xi_Binop{
@@ -128,7 +128,7 @@ TEST_CASE("Parse mathexpr", "[Xi_MathExpr]")
 
 TEST_CASE("Parse mathexpr with identify", "[Xi_MathExpr]")
 {
-    auto [integer1, integer2] = Xi_mathexpr("a + 2").value();
+    auto [integer1, integer2] = Xi_arithmeticexpr("a + 2").value();
     REQUIRE(
         integer1 ==
         Xi_Binop{
@@ -138,7 +138,7 @@ TEST_CASE("Parse mathexpr with identify", "[Xi_MathExpr]")
         }
     );
 
-    auto [integer3, integer4] = Xi_mathexpr("a + b").value();
+    auto [integer3, integer4] = Xi_arithmeticexpr("a + b").value();
     REQUIRE(
         integer3 ==
         Xi_Binop{
@@ -149,7 +149,7 @@ TEST_CASE("Parse mathexpr with identify", "[Xi_MathExpr]")
     );
 
     REQUIRE_THAT(
-        Xi_mathexpr("(a_1 + b) * 3"),
+        Xi_arithmeticexpr("(a_1 + b) * 3"),
         AstNodeMatcher(
             Xi_Binop{
                 Xi_Binop{
@@ -165,7 +165,7 @@ TEST_CASE("Parse mathexpr with identify", "[Xi_MathExpr]")
     );
 
     REQUIRE_THAT(
-        Xi_mathexpr(" (x + y - 1)"),
+        Xi_arithmeticexpr(" (x + y - 1)"),
         AstNodeMatcher(
             Xi_Binop{Xi_Binop{
                 Xi_Iden{"x"},
@@ -179,7 +179,7 @@ TEST_CASE("Parse mathexpr with identify", "[Xi_MathExpr]")
             ""
         )
     );
-    REQUIRE(Xi_mathexpr(" (x + y - 1)") == Xi_expr(" (x + y - 1)"));
+    REQUIRE(Xi_arithmeticexpr(" (x + y - 1)") == Xi_expr(" (x + y - 1)"));
 }
 
 } // namespace xi

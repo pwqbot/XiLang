@@ -1,6 +1,6 @@
 #include "test_header.h"
 
-#include <compiler/parser/bool_expr.h>
+#include <compiler/parser/math_expr.h>
 
 namespace xi
 {
@@ -18,7 +18,7 @@ TEST_CASE("Parse boolean", "[Xi_Expr][Xi_Boolean]")
 
 TEST_CASE("Parse boolexpr", "[Xi_Expr][Xi_Boolean]")
 {
-    auto [boolean1, boolean2] = Xi_boolexpr("true && false").value();
+    auto [boolean1, boolean2] = Xi_mathexpr("true && false").value();
     REQUIRE(
         boolean1 ==
         Xi_Binop{
@@ -28,7 +28,7 @@ TEST_CASE("Parse boolexpr", "[Xi_Expr][Xi_Boolean]")
         }
     );
 
-    auto [boolean3, boolean4] = Xi_boolexpr("true || false").value();
+    auto [boolean3, boolean4] = Xi_mathexpr("true || false").value();
     REQUIRE(
         boolean3 ==
         Xi_Binop{
@@ -38,7 +38,7 @@ TEST_CASE("Parse boolexpr", "[Xi_Expr][Xi_Boolean]")
         }
     );
 
-    auto [boolean5, boolean6] = Xi_boolexpr("true && false || true").value();
+    auto [boolean5, boolean6] = Xi_mathexpr("true && false || true").value();
     REQUIRE(
         boolean5 ==
         Xi_Binop{
@@ -52,7 +52,7 @@ TEST_CASE("Parse boolexpr", "[Xi_Expr][Xi_Boolean]")
         }
     );
 
-    auto [boolean7, boolean8] = Xi_boolexpr("true || false && true").value();
+    auto [boolean7, boolean8] = Xi_mathexpr("true || false && true").value();
     REQUIRE(
         boolean7 ==
         Xi_Binop{
@@ -67,7 +67,7 @@ TEST_CASE("Parse boolexpr", "[Xi_Expr][Xi_Boolean]")
     );
 
     auto [boolean9, boolean10] =
-        Xi_boolexpr("true && false || true && false").value();
+        Xi_mathexpr("true && false || true && false").value();
     REQUIRE(
         boolean9 ==
         Xi_Binop{
@@ -87,7 +87,7 @@ TEST_CASE("Parse boolexpr", "[Xi_Expr][Xi_Boolean]")
 
     // test paren
     auto [boolean11, boolean12] =
-        Xi_boolexpr("(true || false) && true").value();
+        Xi_mathexpr("(true || false) && true").value();
     REQUIRE(
         boolean11 ==
         Xi_Binop{
@@ -102,7 +102,7 @@ TEST_CASE("Parse boolexpr", "[Xi_Expr][Xi_Boolean]")
     );
 
     auto [boolean13, boolean14] =
-        Xi_boolexpr("true && (false || true)").value();
+        Xi_mathexpr("true && (false || true)").value();
     REQUIRE(
         boolean13 ==
         Xi_Binop{
@@ -116,7 +116,7 @@ TEST_CASE("Parse boolexpr", "[Xi_Expr][Xi_Boolean]")
     );
 
     // test mathbool
-    auto [boolean15, boolean16] = Xi_boolexpr("1 + 2 > 3 * 4").value();
+    auto [boolean15, boolean16] = Xi_mathexpr("1 + 2 > 3 * 4").value();
     REQUIRE(
         boolean15 ==
         Xi_Binop{
@@ -135,7 +135,7 @@ TEST_CASE("Parse boolexpr", "[Xi_Expr][Xi_Boolean]")
     );
 
     auto [boolean17, boolean18] =
-        Xi_boolexpr("(1 + (2 + 3) < 3 * 4) || true").value();
+        Xi_mathexpr("(1 + (2 + 3) < 3 * 4) || true").value();
     REQUIRE(
         boolean17 ==
         Xi_Binop{
@@ -158,6 +158,18 @@ TEST_CASE("Parse boolexpr", "[Xi_Expr][Xi_Boolean]")
             Xi_Boolean{true},
             Xi_Op::Or,
         }
+    );
+
+    REQUIRE_THAT(
+        Xi_mathexpr("1 == 2"),
+        AstNodeMatcher(
+            Xi_Binop{
+                Xi_Integer{1},
+                Xi_Integer{2},
+                Xi_Op::Eq,
+            },
+            ""
+        )
     );
 }
 
