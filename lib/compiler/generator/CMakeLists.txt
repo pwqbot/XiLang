@@ -13,7 +13,15 @@ list(APPEND CMAKE_MODULE_PATH "${LLVM_CMAKE_DIR}")
 # add_definitions(${LLVM_DEFINITIONS})
 
 # Find the libraries that correspond to the LLVM components that we wish to use
-llvm_map_components_to_libnames(llvm_libs core support irreader)
+llvm_map_components_to_libnames(
+  llvm_libs
+  core
+  support
+  irreader
+  target
+  mc
+  codegen
+  ${LLVM_TARGETS_TO_BUILD})
 message(STATUS "LLVM libs: ${llvm_libs}")
 
 add_library(generator STATIC ${srcs})

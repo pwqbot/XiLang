@@ -1,7 +1,6 @@
 #include <compiler/functional/monad.h>
 #include <fmt/core.h>
 #include <magic_enum.hpp>
-#include <numeric>
 #include <string>
 #include <tl/expected.hpp>
 

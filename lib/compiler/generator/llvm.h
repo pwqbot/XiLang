@@ -8,7 +8,14 @@
 #include <llvm/ADT/APFloat.h>
 #include <llvm/IR/Constants.h>
 #include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/LegacyPassManager.h>
 #include <llvm/IR/Verifier.h>
+#include <llvm/MC/TargetRegistry.h>
+#include <llvm/Support/FileSystem.h>
+#include <llvm/Support/Host.h>
+#include <llvm/Support/TargetSelect.h>
+#include <llvm/Target/TargetMachine.h>
+#include <llvm/Target/TargetOptions.h>
 #include <map>
 #include <spdlog/spdlog.h>
 #include <tl/expected.hpp>
@@ -209,6 +216,8 @@ auto XiTypeToLLVMType(Xi_Type xi_t) -> ExpectedCodeGen<llvm::Type *>
         return llvm::Type::getDoubleTy(*context);
     case Xi_Type::i64:
         return llvm::Type::getInt64Ty(*context);
+    case Xi_Type::string:
+        return llvm::PointerType::get(llvm::Type::getInt8Ty(*context), 0);
     default:
         return tl::unexpected(
             ErrorCodeGen(ErrorCodeGen::UnknownType, magic_enum::enum_name(xi_t))
@@ -216,9 +225,9 @@ auto XiTypeToLLVMType(Xi_Type xi_t) -> ExpectedCodeGen<llvm::Type *>
     }
 }
 
-auto CodeGen(Xi_String) -> codegen_result_t
+auto CodeGen(Xi_String s) -> codegen_result_t
 {
-    return tl::unexpected(ErrorCodeGen(ErrorCodeGen::NotImplemented, "String"));
+    return builder->CreateGlobalStringPtr(s.value);
 }
 
 auto CodeGen(Xi_Decl decl) -> codegen_result_t
@@ -306,26 +315,74 @@ auto CodeGen(Xi_Stmt stmt) -> codegen_result_t
     return std::visit([](auto stmt_) { return CodeGen(stmt_); }, stmt);
 }
 
-auto CodeGen(Xi_Program program) -> std::string
+auto CodeGen(Xi_Program program) -> ExpectedCodeGen<std::string>
 {
     InitializeModule();
-    for (auto &stmt : program.stmts)
+    return flatmap(program.stmts, [](auto arg) { return CodeGen(arg); }) >>=
+           [](auto) -> ExpectedCodeGen<std::string>
     {
-        auto value = CodeGen(stmt);
-        if (value.has_value())
-        {
-            auto *vv = value.value();
-            vv->print(llvm::outs());
-        }
-        else
-        {
-            spdlog::error("Error: {}", value.error().what());
-            return "";
-        }
+        std::string              output;
+        llvm::raw_string_ostream os(output);
+        module->print(os, nullptr);
+        return output;
+    };
+}
+
+auto GenObj(std::string_view output_file)
+{
+    llvm::InitializeAllTargetInfos();
+    llvm::InitializeAllTargets();
+    llvm::InitializeAllTargetMCs();
+    llvm::InitializeAllAsmParsers();
+    llvm::InitializeAllAsmPrinters();
+
+    auto TargetTriple = llvm::sys::getDefaultTargetTriple();
+    module->setTargetTriple(TargetTriple);
+
+    std::string Error;
+    const auto *Target =
+        llvm::TargetRegistry::lookupTarget(TargetTriple, Error);
+
+    // Print an error and exit if we couldn't find the requested target.
+    // This generally occurs if we've forgotten to initialise the
+    // TargetRegistry or we have a bogus target triple.
+    if (Target == nullptr)
+    {
+        llvm::errs() << Error;
+        return 1;
     }
-    std::string              output;
-    llvm::raw_string_ostream os(output);
-    module->print(os, nullptr);
-    return output;
+
+    const auto *CPU      = "generic";
+    const auto *Features = "";
+
+    llvm::TargetOptions opt;
+    auto                RM = llvm::Optional<llvm::Reloc::Model>();
+    auto               *TargetMachine =
+        Target->createTargetMachine(TargetTriple, CPU, Features, opt, RM);
+
+    module->setDataLayout(TargetMachine->createDataLayout());
+
+    std::error_code      EC;
+    llvm::raw_fd_ostream dest(output_file, EC, llvm::sys::fs::OF_None);
+
+    if (EC)
+    {
+        llvm::errs() << "Could not open file: " << EC.message();
+        return 1;
+    }
+
+    llvm::legacy::PassManager pass;
+    auto                      FileType = llvm::CGFT_ObjectFile;
+
+    if (TargetMachine->addPassesToEmitFile(pass, dest, nullptr, FileType))
+    {
+        llvm::errs() << "TargetMachine can't emit a file of this type";
+        return 1;
+    }
+
+    pass.run(*module);
+    dest.flush();
+    llvm::outs() << "Wrote " << output_file << "\n";
+    return 1;
 }
 } // namespace xi
