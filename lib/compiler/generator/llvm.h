@@ -1,10 +1,11 @@
 #pragma once
 
-#include "compiler/parser/utils.h"
-
 #include <compiler/ast/ast.h>
 #include <compiler/ast/ast_format.h>
+#include <compiler/ast/type.h>
 #include <compiler/generator/error.h>
+#include <compiler/parser/utils.h>
+#include <concepts>
 #include <llvm/ADT/APFloat.h>
 #include <llvm/IR/Constants.h>
 #include <llvm/IR/DerivedTypes.h>
@@ -70,25 +71,39 @@ auto CodeGen(Xi_Boolean boolean) -> codegen_result_t
     );
 }
 
-auto XiTypeToLLVMType(Xi_Type xi_t) -> ExpectedCodeGen<llvm::Type *>
+auto XiTypeToLLVMType(type::Xi_Type xi_t) -> ExpectedCodeGen<llvm::Type *>
 {
-    switch (xi_t.type_)
-    {
-    case Xi_Type::real:
-        return llvm::Type::getDoubleTy(*context);
-    case Xi_Type::i64:
-        return llvm::Type::getInt64Ty(*context);
-    case Xi_Type::string:
-        return llvm::PointerType::get(llvm::Type::getInt8Ty(*context), 0);
-    case Xi_Type::buer:
-        return llvm::PointerType::get(llvm::Type::getInt1Ty(*context), 0);
-    case Xi_Type::_set:
-        return llvm::StructType::getTypeByName(*context, xi_t.name_);
-    default:
-        return tl::unexpected(ErrorCodeGen(
-            ErrorCodeGen::UnknownType, magic_enum::enum_name(xi_t.type_)
-        ));
-    }
+    return std::visit(
+        []<typename T>(T v) -> ExpectedCodeGen<llvm::Type *>
+        {
+            if constexpr (std::same_as<T, type::real>)
+            {
+                return llvm::Type::getDoubleTy(*context);
+            }
+            else if constexpr (std::same_as<T, type::i64>)
+            {
+                return llvm::Type::getInt64Ty(*context);
+            }
+            else if constexpr (std::same_as<T, type::string>)
+            {
+                return llvm::PointerType::get(
+                    llvm::Type::getInt8Ty(*context), 0
+                );
+            }
+            else if constexpr (std::same_as<T, type::buer>)
+            {
+                return llvm::PointerType::get(
+                    llvm::Type::getInt1Ty(*context), 0
+                );
+            }
+            else if constexpr (std::same_as<T, type::set>)
+            {
+                return llvm::StructType::getTypeByName(*context, v.name);
+            }
+            return tl::unexpected(ErrorCodeGen(ErrorCodeGen::UnknownType, ""));
+        },
+        xi_t
+    );
 }
 
 // generate user defined type
@@ -98,8 +113,7 @@ auto CodeGen(Xi_Set set) -> codegen_result_t
     auto member_types = set.members | ranges::views::transform(&Xi_Iden::type) |
                         ranges::to_vector;
     return flatmap(member_types, XiTypeToLLVMType) >>=
-           [&struct_type](std::vector<llvm::Type *> types
-           ) -> codegen_result_t 
+           [&struct_type](std::vector<llvm::Type *> types) -> codegen_result_t
     {
         ranges::for_each(
             types,

@@ -9,19 +9,18 @@
 namespace xi
 {
 
-inline const Parser auto Xi_type =
-    (token(str("...")) > unit(Xi_Type(Xi_Type::_vararg))) ||
-    (token(some(s_alphanum || s_underscore)) >>
-     [](const std::string &name)
-     {
-         auto t = magic_enum::enum_cast<Xi_Type::Xi_Type_>(name);
-         if (t.has_value())
-         {
-             return unit(Xi_Type(t.value()));
-         }
+inline const Parser auto
+    Xi_type = token(some(s_alphanum || s_underscore) || str("...")) >>
+              [](const std::string &name) -> Parser auto
+{
+    auto t = type::ToBuiltinTypes(name);
+    if (t.has_value())
+    {
+        return unit(t.value());
+    }
 
-         return unit(Xi_Type(Xi_Type::_set, name));
-     });
+    return unit(type::Xi_Type(type::set{.name = name}));
+};
 
 inline const Parser auto Xi_decl_term = Xi_type >> [](auto t)
 {
@@ -34,16 +33,16 @@ inline const auto Xi_decl = token(str("fn")) > Xi_iden >>
                             [](const Xi_Iden &name)
 {
     return token(str("::")) > many(Xi_decl_term) >>
-           [name](std::vector<Xi_Type> param_types)
+           [name](std::vector<type::Xi_Type> param_types)
     {
-        return Xi_type >> [name, param_types](Xi_Type return_type)
+        return Xi_type >> [name, param_types](type::Xi_Type return_type)
         {
             auto [is_vararg, new_param_types] =
                 [](auto old_param_types
-                ) -> std::pair<bool, std::vector<Xi_Type>>
+                ) -> std::pair<bool, std::vector<type::Xi_Type>>
             {
                 if (!old_param_types.empty() &&
-                    old_param_types.back().type_ == Xi_Type::_vararg)
+                    old_param_types.back() == type::vararg{})
                 {
                     return {
                         true,

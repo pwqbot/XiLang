@@ -10,22 +10,23 @@
 namespace xi
 {
 
-inline const Parser auto Xi_set_type = token(some(s_alphanum || s_underscore)) >>
-                                   [](const std::string &name)
+inline const Parser auto Xi_set_type = token(some(s_alphanum || s_underscore)
+                                       ) >>
+                                       [](const std::string &name)
 {
-    auto t = magic_enum::enum_cast<Xi_Type::Xi_Type_>(name);
+    auto t = type::ToBuiltinTypes(name);
     if (t.has_value())
     {
-        return unit(Xi_Type(t.value()));
+        return unit(t.value());
     }
 
-    return unit(Xi_Type(Xi_Type::_set, name));
+    return unit(type::Xi_Type(type::set{.name = name}));
 };
 
 inline const auto Xi_user_type_term = token(symbol('(')) > Xi_iden >>
                                       [](Xi_Iden name)
 {
-    return Xi_set_type >> [name](Xi_Type type)
+    return Xi_set_type >> [name](type::Xi_Type type)
     {
         return token(symbol(')')) > unit(Xi_Iden{
                                         .name = name,

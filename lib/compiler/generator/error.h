@@ -1,3 +1,5 @@
+#pragma once
+
 #include <compiler/functional/monad.h>
 #include <fmt/core.h>
 #include <magic_enum.hpp>
@@ -51,7 +53,7 @@ struct unit_<ExpectedCodeGen<T>>
 };
 
 template <typename T, typename E, typename F>
-auto operator>>=(tl::expected<T, E> expected, F func)
+inline auto operator>>=(tl::expected<T, E> expected, F func)
 {
     return expected.and_then(func);
 }

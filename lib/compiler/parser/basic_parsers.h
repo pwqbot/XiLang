@@ -9,11 +9,13 @@ namespace xi
 // Return a Parser that matched the beginning of the input
 constexpr auto str(std::string_view match) -> Parser auto
 {
-    return [match](std::string_view input) -> Parsed_t<std::string_view>
+    return [match](std::string_view input) -> Parsed_t<std::string>
     {
         if (input.starts_with(match))
         {
-            return std::make_pair(match, input.substr(match.size()));
+            return std::make_pair(
+                std::string(match), input.substr(match.size())
+            );
         }
         return std::nullopt;
     };
@@ -142,7 +144,7 @@ const auto Xi_iden = token(some(s_alphanum || s_underscore)) >>
 {
     return unit(Xi_Iden{
         .name = name,
-        .type = Xi_Type(Xi_Type::_unknown),
+        .type = type::unknown{},
     });
 };
 

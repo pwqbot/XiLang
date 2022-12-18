@@ -1,6 +1,9 @@
 #pragma once
 
 #include <compare>
+#include <compiler/ast/type.h>
+#include <compiler/ast/type_format.h>
+#include <compiler/ast/utils.h>
 #include <compiler/parser/utils.h>
 #include <fmt/format.h>
 #include <magic_enum.hpp>
@@ -13,28 +16,6 @@
 
 namespace xi
 {
-// A trait to check that T is one of 'Types...'
-template <typename T, typename... Types>
-concept is_one_of =
-    std::disjunction_v<std::is_same<std::remove_cv_t<T>, Types>...>;
-
-template <typename T, typename... Types>
-concept is_one_of_recursive = std::disjunction_v<
-    std::is_same<recursive_wrapper<std::remove_cv_t<T>>, Types>...>;
-
-template <typename... Types, typename T>
-auto operator==(const std::variant<Types...> &v, const T &t) noexcept
-    requires is_one_of<T, Types...> || is_one_of_recursive<T, Types...>
-{
-    if constexpr (is_one_of_recursive<T, Types...>)
-    {
-        return std::get<recursive_wrapper<std::remove_cv_t<T>>>(v) == t;
-    }
-    else
-    {
-        return std::get<T>(v) == t;
-    }
-}
 
 struct Xi_Boolean
 {
@@ -59,8 +40,6 @@ struct Xi_String
     std::string value;
     auto        operator<=>(const Xi_String &) const = default;
 };
-
-using Xi_Literal = std::variant<Xi_Boolean, Xi_Integer, Xi_Real, Xi_String>;
 
 enum class Xi_Op
 {
@@ -123,30 +102,10 @@ constexpr auto Xi_Op_To_OpStr(Xi_Op op) -> std::string_view
     )->first;
 }
 
-struct Xi_Type
-{
-    enum Xi_Type_
-    {
-        i64,
-        real,
-        array,
-        string,
-        buer,
-        _vararg,
-        _set,
-        _unknown,
-    };
-    Xi_Type_    type_;
-    std::string name_;
-    auto        operator<=>(const Xi_Type &) const = default;
-    explicit Xi_Type(Xi_Type_ t) : type_(t) {}
-    Xi_Type(Xi_Type_ t, std::string name) : type_(t), name_(std::move(name)) {}
-};
-
 struct Xi_Iden
 {
-    std::string name;
-    Xi_Type     type = Xi_Type(Xi_Type::_unknown);
+    std::string   name;
+    type::Xi_Type type = type::unknown{};
     // Xi_Expr     expr;
          operator std::string() const { return name; }
     auto operator<=>(const Xi_Iden &) const = default;
@@ -161,11 +120,11 @@ struct Xi_Set
 
 struct Xi_Decl
 {
-    Xi_Iden              name;
-    Xi_Type              return_type;
-    std::vector<Xi_Type> params_type;
-    bool                 is_vararg;
-    auto                 operator<=>(const Xi_Decl &) const = default;
+    Xi_Iden                    name;
+    type::Xi_Type              return_type;
+    std::vector<type::Xi_Type> params_type;
+    bool                       is_vararg;
+    auto                       operator<=>(const Xi_Decl &) const = default;
 };
 
 struct Xi_Binop;
@@ -204,6 +163,7 @@ struct Xi_Func
     Xi_Iden              name;
     std::vector<Xi_Iden> params;
     Xi_Expr              expr;
+    type::Xi_Type        type = type::unknown{};
     auto                 operator<=>(const Xi_Func &rhs) const = default;
 };
 
