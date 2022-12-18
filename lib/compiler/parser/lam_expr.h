@@ -11,19 +11,20 @@ namespace xi
 
 // parse lambda: "?" <args> "->" <expr>
 // <args> ::= <iden> | <iden> <args>
-inline auto Xi_args(std::string_view input) -> Parsed_t<Xi_Args>
+inline auto Xi_args(std::string_view input) -> Parsed_t<std::vector<Xi_Iden>>
 {
     return (
         (Xi_iden >>
          [](const Xi_Iden &arg)
          {
-             return Xi_args >> [arg](Xi_Args args)
+             return Xi_args >> [arg](std::vector<Xi_Iden> args)
              {
                  args.insert(args.begin(), arg);
-                 return unit(Xi_Args{args});
+                 return unit(args);
              };
          }) ||
-        Xi_iden >> [](const Xi_Iden &arg) { return unit(Xi_Args{arg}); }
+        Xi_iden >> [](const Xi_Iden &arg)
+            { return unit(std::vector<Xi_Iden>{arg}); }
     )(input);
 }
 

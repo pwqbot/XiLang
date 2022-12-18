@@ -8,12 +8,11 @@ namespace xi
 
 // A trait to check that T is one of 'Types...'
 template <typename T, typename... Types>
-concept is_one_of =
-    std::disjunction_v<std::is_same<std::remove_cv_t<T>, Types>...>;
+concept is_one_of = std::disjunction_v<std::is_same<std::decay_t<T>, Types>...>;
 
 template <typename T, typename... Types>
 concept is_one_of_recursive = std::disjunction_v<
-    std::is_same<recursive_wrapper<std::remove_cv_t<T>>, Types>...>;
+    std::is_same<recursive_wrapper<std::decay_t<T>>, Types>...>;
 
 template <typename T>
 struct is_recursive : std::false_type

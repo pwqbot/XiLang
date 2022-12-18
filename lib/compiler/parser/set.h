@@ -14,24 +14,15 @@ inline const Parser auto Xi_set_type = token(some(s_alphanum || s_underscore)
                                        ) >>
                                        [](const std::string &name)
 {
-    auto t = type::ToBuiltinTypes(name);
-    if (t.has_value())
-    {
-        return unit(t.value());
-    }
-
-    return unit(type::Xi_Type(type::set{.name = name}));
+    return unit(name);
 };
 
-inline const auto Xi_user_type_term = token(symbol('(')) > Xi_iden >>
-                                      [](Xi_Iden name)
+inline const auto Xi_user_type_term = token(symbol('(')) > Xi_set_type >>
+                                      [](std::string name)
 {
-    return Xi_set_type >> [name](type::Xi_Type type)
+    return Xi_set_type >> [name](std::string type)
     {
-        return token(symbol(')')) > unit(Xi_Iden{
-                                        .name = name,
-                                        .type = type,
-                                    });
+        return token(symbol(')')) > unit(std::make_pair(name, type));
     };
 };
 
@@ -39,7 +30,7 @@ inline const auto Xi_user_type_term = token(symbol('(')) > Xi_iden >>
 inline const auto Xi_set = token(str("set")) > Xi_iden >> [](Xi_Iden name)
 {
     return token(symbol('=')) > token(symbol('(')) > some(Xi_user_type_term) >>
-           [name](std::vector<Xi_Iden> members)
+           [name](std::vector<std::pair<std::string, std::string>> members)
     {
         return token(symbol(')')) > unit(Xi_Stmt{Xi_Set{
                                         .name    = name,

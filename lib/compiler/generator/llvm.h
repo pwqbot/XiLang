@@ -109,9 +109,9 @@ auto XiTypeToLLVMType(type::Xi_Type xi_t) -> ExpectedCodeGen<llvm::Type *>
 // generate user defined type
 auto CodeGen(Xi_Set set) -> codegen_result_t
 {
-    auto *struct_type = llvm::StructType::create(*context, set.name);
-    auto member_types = set.members | ranges::views::transform(&Xi_Iden::type) |
-                        ranges::to_vector;
+    auto *struct_type  = llvm::StructType::create(*context, set.name);
+    auto  set_type     = std::get<recursive_wrapper<type::set>>(set.type).get();
+    auto  member_types = set_type.members;
     return flatmap(member_types, XiTypeToLLVMType) >>=
            [&struct_type](std::vector<llvm::Type *> types) -> codegen_result_t
     {
@@ -234,11 +234,11 @@ auto CodeGen(Xi_Unop uop) -> codegen_result_t
 
 auto CodeGen(Xi_Call call_expr) -> codegen_result_t
 {
-    llvm::Function *calleeF = module->getFunction(call_expr.name.name);
+    llvm::Function *calleeF = module->getFunction(call_expr.name);
     if (calleeF == nullptr)
     {
         return tl::unexpected(
-            ErrorCodeGen(ErrorCodeGen::UnknownFunction, call_expr.name.name)
+            ErrorCodeGen(ErrorCodeGen::UnknownFunction, call_expr.name)
         );
     }
     if (!calleeF->isVarArg() && calleeF->arg_size() != call_expr.args.size())
@@ -273,10 +273,11 @@ auto CodeGen(Xi_String s) -> codegen_result_t
 
 auto CodeGen(Xi_Decl decl) -> codegen_result_t
 {
-    return flatmap(decl.params_type, XiTypeToLLVMType) >>=
-           [decl](auto arg_types) -> codegen_result_t
+    auto decl_type = std::get<recursive_wrapper<type::function>>(decl.type);
+    return flatmap(decl_type.get().param_types, XiTypeToLLVMType) >>=
+           [decl, decl_type](auto arg_types) -> codegen_result_t
     {
-        return XiTypeToLLVMType(decl.return_type) >>=
+        return XiTypeToLLVMType(decl_type.get().return_type) >>=
                [decl, arg_types](auto return_type) mutable -> codegen_result_t
         {
             auto *func_type =
@@ -306,13 +307,12 @@ auto checkFunc(Xi_Func xi) -> ExpectedCodeGen<llvm::Function *>
     {
         spdlog::error("Unknown function referenced");
         return tl::unexpected(
-            ErrorCodeGen(ErrorCodeGen::UnknownFunction, xi.name.name)
+            ErrorCodeGen(ErrorCodeGen::UnknownFunction, xi.name)
         );
     }
     if (!func->empty())
     {
-        return tl::unexpected(
-            ErrorCodeGen(ErrorCodeGen::Redefinition, xi.name.name)
+        return tl::unexpected(ErrorCodeGen(ErrorCodeGen::Redefinition, xi.name)
         );
     }
     if (!func->isVarArg() && xi.params.size() != func->arg_size())

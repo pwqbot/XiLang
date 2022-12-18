@@ -1,3 +1,4 @@
+#include "compiler/ast/type.h"
 #include "test_header.h"
 
 #include <compiler/ast/ast.h>
@@ -13,9 +14,8 @@ TEST_CASE("Parser Xi_Decl", "[Xi_DeclExpr]")
         AstNodeMatcher(
             Xi_Decl{
                 Xi_Iden{"func"},
-                type::i64{},
+                "i64",
                 {},
-                false,
             },
             ""
         )
@@ -26,9 +26,8 @@ TEST_CASE("Parser Xi_Decl", "[Xi_DeclExpr]")
         AstNodeMatcher(
             Xi_Decl{
                 Xi_Iden{"func"},
-                type::i64{},
-                {type::real{}},
-                true,
+                "i64",
+                {"real", "..."},
             },
             ""
         )
@@ -39,12 +38,11 @@ TEST_CASE("Parser Xi_Decl", "[Xi_DeclExpr]")
         AstNodeMatcher(
             Xi_Decl{
                 Xi_Iden{"func"},
-                type::i64{},
+                "i64",
                 {
-                    type::i64{},
-                    type::i64{},
+                    "i64",
+                    "i64",
                 },
-                false,
             },
             ""
         )

@@ -19,26 +19,30 @@ namespace xi
 
 struct Xi_Boolean
 {
-    bool value;
-    auto operator<=>(const Xi_Boolean &) const = default;
+    bool          value;
+    type::Xi_Type type                                  = type::buer{};
+    auto          operator<=>(const Xi_Boolean &) const = default;
 };
 
 struct Xi_Integer
 {
-    int64_t value;
-    auto    operator<=>(const Xi_Integer &) const = default;
+    int64_t       value;
+    type::Xi_Type type                                  = type::i64{};
+    auto          operator<=>(const Xi_Integer &) const = default;
 };
 
 struct Xi_Real
 {
-    double value;
-    auto   operator<=>(const Xi_Real &) const = default;
+    double        value;
+    type::Xi_Type type                               = type::real{};
+    auto          operator<=>(const Xi_Real &) const = default;
 };
 
 struct Xi_String
 {
-    std::string value;
-    auto        operator<=>(const Xi_String &) const = default;
+    std::string   value;
+    type::Xi_Type type                                 = type::string{};
+    auto          operator<=>(const Xi_String &) const = default;
 };
 
 enum class Xi_Op
@@ -114,17 +118,19 @@ struct Xi_Iden
 struct Xi_Set
 {
     std::string          name;
-    std::vector<Xi_Iden> members;
+    std::vector<std::pair<std::string, std::string>> members;
+    type::Xi_Type        type                              = type::unknown{};
     auto                 operator<=>(const Xi_Set &) const = default;
 };
 
 struct Xi_Decl
 {
-    Xi_Iden                    name;
-    type::Xi_Type              return_type;
-    std::vector<type::Xi_Type> params_type;
-    bool                       is_vararg;
-    auto                       operator<=>(const Xi_Decl &) const = default;
+    std::string              name;
+    std::string              return_type;
+    std::vector<std::string> params_type;
+    bool                     is_vararg = false;
+    type::Xi_Type            type      = type::unknown{};
+    auto                     operator<=>(const Xi_Decl &) const = default;
 };
 
 struct Xi_Binop;
@@ -160,7 +166,7 @@ using Xi_Expr = std::variant<
 
 struct Xi_Func
 {
-    Xi_Iden              name;
+    std::string          name;
     std::vector<Xi_Iden> params;
     Xi_Expr              expr;
     type::Xi_Type        type = type::unknown{};
@@ -178,10 +184,11 @@ struct Xi_Program
 // binary expression
 struct Xi_Binop
 {
-    Xi_Expr lhs;
-    Xi_Expr rhs;
-    Xi_Op   op;
-    auto    operator==(const Xi_Binop &b) const -> bool
+    Xi_Expr       lhs;
+    Xi_Expr       rhs;
+    Xi_Op         op;
+    type::Xi_Type type = type::unknown{};
+    auto          operator==(const Xi_Binop &b) const -> bool
     {
         return *this <=> b == nullptr;
     }
@@ -203,8 +210,9 @@ inline auto operator<=>(const Xi_Binop &lhs, const Xi_Binop &rhs)
 
 struct Xi_Unop
 {
-    Xi_Expr expr;
-    Xi_Op   op;
+    Xi_Expr       expr;
+    Xi_Op         op;
+    type::Xi_Type type = type::unknown{};
 };
 
 inline auto operator<=>(const Xi_Unop &lhs, const Xi_Unop &rhs)
@@ -219,9 +227,10 @@ inline auto operator<=>(const Xi_Unop &lhs, const Xi_Unop &rhs)
 
 struct Xi_If
 {
-    Xi_Expr cond;
-    Xi_Expr then;
-    Xi_Expr els;
+    Xi_Expr       cond;
+    Xi_Expr       then;
+    Xi_Expr       els;
+    type::Xi_Type type = type::unknown{};
 };
 
 inline auto operator<=>(const Xi_If &lhs, const Xi_If &rhs)
@@ -238,12 +247,11 @@ inline auto operator<=>(const Xi_If &lhs, const Xi_If &rhs)
     return lhs.els <=> rhs.els;
 }
 
-using Xi_Args = std::vector<Xi_Iden>;
-
 struct Xi_Lam
 {
     std::vector<Xi_Iden> args;
     Xi_Expr              body;
+    type::Xi_Type        type = type::unknown{};
 };
 
 inline auto operator<=>(const Xi_Lam &lhs, const Xi_Lam &rhs)
@@ -258,8 +266,9 @@ inline auto operator<=>(const Xi_Lam &lhs, const Xi_Lam &rhs)
 
 struct Xi_Call
 {
-    Xi_Iden              name;
+    std::string          name;
     std::vector<Xi_Expr> args;
+    type::Xi_Type        type = type::unknown{};
 };
 
 inline auto operator<=>(const Xi_Call &lhs, const Xi_Call &rhs)

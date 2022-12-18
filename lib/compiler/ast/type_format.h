@@ -77,9 +77,16 @@ template <>
 struct fmt::formatter<xi::type::function> : fmt::formatter<std::string>
 {
     template <typename FormatContext>
-    auto format(const xi::type::function /*unused*/, FormatContext &ctx) const
+    auto format(const xi::type::function func, FormatContext &ctx) const
     {
-        return fmt::format_to(ctx.out(), "function");
+        auto out = ctx.out();
+        fmt::format_to(out, "func ");
+        for (auto &&p_type : func.param_types)
+        {
+            fmt::format_to(out, "{} -> ", p_type);
+        }
+        fmt::format_to(out, "{}", func.return_type);
+        return out;
     }
 };
 

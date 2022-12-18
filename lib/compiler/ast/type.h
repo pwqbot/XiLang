@@ -77,7 +77,6 @@ inline auto operator<=>(const array &lhs, const array &rhs) -> std::partial_orde
 
 struct function
 {
-    std::string          name;
     Xi_Type              return_type;
     std::vector<Xi_Type> param_types;
 };
@@ -85,10 +84,6 @@ struct function
 inline auto operator<=>(const function &lhs, const function &rhs)
     -> std::partial_ordering
 {
-    if (auto cmp = lhs.name <=> rhs.name; cmp != nullptr)
-    {
-        return cmp;
-    }
     if (auto cmp = lhs.return_type <=> rhs.return_type; cmp != nullptr)
     {
         return cmp;

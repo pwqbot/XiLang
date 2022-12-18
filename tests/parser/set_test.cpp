@@ -13,11 +13,7 @@ TEST_CASE("Parse Xi_Set", "[Xi_DeclExpr]")
         AstNodeMatcher(
             Xi_Set{
                 "a",
-                {Xi_Iden{"x", type::i64{}},
-                 Xi_Iden{
-                     "y",
-                     type::i64{},
-                 }},
+                {{"x", "i64"}, {"y", "i64"}},
             },
             ""
         )
@@ -29,10 +25,11 @@ TEST_CASE("Parse Xi_Set", "[Xi_DeclExpr]")
             Xi_Set{
                 "a",
                 {
-                    Xi_Iden{"x", type::i64{}},
-                    Xi_Iden{"y", type::i64{}},
-                    Xi_Iden{"z", type::set{"b"}},
+                    {"x", "i64"},
+                    {"y", "i64"},
+                    {"z", "b"},
                 },
+
             },
             ""
         )

@@ -2,6 +2,8 @@
 
 // clang-format off
 #include <compiler/ast/ast_format.h>
+#include <compiler/ast/type_format.h>
+#include <compiler/ast/type.h>
 //clang-format on
 #include <catch2/matchers/catch_matchers_templated.hpp>
 #include <catch2/catch_test_macros.hpp>
@@ -18,7 +20,16 @@ concept is_one_of_ast_node =
     std::same_as<T, xi::Xi_Lam>;
 
 template <typename T>
-    requires is_one_of_ast_node<T>
+concept is_one_of_type_node =
+    std::same_as<T, xi::type::i64> || std::same_as<T, xi::type::real> ||
+    std::same_as<T, xi::type::string> || std::same_as<T, xi::type::buer> ||
+    std::same_as<T, xi::type::function> || std::same_as<T, xi::type::set> ||
+    std::same_as<T, xi::type::array> || std::same_as<T, xi::type::vararg> || std::same_as<T, xi::type::unknown>;
+
+
+
+template <typename T>
+    requires is_one_of_ast_node<T> || is_one_of_type_node<T>
 struct StringMaker<T>
 {
     static auto convert(const T &value) -> std::string
