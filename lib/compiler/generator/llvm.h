@@ -6,7 +6,6 @@
 #include <compiler/generator/error.h>
 #include <compiler/parser/utils.h>
 #include <compiler/util/expected.h>
-#include <concepts>
 #include <llvm/ADT/APFloat.h>
 #include <llvm/IR/Constants.h>
 #include <llvm/IR/DerivedTypes.h>
@@ -309,9 +308,12 @@ auto CodeGen(Xi_Expr expr) -> codegen_result_t
 
 auto CodeGen(Xi_Func xi_func) -> codegen_result_t
 {
-    auto *llvm_func = module->getFunction(static_cast<std::string>(xi_func.name));
-    auto *bb   = llvm::BasicBlock::Create(*context, "entry", llvm_func);
+    auto *llvm_func =
+        module->getFunction(static_cast<std::string>(xi_func.name));
+
+    auto *bb = llvm::BasicBlock::Create(*context, "entry", llvm_func);
     builder->SetInsertPoint(bb);
+
     namedValues.clear();
     auto param_it = xi_func.params.begin();
     for (auto &arg : llvm_func->args())
@@ -320,15 +322,29 @@ auto CodeGen(Xi_Func xi_func) -> codegen_result_t
         param_it++;
         namedValues[arg.getName().str()] = &arg;
     }
-    auto body = CodeGen(xi_func.expr);
-    if (body)
+
+    return flatmap(
+               xi_func.let_idens,
+               [](Xi_Iden iden) { return CodeGen(iden.expr); }
+           ) >>= [&llvm_func, xi_func](auto idens_code) -> codegen_result_t
     {
-        builder->CreateRet(body.value());
-        llvm::verifyFunction(*llvm_func);
-        return llvm_func;
-    }
-    llvm_func->eraseFromParent();
-    return body;
+        for (const auto &[iden_code, let_var] :
+             ranges::views::zip(idens_code, xi_func.let_idens))
+        {
+            namedValues[let_var.name] = iden_code;
+        }
+
+        auto body = CodeGen(xi_func.expr);
+        if (body)
+        {
+            builder->CreateRet(body.value());
+            llvm::verifyFunction(*llvm_func);
+            return llvm_func;
+        }
+
+        llvm_func->eraseFromParent();
+        return body;
+    };
 }
 
 auto CodeGen(Xi_Stmt stmt) -> codegen_result_t
