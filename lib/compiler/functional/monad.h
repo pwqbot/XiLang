@@ -1,3 +1,5 @@
+#pragma once
+
 #include <compiler/functional/fold.h>
 #include <range/v3/action/reverse.hpp>
 #include <range/v3/action/transform.hpp>
@@ -54,6 +56,13 @@ auto sequence(std::vector<M<T, Args...>> monads)
 
 template <typename T, typename Func>
 auto flatmap(std::vector<T> v, Func &&f)
+{
+    const auto mapped = v | ranges::views::transform(f) | ranges::to_vector;
+    return sequence(mapped);
+}
+
+template <typename T, typename Func>
+auto flatmap_(std::vector<T>& v, Func &&f)
 {
     const auto mapped = v | ranges::views::transform(f) | ranges::to_vector;
     return sequence(mapped);
