@@ -71,7 +71,7 @@ TEST_CASE("Type Assign Decl", "[Xi_Decl]")
         })
     );
 
-    GetSymbolTable().clear();
+    ClearTypeAssignState();
     auto decl_vararg = Xi_Decl{
         .name        = "f",
         .return_type = "i64",
@@ -90,7 +90,7 @@ TEST_CASE("Type Assign Decl", "[Xi_Decl]")
         })
     );
 
-    GetSymbolTable().clear();
+    ClearTypeAssignState();
     auto decl_vararg_no_last = Xi_Decl{
         .name        = "f",
         .return_type = "i64",
@@ -175,7 +175,7 @@ TEST_CASE("Type Assign Func")
             type::function{type::i64{}, {type::i64{}, type::i64{}}}})
     );
 
-    GetSymbolTable().clear();
+    ClearTypeAssignState();
     auto func_match_binop = Xi_Program{
         {
             Xi_Decl{"f", "buer", {"i64", "i64"}},
@@ -193,7 +193,7 @@ TEST_CASE("Type Assign Func")
         })
     );
 
-    GetSymbolTable().clear();
+    ClearTypeAssignState();
     auto func_mismatch_binop = Xi_Program{
         {
             Xi_Decl{"f", "buer", {"i64", "i64"}},
@@ -247,7 +247,7 @@ TEST_CASE("Assign Func with let")
         })
     );
 
-    GetSymbolTable().clear();
+    ClearTypeAssignState();
     auto func_with_let_mismatch = Xi_Program{
         {
             Xi_Decl{
@@ -300,7 +300,7 @@ TEST_CASE("Assign Call")
         })
     );
 
-    GetSymbolTable().clear();
+    ClearTypeAssignState();
     auto func_call_mismatch = Xi_Program{
         {
             Xi_Decl{

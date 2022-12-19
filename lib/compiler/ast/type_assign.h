@@ -16,12 +16,26 @@ static auto GetSymbolTable() -> std::unordered_map<std::string, type::Xi_Type> &
     return symbol_table;
 }
 
+static auto GetFunctionDefinitionTable()
+    -> std::unordered_map<std::string, type::Xi_Type> &
+{
+    static std::unordered_map<std::string, type::Xi_Type> symbol_table;
+    return symbol_table;
+}
+
+inline auto ClearTypeAssignState()
+{
+    GetSymbolTable().clear();
+    GetFunctionDefinitionTable().clear();
+}
+
 struct TypeAssignError
 {
     enum Error
     {
         UnknownType,
-        DuplicateDecl,
+        DuplicateDeclaration,
+        DuplicateDefinition,
         TypeMismatch,
         ParameterCountMismatch,
         UnknownVariable,
@@ -104,7 +118,7 @@ auto TypeAssign(Xi_Set &set) -> TypeAssignResult
     if (GetSymbolTable().contains(set.name))
     {
         return tl::make_unexpected(TypeAssignError{
-            TypeAssignError::DuplicateDecl,
+            TypeAssignError::DuplicateDeclaration,
             fmt::format("set {}", set.name),
             set});
     }
@@ -246,7 +260,7 @@ auto TypeAssign(Xi_Decl &decl) -> TypeAssignResult
     if (GetSymbolTable().contains(decl.name))
     {
         return tl::make_unexpected(TypeAssignError{
-            TypeAssignError::DuplicateDecl,
+            TypeAssignError::DuplicateDeclaration,
             fmt::format("Decl {}", decl.name),
             decl});
     }
@@ -323,6 +337,14 @@ auto TypeAssign(Xi_If &if_expr, LocalVariableRecord record) -> TypeAssignResult
 
 auto TypeAssign(Xi_Func &func) -> TypeAssignResult
 {
+    if (GetFunctionDefinitionTable().contains(func.name))
+    {
+        return tl::make_unexpected(TypeAssignError{
+            TypeAssignError::DuplicateDefinition,
+            fmt::format("Func {}", func.name),
+            func});
+    }
+
     return findTypeInSymbolTable(func.name, func) >>= [&func](auto decl_type)
     {
         return std::visit(
@@ -352,7 +374,7 @@ auto TypeAssign(Xi_Func &func) -> TypeAssignResult
                         if (record.contains(*func_param_iter))
                         {
                             return tl::make_unexpected(TypeAssignError{
-                                TypeAssignError::DuplicateDecl,
+                                TypeAssignError::DuplicateDeclaration,
                                 fmt::format(
                                     "Decl function parameter {}",
                                     *func_param_iter
@@ -377,7 +399,7 @@ auto TypeAssign(Xi_Func &func) -> TypeAssignResult
                             if (record.contains(let_iter->name))
                             {
                                 return tl::make_unexpected(TypeAssignError{
-                                    TypeAssignError::DuplicateDecl,
+                                    TypeAssignError::DuplicateDeclaration,
                                     fmt::format(
                                         "Decl let variable {}", let_iter->name
                                     ),
@@ -403,6 +425,9 @@ auto TypeAssign(Xi_Func &func) -> TypeAssignResult
                                     ),
                                     func});
                             }
+                            GetFunctionDefinitionTable().insert(
+                                {func.name, func.type}
+                            );
                             return func.type = decl_type_.get();
                         };
                     };

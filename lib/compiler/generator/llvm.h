@@ -240,12 +240,6 @@ auto CodeGen(Xi_Unop uop) -> codegen_result_t
 auto CodeGen(Xi_Call call_expr) -> codegen_result_t
 {
     llvm::Function *calleeF = module->getFunction(call_expr.name);
-    if (calleeF == nullptr)
-    {
-        return tl::unexpected(
-            ErrorCodeGen(ErrorCodeGen::UnknownFunction, call_expr.name)
-        );
-    }
 
     return flatmap(call_expr.args, [](auto arg) { return CodeGen(arg); }) >>=
            [calleeF](std::vector<llvm::Value *> argsV) -> codegen_result_t
@@ -313,60 +307,28 @@ auto CodeGen(Xi_Expr expr) -> codegen_result_t
     return std::visit([](auto expr_) { return CodeGen(expr_); }, expr);
 }
 
-auto checkFunc(Xi_Func xi) -> ExpectedCodeGen<llvm::Function *>
-{
-    auto *func = module->getFunction(static_cast<std::string>(xi.name));
-    if (func == nullptr)
-    {
-        spdlog::error("Unknown function referenced");
-        return tl::unexpected(
-            ErrorCodeGen(ErrorCodeGen::UnknownFunction, xi.name)
-        );
-    }
-    if (!func->empty())
-    {
-        return tl::unexpected(ErrorCodeGen(ErrorCodeGen::Redefinition, xi.name)
-        );
-    }
-    if (!func->isVarArg() && xi.params.size() != func->arg_size())
-    {
-        return tl::unexpected(ErrorCodeGen(
-            ErrorCodeGen::InvalidArgumentCount,
-            fmt::format(
-                "func {}, want {}, get {}",
-                func->getName(),
-                func->arg_size(),
-                xi.params.size()
-            )
-        ));
-    }
-    return func;
-}
-
 auto CodeGen(Xi_Func xi_func) -> codegen_result_t
 {
-    return checkFunc(xi_func) >>= [xi_func](auto llvm_func) -> codegen_result_t
+    auto *llvm_func = module->getFunction(static_cast<std::string>(xi_func.name));
+    auto *bb   = llvm::BasicBlock::Create(*context, "entry", llvm_func);
+    builder->SetInsertPoint(bb);
+    namedValues.clear();
+    auto param_it = xi_func.params.begin();
+    for (auto &arg : llvm_func->args())
     {
-        auto *bb = llvm::BasicBlock::Create(*context, "entry", llvm_func);
-        builder->SetInsertPoint(bb);
-        namedValues.clear();
-        auto param_it = xi_func.params.begin();
-        for (auto &arg : llvm_func->args())
-        {
-            arg.setName(*param_it);
-            param_it++;
-            namedValues[arg.getName().str()] = &arg;
-        }
-        auto body = CodeGen(xi_func.expr);
-        if (body)
-        {
-            builder->CreateRet(body.value());
-            llvm::verifyFunction(*llvm_func);
-            return llvm_func;
-        }
-        llvm_func->eraseFromParent();
-        return body;
-    };
+        arg.setName(*param_it);
+        param_it++;
+        namedValues[arg.getName().str()] = &arg;
+    }
+    auto body = CodeGen(xi_func.expr);
+    if (body)
+    {
+        builder->CreateRet(body.value());
+        llvm::verifyFunction(*llvm_func);
+        return llvm_func;
+    }
+    llvm_func->eraseFromParent();
+    return body;
 }
 
 auto CodeGen(Xi_Stmt stmt) -> codegen_result_t
