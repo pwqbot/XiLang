@@ -85,6 +85,10 @@ struct fmt::formatter<xi::type::function> : fmt::formatter<std::string>
         {
             fmt::format_to(out, "{} -> ", p_type);
         }
+        if (func.is_vararg)
+        {
+            fmt::format_to(out, "... -> ");
+        }
         fmt::format_to(out, "{}", func.return_type);
         return out;
     }
