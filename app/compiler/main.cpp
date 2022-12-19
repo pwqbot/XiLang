@@ -1,4 +1,6 @@
 #include <compiler/ast/ast_format.h>
+#include <compiler/ast/type_assign.h>
+#include <compiler/ast/type_format.h>
 #include <compiler/generator/llvm.h>
 #include <compiler/parser/program.h>
 
@@ -22,7 +24,15 @@ int main()
         {
             fmt::print("Parse successfully\n");
             fmt::print("AST:\n {}\n", ast_result.value().first);
-            auto codegen_result = xi::CodeGen(ast_result.value().first);
+            auto ast = ast_result.value().first;
+            auto ast_type = TypeAssign(ast);
+            if (!ast_type.has_value()) {
+                fmt::print("Type error {}\n {}\n", ast_type.error().what(), ast_type.error().node);
+                return 1;
+            }
+
+            fmt::print("Type:\n {}\n", ast_type.value());
+            auto codegen_result = xi::CodeGen(ast);
             if (!codegen_result)
             {
                 fmt::print("LLVM: \n {}\n", codegen_result.error().what());
