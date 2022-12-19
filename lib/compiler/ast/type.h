@@ -70,7 +70,8 @@ struct array
     Xi_Type inner_type;
 };
 
-inline auto operator<=>(const array &lhs, const array &rhs) -> std::partial_ordering
+inline auto operator<=>(const array &lhs, const array &rhs)
+    -> std::partial_ordering
 {
     return lhs.inner_type <=> rhs.inner_type;
 }
@@ -79,6 +80,7 @@ struct function
 {
     Xi_Type              return_type;
     std::vector<Xi_Type> param_types;
+    bool                 is_vararg = false;
 };
 
 inline auto operator<=>(const function &lhs, const function &rhs)
@@ -88,7 +90,11 @@ inline auto operator<=>(const function &lhs, const function &rhs)
     {
         return cmp;
     }
-    return lhs.param_types <=> rhs.param_types;
+    if (auto cmp = lhs.param_types <=> rhs.param_types; cmp != nullptr)
+    {
+        return cmp;
+    }
+    return lhs.is_vararg <=> rhs.is_vararg;
 }
 
 struct set

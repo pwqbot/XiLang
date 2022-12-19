@@ -1,7 +1,9 @@
 #include <compiler/ast/ast.h>
+#include <compiler/ast/type_format.h>
 #include <compiler/ast/utils.h>
 #include <compiler/functional/monad.h>
-#include <tl/expected.hpp>
+#include <compiler/util/expected.h>
+#include <range/v3/algorithm/find_if.hpp>
 #include <unordered_map>
 #include <variant>
 
@@ -22,7 +24,8 @@ struct TypeAssignError
         DuplicateDecl,
         TypeMismatch,
         ParameterCountMismatch,
-        UnknownVariable
+        UnknownVariable,
+        VarargNotLast,
     };
     Error       err;
     std::string message;
@@ -48,12 +51,6 @@ struct unit_<ExpectedTypeAssign<T>>
 {
     static auto unit(T t) -> ExpectedTypeAssign<T> { return t; }
 };
-
-template <typename T, typename E, typename F>
-inline auto operator>>=(tl::expected<T, E> expected, F func)
-{
-    return expected.and_then(func);
-}
 
 auto TypeAssign(
     Xi_Integer /*unused*/,
@@ -214,7 +211,7 @@ auto TypeAssign(Xi_Unop &unop, LocalVariableRecord record) -> TypeAssignResult
         {
         case Xi_Op::Sub:
         case Xi_Op::Add:
-            if (expr_type != type::i64{})
+            if (expr_type != type::i64{} && expr_type != type::real{})
             {
                 return tl::make_unexpected(TypeAssignError{
                     TypeAssignError::TypeMismatch,
@@ -260,13 +257,29 @@ auto TypeAssign(Xi_Decl &decl) -> TypeAssignResult
         return flatmap(
                    decl.params_type,
                    [decl](auto x) { return findTypeInSymbolTable(x, decl); }
-               ) >>= [return_type, &decl](auto param_types) -> TypeAssignResult
+               ) >>= [return_type, &decl](std::vector<type::Xi_Type> param_types
+                     ) -> TypeAssignResult
         {
             auto func_type = type::function{
                 .return_type = return_type, .param_types = param_types};
+
+            auto vararg_iter =
+                ranges::find(param_types, type::Xi_Type{type::vararg{}});
+            if (vararg_iter != param_types.end())
+            {
+                if (*vararg_iter != param_types.back())
+                {
+                    return tl::make_unexpected(TypeAssignError{
+                        TypeAssignError::VarargNotLast,
+                        fmt::format("vararg must be the last param"),
+                        decl});
+                }
+                func_type.param_types.pop_back();
+                func_type.is_vararg = true;
+            }
+
             GetSymbolTable().insert({decl.name, func_type});
-            decl.type = func_type;
-            return func_type;
+            return decl.type = func_type;
         };
     };
 }
@@ -336,36 +349,62 @@ auto TypeAssign(Xi_Func &func) -> TypeAssignResult
                     auto                func_param_iter = func.params.begin();
                     for (auto &decl_param : decl_type_.get().param_types)
                     {
-                        if (record.contains(func_param_iter->name))
+                        if (record.contains(*func_param_iter))
                         {
                             return tl::make_unexpected(TypeAssignError{
                                 TypeAssignError::DuplicateDecl,
                                 fmt::format(
                                     "Decl function parameter {}",
-                                    func_param_iter->name
+                                    *func_param_iter
                                 ),
                                 func});
                         }
-                        record.insert({func_param_iter->name, decl_param});
+                        record.insert({*func_param_iter, decl_param});
                         ++func_param_iter;
                     }
-
-                    return TypeAssign(func.expr, record) >>=
-                           [decl_type_,
-                            &func](auto expr_type) -> TypeAssignResult
+                    return flatmap_(
+                               func.let_idens,
+                               [record](auto &x)
+                               { return TypeAssign(x.expr, record); }
+                           ) >>=
+                           [&func, record, decl_type_](
+                               std::vector<type::Xi_Type> let_expr_types
+                           ) mutable -> TypeAssignResult
                     {
-                        if (expr_type != decl_type_.get().return_type)
+                        auto let_iter = func.let_idens.begin();
+                        for (auto &let_expr_type : let_expr_types)
                         {
-                            return tl::make_unexpected(TypeAssignError{
-                                TypeAssignError::TypeMismatch,
-                                fmt::format(
-                                    "expect return {}, find {}",
-                                    decl_type_.get().return_type,
-                                    expr_type
-                                ),
-                                func});
+                            if (record.contains(let_iter->name))
+                            {
+                                return tl::make_unexpected(TypeAssignError{
+                                    TypeAssignError::DuplicateDecl,
+                                    fmt::format(
+                                        "Decl let variable {}", let_iter->name
+                                    ),
+                                    func});
+                            }
+
+                            let_iter->type = let_expr_type;
+                            record.insert({let_iter->name, let_expr_type});
+                            ++let_iter;
                         }
-                        return func.type = decl_type_.get();
+                        return TypeAssign(func.expr, record) >>=
+                               [decl_type_,
+                                &func](auto expr_type) -> TypeAssignResult
+                        {
+                            if (expr_type != decl_type_.get().return_type)
+                            {
+                                return tl::make_unexpected(TypeAssignError{
+                                    TypeAssignError::TypeMismatch,
+                                    fmt::format(
+                                        "expect return {}, find {}",
+                                        decl_type_.get().return_type,
+                                        expr_type
+                                    ),
+                                    func});
+                            }
+                            return func.type = decl_type_.get();
+                        };
                     };
                 }
                 else
@@ -396,7 +435,7 @@ auto TypeAssign(Xi_Lam & /*unused*/, LocalVariableRecord /*unused*/)
 auto TypeAssign(Xi_Call call_expr, LocalVariableRecord record)
     -> TypeAssignResult
 {
-    return flatmap(
+    return flatmap_(
                call_expr.args,
                [record](auto &x) { return TypeAssign(x, record); }
            ) >>= [&call_expr, record](auto args_type)
@@ -413,7 +452,8 @@ auto TypeAssign(Xi_Call call_expr, LocalVariableRecord record)
                                       std::decay_t<T>,
                                       recursive_wrapper<type::function>>)
                     {
-                        if (func_type_.get().param_types != args_type)
+                        if (!func_type_.get().is_vararg &&
+                            func_type_.get().param_types != args_type)
                         {
                             return tl::make_unexpected(TypeAssignError{
                                 TypeAssignError::TypeMismatch,
@@ -490,7 +530,7 @@ auto TypeAssign(Xi_Expr &expr, LocalVariableRecord record) -> TypeAssignResult
 auto TypeAssign(Xi_Program &program)
     -> ExpectedTypeAssign<std::vector<type::Xi_Type>>
 {
-    return flatmap(program.stmts, [](auto &x) { return TypeAssign(x); });
+    return flatmap_(program.stmts, [](auto &x) { return TypeAssign(x); });
 }
 
 } // namespace xi

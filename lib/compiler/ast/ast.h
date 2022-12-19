@@ -106,21 +106,12 @@ constexpr auto Xi_Op_To_OpStr(Xi_Op op) -> std::string_view
     )->first;
 }
 
-struct Xi_Iden
-{
-    std::string   name;
-    type::Xi_Type type = type::unknown{};
-    // Xi_Expr     expr;
-         operator std::string() const { return name; }
-    auto operator<=>(const Xi_Iden &) const = default;
-};
-
 struct Xi_Set
 {
-    std::string          name;
+    std::string                                      name;
     std::vector<std::pair<std::string, std::string>> members;
-    type::Xi_Type        type                              = type::unknown{};
-    auto                 operator<=>(const Xi_Set &) const = default;
+    type::Xi_Type                                    type = type::unknown{};
+    auto operator<=>(const Xi_Set &) const                = default;
 };
 
 struct Xi_Decl
@@ -151,26 +142,57 @@ struct Xi_Call;
 auto operator<=>(const Xi_Call &lhs, const Xi_Call &rhs)
     -> std::partial_ordering;
 
+struct Xi_Iden;
+auto operator<=>(const Xi_Iden &lhs, const Xi_Iden &rhs)
+    -> std::partial_ordering;
+
 using Xi_Expr = std::variant<
     std::monostate,
     Xi_Integer,
     Xi_Boolean,
     Xi_Real,
     Xi_String,
-    Xi_Iden,
+    recursive_wrapper<Xi_Iden>,
     recursive_wrapper<Xi_Unop>,
     recursive_wrapper<Xi_Binop>,
     recursive_wrapper<Xi_If>,
     recursive_wrapper<Xi_Lam>,
     recursive_wrapper<Xi_Call>>;
 
+struct Xi_Iden
+{
+    std::string   name;
+    Xi_Expr       expr = std::monostate{};
+    type::Xi_Type type = type::unknown{};
+                  operator std::string() const { return name; }
+    auto          operator==(const Xi_Iden &b) const -> bool
+    {
+        return *this <=> b == nullptr;
+    }
+};
+
+inline auto operator<=>(const Xi_Iden &lhs, const Xi_Iden &rhs)
+    -> std::partial_ordering
+{
+    if (auto cmp = lhs.name <=> rhs.name; cmp != nullptr)
+    {
+        return cmp;
+    }
+    // if (auto cmp = lhs.expr <=> rhs.expr; cmp != nullptr)
+    // {
+    //     return cmp;
+    // }
+    return lhs.type <=> rhs.type;
+}
+
 struct Xi_Func
 {
-    std::string          name;
-    std::vector<Xi_Iden> params;
-    Xi_Expr              expr;
-    type::Xi_Type        type = type::unknown{};
-    auto                 operator<=>(const Xi_Func &rhs) const = default;
+    std::string                             name;
+    std::vector<std::string>                params;
+    Xi_Expr                                 expr;
+    type::Xi_Type                           type      = type::unknown{};
+    std::vector<Xi_Iden> let_idens = {};
+    auto operator<=>(const Xi_Func &rhs) const        = default;
 };
 
 using Xi_Stmt = std::variant<Xi_Expr, Xi_Func, Xi_Decl, Xi_Set>;
@@ -280,4 +302,5 @@ inline auto operator<=>(const Xi_Call &lhs, const Xi_Call &rhs)
     }
     return lhs.name <=> rhs.name;
 }
+
 } // namespace xi

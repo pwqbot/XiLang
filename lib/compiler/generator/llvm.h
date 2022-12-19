@@ -5,6 +5,7 @@
 #include <compiler/ast/type.h>
 #include <compiler/generator/error.h>
 #include <compiler/parser/utils.h>
+#include <compiler/util/expected.h>
 #include <concepts>
 #include <llvm/ADT/APFloat.h>
 #include <llvm/IR/Constants.h>
@@ -20,7 +21,6 @@
 #include <llvm/Target/TargetOptions.h>
 #include <map>
 #include <spdlog/spdlog.h>
-#include <tl/expected.hpp>
 
 namespace xi
 {
@@ -74,7 +74,7 @@ auto CodeGen(Xi_Boolean boolean) -> codegen_result_t
 auto XiTypeToLLVMType(type::Xi_Type xi_t) -> ExpectedCodeGen<llvm::Type *>
 {
     return std::visit(
-        []<typename T>(T v) -> ExpectedCodeGen<llvm::Type *>
+        []<typename T>(T t) -> ExpectedCodeGen<llvm::Type *>
         {
             if constexpr (std::same_as<T, type::real>)
             {
@@ -98,9 +98,11 @@ auto XiTypeToLLVMType(type::Xi_Type xi_t) -> ExpectedCodeGen<llvm::Type *>
             }
             else if constexpr (std::same_as<T, type::set>)
             {
-                return llvm::StructType::getTypeByName(*context, v.name);
+                return llvm::StructType::getTypeByName(*context, t.name);
             }
-            return tl::unexpected(ErrorCodeGen(ErrorCodeGen::UnknownType, ""));
+            return tl::unexpected(
+                ErrorCodeGen(ErrorCodeGen::UnknownType, fmt::format("{}", t))
+            );
         },
         xi_t
     );
@@ -193,6 +195,7 @@ auto CodeGen(Xi_Binop bop) -> codegen_result_t
                 return builder->CreateMul(lhs, rhs, "multmp");
             case Xi_Op::Div:
                 return builder->CreateSDiv(lhs, rhs, "divtmp");
+            // TODO(ding.wang): check type
             case Xi_Op::Lt:
                 return builder->CreateICmpULT(lhs, rhs, "cmptmp");
             case Xi_Op::Gt:
@@ -220,6 +223,8 @@ auto CodeGen(Xi_Unop uop) -> codegen_result_t
     {
         switch (uop.op)
         {
+        case Xi_Op::Add:
+            return expr_code;
         case Xi_Op::Sub:
             return builder->CreateNeg(expr_code);
         case Xi_Op::Not:
@@ -241,18 +246,6 @@ auto CodeGen(Xi_Call call_expr) -> codegen_result_t
             ErrorCodeGen(ErrorCodeGen::UnknownFunction, call_expr.name)
         );
     }
-    if (!calleeF->isVarArg() && calleeF->arg_size() != call_expr.args.size())
-    {
-        return tl::unexpected(ErrorCodeGen(
-            ErrorCodeGen::InvalidArgumentCount,
-            fmt::format(
-                "call {}, want {}, get {}",
-                calleeF->getName(),
-                calleeF->arg_size(),
-                call_expr.args.size()
-            )
-        ));
-    }
 
     return flatmap(call_expr.args, [](auto arg) { return CodeGen(arg); }) >>=
            [calleeF](std::vector<llvm::Value *> argsV) -> codegen_result_t
@@ -273,26 +266,46 @@ auto CodeGen(Xi_String s) -> codegen_result_t
 
 auto CodeGen(Xi_Decl decl) -> codegen_result_t
 {
-    auto decl_type = std::get<recursive_wrapper<type::function>>(decl.type);
-    return flatmap(decl_type.get().param_types, XiTypeToLLVMType) >>=
-           [decl, decl_type](auto arg_types) -> codegen_result_t
-    {
-        return XiTypeToLLVMType(decl_type.get().return_type) >>=
-               [decl, arg_types](auto return_type) mutable -> codegen_result_t
+    return std::visit(
+        [decl](auto decl_type_wrapper) -> codegen_result_t
         {
-            auto *func_type =
-                llvm::FunctionType::get(return_type, arg_types, decl.is_vararg);
+            if constexpr (std::same_as<
+                              std::decay_t<decltype(decl_type_wrapper)>,
+                              recursive_wrapper<type::function>>)
+            {
+                auto decl_type = decl_type_wrapper.get();
+                return flatmap(decl_type.param_types, XiTypeToLLVMType) >>=
+                       [decl, decl_type](auto arg_types) -> codegen_result_t
+                {
+                    return XiTypeToLLVMType(decl_type.return_type) >>=
+                           [decl, arg_types, decl_type](llvm::Type *return_type
+                           ) mutable -> codegen_result_t
+                    {
+                        auto *func_type = llvm::FunctionType::get(
+                            return_type, arg_types, decl_type.is_vararg
+                        );
 
-            auto *function = llvm::Function::Create(
-                func_type,
-                llvm::Function::ExternalLinkage,
-                static_cast<std::string>(decl.name),
-                module.get()
-            );
+                        auto *function = llvm::Function::Create(
+                            func_type,
+                            llvm::Function::ExternalLinkage,
+                            static_cast<std::string>(decl.name),
+                            module.get()
+                        );
 
-            return function;
-        };
-    };
+                        return function;
+                    };
+                };
+            }
+            else
+            {
+                return tl::unexpected(ErrorCodeGen(
+                    ErrorCodeGen::TypeMismatch,
+                    fmt::format("{}", decl_type_wrapper)
+                ));
+            }
+        },
+        decl.type
+    );
 }
 
 auto CodeGen(Xi_Expr expr) -> codegen_result_t
@@ -330,28 +343,28 @@ auto checkFunc(Xi_Func xi) -> ExpectedCodeGen<llvm::Function *>
     return func;
 }
 
-auto CodeGen(Xi_Func xi) -> codegen_result_t
+auto CodeGen(Xi_Func xi_func) -> codegen_result_t
 {
-    return checkFunc(xi) >>= [xi](auto func) -> codegen_result_t
+    return checkFunc(xi_func) >>= [xi_func](auto llvm_func) -> codegen_result_t
     {
-        auto *bb = llvm::BasicBlock::Create(*context, "entry", func);
+        auto *bb = llvm::BasicBlock::Create(*context, "entry", llvm_func);
         builder->SetInsertPoint(bb);
         namedValues.clear();
-        auto param_it = xi.params.begin();
-        for (auto &arg : func->args())
+        auto param_it = xi_func.params.begin();
+        for (auto &arg : llvm_func->args())
         {
-            arg.setName(param_it->name);
+            arg.setName(*param_it);
             param_it++;
             namedValues[arg.getName().str()] = &arg;
         }
-        auto body = CodeGen(xi.expr);
+        auto body = CodeGen(xi_func.expr);
         if (body)
         {
             builder->CreateRet(body.value());
-            llvm::verifyFunction(*func);
-            return func;
+            llvm::verifyFunction(*llvm_func);
+            return llvm_func;
         }
-        func->eraseFromParent();
+        llvm_func->eraseFromParent();
         return body;
     };
 }

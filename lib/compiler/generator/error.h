@@ -1,10 +1,10 @@
 #pragma once
 
 #include <compiler/functional/monad.h>
+#include <compiler/util/expected.h>
 #include <fmt/core.h>
 #include <magic_enum.hpp>
 #include <string>
-#include <tl/expected.hpp>
 
 namespace xi
 {
@@ -27,6 +27,7 @@ struct ErrorCodeGen
         Redefinition,
         InvalidArgumentCount,
         NotImplemented,
+        TypeMismatch,
     };
     ErrorType   type_;
     std::string message_;
@@ -51,11 +52,5 @@ struct unit_<ExpectedCodeGen<T>>
 {
     static auto unit(T t) -> ExpectedCodeGen<T> { return t; }
 };
-
-template <typename T, typename E, typename F>
-inline auto operator>>=(tl::expected<T, E> expected, F func)
-{
-    return expected.and_then(func);
-}
 
 } // namespace xi

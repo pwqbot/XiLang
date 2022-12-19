@@ -53,11 +53,53 @@ TEST_CASE("Type Assign Iden")
 
 TEST_CASE("Type Assign Decl", "[Xi_Decl]")
 {
-    auto decl = Xi_Decl{"i64", "i64", {"i64", "i64"}};
+    auto decl = Xi_Decl{
+        .name        = "f",
+        .return_type = "i64",
+        .params_type = {"i64", "i64"},
+    };
     REQUIRE_THAT(
         TypeAssign(decl),
         TypeAssignMatcher(type::function{
-            type::i64{}, {type::i64{}, type::i64{}}})
+            .return_type = type::i64{},
+            .param_types =
+                {
+                    type::i64{},
+                    type::i64{},
+                },
+            .is_vararg = false,
+        })
+    );
+
+    GetSymbolTable().clear();
+    auto decl_vararg = Xi_Decl{
+        .name        = "f",
+        .return_type = "i64",
+        .params_type = {"i64", "i64", "..."},
+    };
+    REQUIRE_THAT(
+        TypeAssign(decl_vararg),
+        TypeAssignMatcher(type::function{
+            .return_type = type::i64{},
+            .param_types =
+                {
+                    type::i64{},
+                    type::i64{},
+                },
+            .is_vararg = true,
+        })
+    );
+
+    GetSymbolTable().clear();
+    auto decl_vararg_no_last = Xi_Decl{
+        .name        = "f",
+        .return_type = "i64",
+        .params_type = {"i64", "...", "i64"},
+    };
+    auto decl_vararg_no_last_result = TypeAssign(decl_vararg_no_last);
+    REQUIRE(!decl_vararg_no_last_result.has_value());
+    REQUIRE(
+        decl_vararg_no_last_result.error().err == TypeAssignError::VarargNotLast
     );
 }
 
@@ -168,6 +210,78 @@ TEST_CASE("Type Assign Func")
     );
 }
 
+TEST_CASE("Assign Func with let")
+{
+    auto func_with_let_match = Xi_Program{
+        {
+            Xi_Decl{
+                .name        = "f",
+                .return_type = "i64",
+                .params_type = {"i64", "i64"}},
+            Xi_Func{
+                .name   = "f",
+                .params = {{Xi_Iden{"x"}, Xi_Iden{"y"}}},
+                .expr =
+                    Xi_Binop{
+                        .lhs = Xi_Iden{"x"},
+                        .rhs =
+                            Xi_Binop{
+                                .lhs = Xi_Iden{"y"},
+                                .rhs = Xi_Iden{"z"},
+                                .op  = Xi_Op::Add,
+                            },
+                        .op = Xi_Op::Add,
+                    },
+                .let_idens =
+                    {
+                        Xi_Iden{.name = "z", .expr = Xi_Integer{2}},
+                    },
+            },
+        },
+    };
+    REQUIRE_THAT(
+        TypeAssign(func_with_let_match),
+        TypeAssignMatcher(std::vector<type::Xi_Type>{
+            type::function{type::i64{}, {type::i64{}, type::i64{}}},
+            type::function{type::i64{}, {type::i64{}, type::i64{}}},
+        })
+    );
+
+    GetSymbolTable().clear();
+    auto func_with_let_mismatch = Xi_Program{
+        {
+            Xi_Decl{
+                .name        = "f",
+                .return_type = "i64",
+                .params_type = {"i64", "i64"}},
+            Xi_Func{
+                .name   = "f",
+                .params = {{Xi_Iden{"x"}, Xi_Iden{"y"}}},
+                .expr =
+                    Xi_Binop{
+                        .lhs = Xi_Iden{"x"},
+                        .rhs =
+                            Xi_Binop{
+                                .lhs = Xi_Iden{"y"},
+                                .rhs = Xi_Iden{"z"},
+                                .op  = Xi_Op::Add,
+                            },
+                        .op = Xi_Op::Add,
+                    },
+                .let_idens =
+                    {
+                        Xi_Iden{.name = "z", .expr = Xi_Boolean{true}},
+                    },
+            },
+        },
+    };
+    auto func_with_let_mismatch_type = TypeAssign(func_with_let_mismatch);
+    REQUIRE(!func_with_let_mismatch_type.has_value());
+    REQUIRE(
+        func_with_let_mismatch_type.error().err == TypeAssignError::TypeMismatch
+    );
+}
+
 TEST_CASE("Assign Call")
 {
     auto func_call_match = Xi_Program{
@@ -189,9 +303,15 @@ TEST_CASE("Assign Call")
     GetSymbolTable().clear();
     auto func_call_mismatch = Xi_Program{
         {
-            Xi_Decl{"f", "i64", {"i64", "i64"}},
-            Xi_Func{"f", {{Xi_Iden{"x"}, Xi_Iden{"y"}}}, Xi_Integer{2}},
-            Xi_Call{"f", {Xi_Boolean{true}, Xi_Integer{2}}},
+            Xi_Decl{
+                .name        = "f",
+                .return_type = "i64",
+                .params_type = {"i64", "i64"}},
+            Xi_Func{
+                .name   = "f",
+                .params = {{Xi_Iden{"x"}, Xi_Iden{"y"}}},
+                .expr   = Xi_Integer{2}},
+            Xi_Call{.name = "f", .args = {Xi_Boolean{true}, Xi_Integer{2}}},
         },
     };
 

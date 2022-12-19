@@ -2,6 +2,7 @@
 
 #include <compiler/ast/ast.h>
 #include <compiler/parser/parser_combinator.h>
+#include <variant>
 
 namespace xi
 {
@@ -137,14 +138,15 @@ inline const Parser auto Xi_and    = op("&&");
 inline const Parser auto Xi_or     = op("||");
 inline const Parser auto Xi_not    = op("!");
 
-const auto Xi_iden = token(some(s_alphanum || s_underscore)) >>
-                     filter([](std::string_view s) { return !IsKeyWords(s); }
-                     ) >>
+inline const Parser auto s_iden = token(some(s_alphanum || s_underscore));
+
+const auto Xi_iden = s_iden >> filter([](std::string_view s)
+                                      { return !IsKeyWords(s); }) >>
                      [](auto name)
 {
     return unit(Xi_Iden{
         .name = name,
-        .type = type::unknown{},
+        // .expr = std::monostate{},
     });
 };
 
