@@ -1,5 +1,5 @@
 build
 .cache
 *.o
-*.ir
+*.ll
 test
