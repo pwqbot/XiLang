@@ -13,14 +13,30 @@ namespace xi
 // <empty_decl> = "[" <expr>* "]"
 // <comprehension> = "[" <l..r> "]"
 
-inline const auto Xi_decl = token(s_lbracket) > many(Xi_expr) >>
-                            [](std::vector<Xi_Expr> exprs)
-{
-    return token(s_rbracket) > unit(Xi_Array{
-                                   .size     = exprs.size(),
-                                   .elements = std::move(exprs),
-                               });
-};
+inline const auto
+    Xi_array = token(s_lbracket) >
+               ((Xi_expr >>
+                 [](auto first_expr)
+                 {
+                     return many(token(symbol(',')) > Xi_expr) >>
+                            [first_expr](std::vector<Xi_Expr> exprs)
+                     {
+                         exprs.insert(exprs.begin(), first_expr);
+                         return token(s_rbracket) >
+                                unit(Xi_Expr{
+                                    Xi_Array{
+                                        .size     = exprs.size(),
+                                        .elements = std::move(exprs),
+                                    },
+                                });
+                     };
+                 }) ||
+                (token(s_rbracket) > unit(Xi_Expr{
+                                         Xi_Array{
+                                             .size     = 0,
+                                             .elements = {},
+                                         },
+                                     })));
 
 } // namespace xi
 // namespace xi

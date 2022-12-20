@@ -1,3 +1,4 @@
+#include "compiler/ast/ast.h"
 #include "test_header.h"
 
 #include <compiler/parser/expr.h>
@@ -18,6 +19,17 @@ TEST_CASE("Parse expr", "[Xi_Expr]")
 
     REQUIRE_THAT(
         Xi_expr("\"abc\"abc"), AstNodeMatcher(Xi_String{"abc"}, "abc")
+    );
+
+    REQUIRE_THAT(
+        Xi_expr("a[0]"),
+        AstNodeMatcher(
+            Xi_ArrayIndex{
+                .array_var_name = "a",
+                .index          = Xi_Integer{0},
+            },
+            ""
+        )
     );
 }
 

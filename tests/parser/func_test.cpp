@@ -107,6 +107,29 @@ TEST_CASE("Parse let in", "[Parser][Xi_Func]")
             ""
         )
     );
+
+    REQUIRE_THAT(
+        Xi_let("let a = [1, 2, 3, 4, 5] in"),
+        AstNodeMatcher(
+            std::vector<Xi_Iden>{
+                Xi_Iden{
+                    .name = "a",
+                    .expr =
+                        Xi_Array{
+                            .elements =
+                                {
+                                    Xi_Integer{1},
+                                    Xi_Integer{2},
+                                    Xi_Integer{3},
+                                    Xi_Integer{4},
+                                    Xi_Integer{5},
+                                },
+                        },
+                },
+            },
+            ""
+        )
+    );
 }
 
 TEST_CASE("Parse Func with let", "[Parser][Xi_Func]")
@@ -135,6 +158,44 @@ TEST_CASE("Parse Func with let", "[Parser][Xi_Func]")
                                     Xi_Iden{"x"},
                                     Xi_Iden{"y"},
                                     Xi_Op::Add,
+                                },
+                        },
+                    },
+            },
+            ""
+        )
+    );
+
+    REQUIRE_THAT(
+        Xi_func("func x = let a = [1, 2, 3, 4, 5] in a[0]"),
+        AstNodeMatcher(
+            Xi_Func{
+                .name = "func",
+                .params =
+                    {
+                        Xi_Iden{"x"},
+                    },
+                .expr =
+                    {
+                        Xi_ArrayIndex{
+                            Xi_Iden{"a"},
+                            Xi_Integer{0},
+                        },
+                    },
+                .let_idens =
+                    {
+                        Xi_Iden{
+                            .name = "a",
+                            .expr =
+                                Xi_Array{
+                                    .elements =
+                                        {
+                                            Xi_Integer{1},
+                                            Xi_Integer{2},
+                                            Xi_Integer{3},
+                                            Xi_Integer{4},
+                                            Xi_Integer{5},
+                                        },
                                 },
                         },
                     },

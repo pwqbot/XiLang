@@ -246,9 +246,10 @@ TEST_CASE("Type Assign SetGetM")
                  },
          }}
     );
-    auto set_get_m = Xi_SetGetM{
-        .set_var_name = "p",
-        .member_name  = "x",
+    auto set_get_m = Xi_Binop{
+        .lhs = Xi_Iden{"p"},
+        .rhs = Xi_Iden{"x"},
+        .op  = Xi_Op::Dot,
     };
 
     REQUIRE_THAT(TypeAssign(set_get_m, record), TypeAssignMatcher{type::i64{}});
@@ -272,9 +273,10 @@ TEST_CASE("Type Assign SetGetM")
                 .name   = "f",
                 .params = {"p"},
                 .expr =
-                    Xi_SetGetM{
-                        .set_var_name = "p",
-                        .member_name  = "x",
+                    Xi_Binop{
+                        .lhs = Xi_Iden{"p"},
+                        .rhs  = Xi_Iden{"x"},
+                        .op = Xi_Op::Dot,
                     },
             },
         },

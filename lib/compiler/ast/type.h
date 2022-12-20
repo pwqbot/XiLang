@@ -107,6 +107,11 @@ struct array
     explicit array(Xi_Type inner_type_) : inner_type(std::move(inner_type_)) {}
 };
 
+inline auto isSet(Xi_Type type)
+{
+    return std::holds_alternative<recursive_wrapper<set>>(type);
+}
+
 inline auto operator<=>(const array &lhs, const array &rhs)
     -> std::partial_ordering
 {

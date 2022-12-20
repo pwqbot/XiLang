@@ -62,6 +62,7 @@ enum class Xi_Op
     And,
     Or,
     Not,
+    Dot,
 };
 
 constexpr auto OpMaps = std::
@@ -81,10 +82,11 @@ constexpr auto OpMaps = std::
         {"&&", Xi_Op::And},
         {"||", Xi_Op::Or},
         {"!", Xi_Op::Not},
+        {".", Xi_Op::Dot},
     }};
 
-constexpr auto KeyWords = std::array<std::string_view, 6>{
-    "if", "then", "else", "true", "false", "xi"};
+constexpr auto KeyWords = std::array<std::string_view, 10>{
+    "if", "then", "else", "true", "false", "xi", "let", "arr", "i64", "real"};
 
 constexpr auto IsKeyWords(std::string_view str) -> bool
 {
@@ -127,16 +129,6 @@ struct Xi_Set
     auto operator<=>(const Xi_Set &) const                = default;
 };
 
-struct Xi_SetGetM
-{
-    std::string   set_var_name;
-    std::string   member_name;
-    type::Xi_Type set_type                              = type::unknown{};
-    type::Xi_Type member_type                           = type::unknown{};
-    size_t        member_index                          = 0;
-    auto          operator<=>(const Xi_SetGetM &) const = default;
-};
-
 struct Xi_Decl
 {
     std::string              name;
@@ -149,6 +141,10 @@ struct Xi_Decl
 
 struct Xi_Binop;
 auto operator<=>(const Xi_Binop &lhs, const Xi_Binop &rhs)
+    -> std::partial_ordering;
+
+struct Xi_ArrayIndex;
+auto operator<=>(const Xi_ArrayIndex &lhs, const Xi_ArrayIndex &rhs)
     -> std::partial_ordering;
 
 struct Xi_If;
@@ -179,7 +175,7 @@ using Xi_Expr = std::variant<
     Xi_Boolean,
     Xi_Real,
     Xi_String,
-    Xi_SetGetM,
+    recursive_wrapper<Xi_ArrayIndex>,
     recursive_wrapper<Xi_Iden>,
     recursive_wrapper<Xi_Unop>,
     recursive_wrapper<Xi_Binop>,
@@ -255,7 +251,8 @@ struct Xi_Binop
     Xi_Expr       lhs;
     Xi_Expr       rhs;
     Xi_Op         op;
-    type::Xi_Type type = type::unknown{};
+    type::Xi_Type type  = type::unknown{};
+    int64_t       index = 0;
     auto          operator==(const Xi_Binop &b) const -> bool
     {
         return *this <=> b == nullptr;
@@ -347,6 +344,23 @@ inline auto operator<=>(const Xi_Call &lhs, const Xi_Call &rhs)
         return cmp;
     }
     return lhs.name <=> rhs.name;
+}
+
+struct Xi_ArrayIndex
+{
+    std::string   array_var_name;
+    Xi_Expr       index;
+    type::Xi_Type type = type::unknown{};
+};
+
+inline auto operator<=>(const Xi_ArrayIndex &lhs, const Xi_ArrayIndex &rhs)
+    -> std::partial_ordering
+{
+    if (auto cmp = lhs.array_var_name <=> rhs.array_var_name; cmp != nullptr)
+    {
+        return cmp;
+    }
+    return lhs.index <=> rhs.index;
 }
 
 } // namespace xi

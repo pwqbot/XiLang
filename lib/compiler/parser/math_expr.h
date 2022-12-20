@@ -1,13 +1,14 @@
 #pragma once
 
 #include <compiler/ast/ast.h>
+#include <compiler/parser/array.h>
+#include <compiler/parser/array_index.h>
 #include <compiler/parser/basic_parsers.h>
 #include <compiler/parser/call.h>
 #include <compiler/parser/expr.h>
 #include <compiler/parser/if_expr.h>
-#include <compiler/parser/set_get_member.h>
 #include <compiler/parser/lam_expr.h>
-
+#include <compiler/parser/num.h>
 
 namespace xi
 {
@@ -79,32 +80,6 @@ inline const auto combine_to_unop = [](auto C1, auto C2)
 // <factor> ::= "(" <mathexpr> ")" | <number>
 auto Xi_mathexpr(std::string_view input) -> Parsed_t<Xi_Expr>;
 
-inline const Parser auto s_natural = some(s_digit);
-
-inline const Parser auto Xi_integer = token(maybe(symbol('-'))) >> [](auto x)
-{
-    return token(s_natural) >> [x](auto nat)
-    {
-        if (x)
-        {
-            return unit(Xi_Expr{Xi_Integer{.value{-std::stoi(nat)}}});
-        }
-        return unit(Xi_Expr{Xi_Integer{.value{std::stoi(nat)}}});
-    };
-};
-
-// real = integer "." integer
-inline const Parser auto Xi_real = Xi_integer >> [](const Xi_Integer &integer)
-{
-    return token(s_dot) > token(s_natural) >> [integer](auto nat)
-    {
-        return unit(Xi_Expr{Xi_Real{
-            .value{std::stod(std::to_string(integer.value) + "." + nat)}}});
-    };
-};
-
-inline const Parser auto Xi_number = Xi_real || Xi_integer;
-
 inline const auto Xi_parenmathexpr = token(s_lparen) > Xi_mathexpr >>
                                      [](auto expr)
 {
@@ -114,14 +89,24 @@ inline const auto Xi_parenmathexpr = token(s_lparen) > Xi_mathexpr >>
 inline auto Xi_factor(std::string_view input) -> Parsed_t<Xi_Expr>
 {
     return (
-        Xi_lam || Xi_string || Xi_if || Xi_parenmathexpr || Xi_number || Xi_call ||
-        Xi_setGetM || Xi_idenexpr
+        Xi_lam || Xi_string || Xi_if || Xi_parenmathexpr || Xi_number ||
+        Xi_call || Xi_arrayIndex || Xi_idenexpr || Xi_array
     )(input);
 }
 
-inline const Parser auto Xi_term = Xi_factor >> [](Xi_Expr lhs)
+inline const Parser auto Xi_dott = Xi_factor >> [](Xi_Expr lhs)
 {
-    return (some(combine_to_unop(Xi_mul || Xi_divide, Xi_factor), binop_fold) >>
+    return (some(combine_to_unop(Xi_dot, Xi_factor), binop_fold) >>
+            [lhs](Xi_Expr rhs)
+            {
+                return Xi_binop_fold_go(lhs, rhs);
+            }) ||
+           unit(lhs);
+};
+
+inline const Parser auto Xi_term = Xi_dott >> [](Xi_Expr lhs)
+{
+    return (some(combine_to_unop(Xi_mul || Xi_divide, Xi_dott), binop_fold) >>
             [lhs](Xi_Expr rhs)
             {
                 return Xi_binop_fold_go(lhs, rhs);

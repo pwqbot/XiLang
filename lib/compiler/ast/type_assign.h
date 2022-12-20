@@ -213,60 +213,52 @@ auto TypeAssign(Xi_Set &set) -> TypeAssignResult
                 .param_types = member_types,
             },
         });
-        fmt::print("set {} {}\n", set.name, set_type);
         return set.type;
     };
 }
 
-auto TypeAssign(Xi_SetGetM &set_get_m, LocalVariableRecord record)
-    -> TypeAssignResult
+auto TypeAssign(Xi_ArrayIndex &index, LocalVariableRecord record)
 {
-    auto tmpIden = Xi_Expr{Xi_Iden{.name = set_get_m.set_var_name}};
+    auto tmpIden = Xi_Expr{Xi_Iden{.name = index.array_var_name}};
     return TypeAssign(tmpIden, record) >>=
-           [&set_get_m](type::Xi_Type set_type_v)
+           [&index, record](type::Xi_Type array_type_v)
     {
         return std::visit(
-            [&set_get_m](auto set_type_wrapper) -> TypeAssignResult
+            [&index, record](auto array_type_wrapper) -> TypeAssignResult
             {
                 if constexpr (std::same_as<
-                                  std::decay_t<decltype(set_type_wrapper)>,
-                                  recursive_wrapper<type::set>>)
+                                  std::decay_t<decltype(array_type_wrapper)>,
+                                  recursive_wrapper<type::array>>)
                 {
-                    auto set_type    = set_type_wrapper.get();
-                    auto member_type = ranges::find_if(
-                        set_type.members,
-                        [&set_get_m](auto member)
-                        {
-                            return member.first == set_get_m.member_name;
-                        }
-                    );
-                    if (member_type != set_type.members.end())
+                    return TypeAssign(index.index, record) >>=
+                           [&index,
+                            &array_type_wrapper](type::Xi_Type index_type
+                           ) -> TypeAssignResult
                     {
-                        set_get_m.set_type = set_type;
-                        set_get_m.member_index =
-                            static_cast<size_t>(member_type - set_type.members.begin());
-                        return set_get_m.member_type = member_type->second;
-                    }
-                    return tl::make_unexpected(TypeAssignError{
-                        TypeAssignError::UnknownMember,
-                        fmt::format(
-                            "set {} has no member {}",
-                            set_get_m.set_var_name,
-                            set_get_m.member_name
-                        ),
-                        set_get_m,
-                    });
+                        if (index_type != type::i64{})
+                        {
+                            return tl::make_unexpected(TypeAssignError{
+                                TypeAssignError::TypeMismatch,
+                                fmt::format(
+                                    "array index must be i64, but got {}",
+                                    index_type
+                                ),
+                                index,
+                            });
+                        }
+                        return array_type_wrapper.get().inner_type;
+                    };
                 }
                 else
                 {
                     return tl::make_unexpected(TypeAssignError{
                         TypeAssignError::TypeMismatch,
-                        fmt::format("{}", set_type_wrapper),
-                        set_get_m,
+                        fmt::format("{}", array_type_wrapper),
+                        index,
                     });
                 }
             },
-            set_type_v
+            array_type_v
         );
     };
 }
@@ -292,13 +284,72 @@ auto TypeAssign(Xi_Array &arr, LocalVariableRecord record)
     };
 }
 
-auto TypeAssign(Xi_Binop &binop, LocalVariableRecord record) -> TypeAssignResult
+auto typeAssignDot(Xi_Binop &binop, LocalVariableRecord record)
+    -> TypeAssignResult
 {
     return TypeAssign(binop.lhs, record) >>=
            [&binop, record](type::Xi_Type lhs_type) -> TypeAssignResult
     {
+        if (!type::isSet(lhs_type))
+        {
+            return tl::make_unexpected(TypeAssignError{
+                TypeAssignError::TypeMismatch,
+                fmt::format(
+                    "Dot operator can only be applied to set, but got {}",
+                    lhs_type
+                ),
+                binop});
+        }
+        if (!std::holds_alternative<recursive_wrapper<Xi_Iden>>(binop.rhs))
+        {
+            return tl::make_unexpected(TypeAssignError{
+                TypeAssignError::TypeMismatch,
+                fmt::format(
+                    "rhs of dot operator must be an identifier, but got {}",
+                    lhs_type
+                ),
+                binop});
+        }
+        auto set_type = std::get<recursive_wrapper<type::set>>(lhs_type);
+        auto member_name =
+            std::get<recursive_wrapper<Xi_Iden>>(binop.rhs).get().name;
+        auto member_type = std::find_if(
+            set_type.get().members.begin(),
+            set_type.get().members.end(),
+            [&member_name](auto member)
+            {
+                return member.first == member_name;
+            }
+        );
+        if (member_type == set_type.get().members.end())
+        {
+            return tl::make_unexpected(TypeAssignError{
+                TypeAssignError::TypeMismatch,
+                fmt::format(
+                    "set {} has no member named {}",
+                    set_type.get().name,
+                    member_name
+                ),
+                binop});
+        }
+        binop.index =
+            std::distance(set_type.get().members.begin(), member_type);
+        return binop.type = member_type->second;
+    };
+}
+
+auto TypeAssign(Xi_Binop &binop, LocalVariableRecord record) -> TypeAssignResult
+{
+    if (binop.op == Xi_Op::Dot)
+    {
+        return typeAssignDot(binop, record);
+    }
+    return TypeAssign(binop.lhs, record) >>=
+           [&binop, record](type::Xi_Type lhs_type) -> TypeAssignResult
+    {
         return TypeAssign(binop.rhs, record) >>=
-               [&binop, lhs_type](type::Xi_Type rhs_type) -> TypeAssignResult
+               [&binop, lhs_type, record](type::Xi_Type rhs_type
+               ) -> TypeAssignResult
         {
             if (lhs_type != rhs_type)
             {
@@ -548,7 +599,6 @@ auto TypeAssign(Xi_Func &func_def) -> TypeAssignResult
                         });
                     }
 
-                    fmt::print("decl {}", decl_type.param_types);
                     LocalVariableRecord record;
                     for (const auto &[decl_param, func_param] :
                          ranges::views::zip(
@@ -565,9 +615,6 @@ auto TypeAssign(Xi_Func &func_def) -> TypeAssignResult
                                 func_def,
                             });
                         }
-                        fmt::print(
-                            "insert {} {} into record", func_param, decl_param
-                        );
                         record.insert({func_param, decl_param});
                     }
 

@@ -142,6 +142,7 @@ inline const Parser auto Xi_ne     = op("!=");
 inline const Parser auto Xi_and    = op("&&");
 inline const Parser auto Xi_or     = op("||");
 inline const Parser auto Xi_not    = op("!");
+inline const Parser auto Xi_dot    = op(".");
 
 inline const Parser auto s_iden = token(some(s_alphanum || s_underscore));
 

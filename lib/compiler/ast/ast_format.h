@@ -103,6 +103,18 @@ struct fmt::formatter<xi::Xi_Binop> : fmt::formatter<std::string>
 };
 
 template <>
+struct fmt::formatter<xi::Xi_ArrayIndex> : fmt::formatter<xi::Xi_Expr>
+{
+    template <typename FormatContext>
+    auto format(const xi::Xi_ArrayIndex &u, FormatContext &ctx) const
+    {
+        return fmt::format_to(
+            ctx.out(), "Xi_ArrayIndex {}[{}]", u.array_var_name, u.index
+        );
+    }
+};
+
+template <>
 struct fmt::formatter<xi::Xi_Unop> : fmt::formatter<xi::Xi_Expr>
 {
     template <typename FormatContext>
@@ -203,16 +215,18 @@ struct fmt::formatter<xi::Xi_Func> : fmt::formatter<xi::Xi_Expr>
     template <typename FormatContext>
     auto format(const xi::Xi_Func &i, FormatContext &ctx) const
     {
-        const auto name   = fmt::format("{}", i.name) | wd;
-        const auto params = fmt::format("{}", i.params);
-        const auto expr   = fmt::format("{}", i.expr) | wd;
+        const auto name      = fmt::format("{}", i.name) | wd;
+        const auto params    = fmt::format("{}", i.params);
+        const auto expr      = fmt::format("{}", i.expr) | wd;
+        const auto let_idens = fmt::format("{}", i.let_idens);
         return fmt::format_to(
             ctx.out(),
             "Xi_Func \n"
-            "{} {}\n"
+            "{} param: {} let: {}\n"
             "{}",
             name,
             params,
+            let_idens,
             expr
         );
     }
@@ -263,18 +277,6 @@ struct fmt::formatter<xi::Xi_Set> : fmt::formatter<xi::Xi_Expr>
             "{}",
             i.name,
             i.members
-        );
-    }
-};
-
-template <>
-struct fmt::formatter<xi::Xi_SetGetM> : fmt::formatter<xi::Xi_Expr>
-{
-    template <typename FormatContext>
-    auto format(const xi::Xi_SetGetM &i, FormatContext &ctx) const
-    {
-        return fmt::format_to(
-            ctx.out(), "Xi_SetGetM {}.{}\n", i.set_var_name, i.member_name
         );
     }
 };

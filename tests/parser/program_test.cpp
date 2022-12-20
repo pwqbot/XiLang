@@ -19,6 +19,52 @@ TEST_CASE("Parse program", "[Xi_Expr]")
             ""
         )
     );
+    REQUIRE_THAT(
+        Xi_program("fn test_array :: i64 -> arr[i64]\n"
+                   "test_array x = let a = [1, 2, 3, 4, 5] in a[0]"),
+        AstNodeMatcher(
+            Xi_Program{
+                {
+                    Xi_Decl{
+                        .name        = Xi_Iden{"test_array"},
+                        .return_type = "arr[i64]",
+                        .params_type = {"i64"},
+                    },
+                    Xi_Func{
+                        .name   = "test_array",
+                        .params = {"x"},
+                        .expr =
+                            Xi_Expr{
+                                Xi_ArrayIndex{
+                                    .array_var_name = "a",
+                                    .index          = Xi_Integer{0},
+                                },
+                            },
+                        .let_idens =
+                            {
+                                Xi_Iden{
+                                    .name = "a",
+                                    .expr =
+                                        Xi_Expr{
+                                            Xi_Array{
+                                                .elements =
+                                                    {
+                                                        Xi_Integer{1},
+                                                        Xi_Integer{2},
+                                                        Xi_Integer{3},
+                                                        Xi_Integer{4},
+                                                        Xi_Integer{5},
+                                                    },
+                                            },
+                                        },
+                                },
+                            },
+                    },
+                },
+            },
+            ""
+        )
+    );
 
     REQUIRE_THAT(
         Xi_program("fn add :: i64 -> i64 -> i64\n"
@@ -121,7 +167,8 @@ TEST_CASE("Parse program", "[Xi_Expr]")
                    "2 * 3\n"
                    "true\n"
                    "?x y -> (x + y - 1)\n"
-                   "f(1 b true)"),
+                   "f(1 b true)\n"
+                   "[1, 2, 3, 4, 5]"),
         AstNodeMatcher(
             Xi_Program{std::vector<Xi_Stmt>{
                 Xi_Binop{
@@ -156,6 +203,16 @@ TEST_CASE("Parse program", "[Xi_Expr]")
                         Xi_Integer{1},
                         Xi_Iden{"b"},
                         Xi_Boolean{true},
+                    },
+                },
+                Xi_Array{
+                    5,
+                    {
+                        Xi_Integer{1},
+                        Xi_Integer{2},
+                        Xi_Integer{3},
+                        Xi_Integer{4},
+                        Xi_Integer{5},
                     },
                 },
             }},
