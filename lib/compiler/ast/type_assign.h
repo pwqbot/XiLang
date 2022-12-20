@@ -306,7 +306,7 @@ auto typeAssignDot(Xi_Binop &binop, LocalVariableRecord record)
                 TypeAssignError::TypeMismatch,
                 fmt::format(
                     "rhs of dot operator must be an identifier, but got {}",
-                    lhs_type
+                    binop.rhs
                 ),
                 binop});
         }
