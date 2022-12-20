@@ -4,6 +4,10 @@
 #include <compiler/parser/basic_parsers.h>
 #include <compiler/parser/call.h>
 #include <compiler/parser/expr.h>
+#include <compiler/parser/if_expr.h>
+#include <compiler/parser/set_get_member.h>
+#include <compiler/parser/lam_expr.h>
+
 
 namespace xi
 {
@@ -109,7 +113,10 @@ inline const auto Xi_parenmathexpr = token(s_lparen) > Xi_mathexpr >>
 
 inline auto Xi_factor(std::string_view input) -> Parsed_t<Xi_Expr>
 {
-    return (Xi_parenmathexpr || Xi_number || Xi_call || Xi_idenexpr)(input);
+    return (
+        Xi_lam || Xi_string || Xi_if || Xi_parenmathexpr || Xi_number || Xi_call ||
+        Xi_setGetM || Xi_idenexpr
+    )(input);
 }
 
 inline const Parser auto Xi_term = Xi_factor >> [](Xi_Expr lhs)
