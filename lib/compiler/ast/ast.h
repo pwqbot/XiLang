@@ -127,6 +127,16 @@ struct Xi_Set
     auto operator<=>(const Xi_Set &) const                = default;
 };
 
+struct Xi_SetGetM
+{
+    std::string   set_var_name;
+    std::string   member_name;
+    type::Xi_Type set_type                              = type::unknown{};
+    type::Xi_Type member_type                           = type::unknown{};
+    size_t        member_index                          = 0;
+    auto          operator<=>(const Xi_SetGetM &) const = default;
+};
+
 struct Xi_Decl
 {
     std::string              name;
@@ -159,18 +169,41 @@ struct Xi_Iden;
 auto operator<=>(const Xi_Iden &lhs, const Xi_Iden &rhs)
     -> std::partial_ordering;
 
+struct Xi_Array;
+auto operator<=>(const Xi_Array &lhs, const Xi_Array &rhs)
+    -> std::partial_ordering;
+
 using Xi_Expr = std::variant<
     std::monostate,
     Xi_Integer,
     Xi_Boolean,
     Xi_Real,
     Xi_String,
+    Xi_SetGetM,
     recursive_wrapper<Xi_Iden>,
     recursive_wrapper<Xi_Unop>,
     recursive_wrapper<Xi_Binop>,
     recursive_wrapper<Xi_If>,
     recursive_wrapper<Xi_Lam>,
-    recursive_wrapper<Xi_Call>>;
+    recursive_wrapper<Xi_Call>,
+    recursive_wrapper<Xi_Array>>;
+
+struct Xi_Array
+{
+    size_t               size = 0;
+    std::vector<Xi_Expr> elements;
+    type::Xi_Type        type = type::unknown{};
+};
+
+inline auto operator<=>(const Xi_Array &lhs, const Xi_Array &rhs)
+    -> std::partial_ordering
+{
+    if (auto cmp = lhs.type <=> rhs.type; cmp != nullptr)
+    {
+        return cmp;
+    }
+    return lhs.elements <=> rhs.elements;
+}
 
 struct Xi_Iden
 {

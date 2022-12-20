@@ -1,3 +1,5 @@
+#include "compiler/ast/type.h"
+
 #include <compiler/ast/ast.h>
 #include <compiler/ast/type_format.h>
 #include <compiler/ast/utils.h>
@@ -48,8 +50,10 @@ struct TypeAssignError
         TypeMismatch,
         ParameterCountMismatch,
         UnknownVariable,
+        UnknownMember,
         VarargNotLast,
     };
+
     Error       err;
     std::string message;
     Xi_Stmt     node;
@@ -187,7 +191,17 @@ auto TypeAssign(Xi_Set &set) -> TypeAssignResult
                }
            ) >>= [&set](auto member_types) -> TypeAssignResult
     {
-        auto set_type = type::set{set.name, member_types};
+        auto name_with_type = ranges::views::zip(
+                                  set.members | ranges::views::transform(
+                                                    [](auto pair)
+                                                    {
+                                                        return pair.first;
+                                                    }
+                                                ),
+                                  member_types
+                              ) |
+                              ranges::to_vector;
+        auto set_type = type::set{set.name, name_with_type};
         set.type      = set_type;
         GetSymbolTable().insert({{set.name, SymbolType::Type}, set_type});
 
@@ -199,7 +213,61 @@ auto TypeAssign(Xi_Set &set) -> TypeAssignResult
                 .param_types = member_types,
             },
         });
+        fmt::print("set {} {}\n", set.name, set_type);
         return set.type;
+    };
+}
+
+auto TypeAssign(Xi_SetGetM &set_get_m, LocalVariableRecord record)
+    -> TypeAssignResult
+{
+    auto tmpIden = Xi_Expr{Xi_Iden{.name = set_get_m.set_var_name}};
+    return TypeAssign(tmpIden, record) >>=
+           [&set_get_m](type::Xi_Type set_type_v)
+    {
+        return std::visit(
+            [&set_get_m](auto set_type_wrapper) -> TypeAssignResult
+            {
+                if constexpr (std::same_as<
+                                  std::decay_t<decltype(set_type_wrapper)>,
+                                  recursive_wrapper<type::set>>)
+                {
+                    auto set_type    = set_type_wrapper.get();
+                    auto member_type = ranges::find_if(
+                        set_type.members,
+                        [&set_get_m](auto member)
+                        {
+                            return member.first == set_get_m.member_name;
+                        }
+                    );
+                    if (member_type != set_type.members.end())
+                    {
+                        set_get_m.set_type = set_type;
+                        set_get_m.member_index =
+                            static_cast<size_t>(member_type - set_type.members.begin());
+                        return set_get_m.member_type = member_type->second;
+                    }
+                    return tl::make_unexpected(TypeAssignError{
+                        TypeAssignError::UnknownMember,
+                        fmt::format(
+                            "set {} has no member {}",
+                            set_get_m.set_var_name,
+                            set_get_m.member_name
+                        ),
+                        set_get_m,
+                    });
+                }
+                else
+                {
+                    return tl::make_unexpected(TypeAssignError{
+                        TypeAssignError::TypeMismatch,
+                        fmt::format("{}", set_type_wrapper),
+                        set_get_m,
+                    });
+                }
+            },
+            set_type_v
+        );
     };
 }
 
@@ -365,14 +433,14 @@ auto TypeAssign(Xi_Decl &decl) -> TypeAssignResult
         });
     }
 
-    return findTypeInSymbolTable(decl.return_type, SymbolType::All, decl) >>=
+    return findTypeInSymbolTable(decl.return_type, SymbolType::Type, decl) >>=
            [&decl](auto return_type)
     {
         return flatmap(
                    decl.params_type,
                    [decl](auto x)
                    {
-                       return findTypeInSymbolTable(x, SymbolType::All, decl);
+                       return findTypeInSymbolTable(x, SymbolType::Type, decl);
                    }
                ) >>= [return_type, &decl](std::vector<type::Xi_Type> param_types
                      ) -> TypeAssignResult
@@ -480,6 +548,7 @@ auto TypeAssign(Xi_Func &func_def) -> TypeAssignResult
                         });
                     }
 
+                    fmt::print("decl {}", decl_type.param_types);
                     LocalVariableRecord record;
                     for (const auto &[decl_param, func_param] :
                          ranges::views::zip(
@@ -496,6 +565,9 @@ auto TypeAssign(Xi_Func &func_def) -> TypeAssignResult
                                 func_def,
                             });
                         }
+                        fmt::print(
+                            "insert {} {} into record", func_param, decl_param
+                        );
                         record.insert({func_param, decl_param});
                     }
 

@@ -9,8 +9,10 @@
 #include <compiler/util/expected.h>
 #include <llvm/ADT/APFloat.h>
 #include <llvm/IR/Constants.h>
+#include <llvm/IR/DataLayout.h>
 #include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/Intrinsics.h>
 #include <llvm/IR/LegacyPassManager.h>
 #include <llvm/IR/Verifier.h>
 #include <llvm/MC/TargetRegistry.h>
@@ -30,6 +32,7 @@ using codegen_result_t = ExpectedCodeGen<llvm::Value *>;
 static std::unique_ptr<llvm::LLVMContext>   context;
 static std::unique_ptr<llvm::IRBuilder<>>   builder;
 static std::unique_ptr<llvm::Module>        module;
+static std::unique_ptr<llvm::DataLayout>    dataLayout;
 static std::map<std::string, llvm::Value *> namedValues;
 constexpr int                               llvm_int_precision = 64;
 
@@ -37,8 +40,9 @@ inline void InitializeModule()
 {
     static const std::string moduleName = "xi module";
     context                             = std::make_unique<llvm::LLVMContext>();
-    module  = std::make_unique<llvm::Module>(moduleName, *context);
-    builder = std::make_unique<llvm::IRBuilder<>>(*context);
+    module     = std::make_unique<llvm::Module>(moduleName, *context);
+    builder    = std::make_unique<llvm::IRBuilder<>>(*context);
+    dataLayout = std::make_unique<llvm::DataLayout>(module->getDataLayout());
 }
 
 auto CodeGen(Xi_Expr expr) -> codegen_result_t;
@@ -97,16 +101,22 @@ auto XiTypeToLLVMType(type::Xi_Type xi_t) -> ExpectedCodeGen<llvm::Type *>
                     llvm::Type::getInt1Ty(*context), 0
                 );
             }
-            else if constexpr (std::same_as<T, type::set>)
+            else if constexpr (std::same_as<T, recursive_wrapper<type::set>>)
             {
-                return llvm::StructType::getTypeByName(*context, t.name);
+                return llvm::StructType::getTypeByName(*context, t.get().name);
             }
             else if constexpr (std::same_as<T, recursive_wrapper<type::array>>)
             {
                 return XiTypeToLLVMType(t.get().inner_type) >>=
                        [](auto inner_type) -> ExpectedCodeGen<llvm::Type *>
                 {
-                    return llvm::PointerType::get(inner_type, 0);
+                    llvm::Type *intType = llvm::Type::getInt32Ty(*context);
+
+                    std::vector<llvm::Type *> types = {
+                        llvm::PointerType::get(inner_type, 0),
+                        intType,
+                    };
+                    return llvm::StructType::get(*context, types);
                 };
             }
             return tl::unexpected(
@@ -117,20 +127,73 @@ auto XiTypeToLLVMType(type::Xi_Type xi_t) -> ExpectedCodeGen<llvm::Type *>
     );
 }
 
+auto getArrayMemberType(Xi_Array arr) -> ExpectedCodeGen<llvm::Type *>
+{
+    return std::visit(
+        [](auto arr_)
+        {
+            if constexpr (std::same_as<decltype(arr_), Xi_Array>)
+            {
+                return XiTypeToLLVMType(arr_.inner_type);
+            }
+            return tl::unexpected(
+                ErrorCodeGen(ErrorCodeGen::UnknownType, "Unknown type")
+            );
+        },
+        arr.type
+    );
+}
+
+auto CodeGen(Xi_Array arr) -> codegen_result_t
+{
+    return getArrayMemberType(arr) >>=
+           [arr](llvm::Type *element_type) -> codegen_result_t
+    {
+        auto *int32type = llvm::Type::getInt32Ty(*context);
+
+        auto *element_size = llvm::ConstantInt::get(
+            int32type, dataLayout->getTypeSizeInBits(element_type) / 8
+        );
+        // TODO(ding.wang): get size in run time
+        auto *alloc_size = llvm::ConstantExpr::getMul(
+            llvm::ConstantInt::get(int32type, arr.elements.size()), element_size
+        );
+        auto *arr_code = llvm::CallInst::CreateMalloc(
+            builder->GetInsertBlock(),
+            element_type->getPointerTo(),
+            element_type,
+            alloc_size,
+            nullptr,
+            nullptr,
+            ""
+        );
+        return builder->Insert(arr_code);
+    };
+}
+
 // generate user defined type
 auto CodeGen(Xi_Set set) -> codegen_result_t
 {
     auto set_type     = std::get<recursive_wrapper<type::set>>(set.type).get();
-    auto member_types = set_type.members;
+    auto member_types = set_type.members |
+                        ranges::views::transform(
+                            [](auto pair)
+                            {
+                                return pair.second;
+                            }
+                        ) |
+                        ranges::to_vector;
     return flatmap(member_types, XiTypeToLLVMType) >>=
-           [set](std::vector<llvm::Type *> llvm_members_type) -> codegen_result_t
+           [set](std::vector<llvm::Type *> llvm_members_type
+           ) -> codegen_result_t
     {
-        auto *struct_type = llvm::StructType::create(*context, llvm_members_type, set.name);
+        auto *struct_type =
+            llvm::StructType::create(*context, llvm_members_type, set.name);
         // generate constructor
         auto *constructor = llvm::Function::Create(
             llvm::FunctionType::get(struct_type, llvm_members_type, false),
             llvm::Function::ExternalLinkage,
-            fmt::format("{}.new", set.name),
+            set.name,
             module.get()
         );
 
@@ -139,15 +202,41 @@ auto CodeGen(Xi_Set set) -> codegen_result_t
         // create struct in stack
         auto *struct_ptr = builder->CreateAlloca(struct_type);
 
+        unsigned int i = 0;
         for (auto &arg : constructor->args())
         {
-            auto *field = builder->CreateStructGEP(struct_type, struct_ptr, 0);
+            auto *field = builder->CreateStructGEP(struct_type, struct_ptr, i);
+            i += 1;
             builder->CreateStore(&arg, field);
         }
-        builder->CreateRet(struct_ptr);
+        // return struct
+        llvm::Value *struct_val = builder->CreateLoad(struct_type, struct_ptr);
+        builder->CreateRet(struct_val);
 
-        return struct_ptr;
+        return struct_val;
     };
+}
+
+auto CodeGen(Xi_SetGetM set_get_m) -> codegen_result_t
+{
+    auto struct_pointer = namedValues.find(set_get_m.set_var_name);
+    if (struct_pointer == namedValues.end())
+    {
+        return tl::unexpected(ErrorCodeGen(
+            ErrorCodeGen::UnknownVariable,
+            fmt::format("Unknown variable {}", set_get_m.set_var_name)
+        ));
+    }
+
+    auto *member_index = llvm::ConstantInt::get(
+        *context, llvm::APInt(32, set_get_m.member_index, true)
+    );
+    std::vector<llvm::Value *> indices(2);
+    indices[0] = llvm::ConstantInt::get(*context, llvm::APInt(32, 0, true));
+    indices[1] = member_index;
+    return builder->CreateExtractValue(
+        struct_pointer->second, static_cast<unsigned int>(set_get_m.member_index), "membertmp"
+    );
 }
 
 auto CodeGen(Xi_If if_expr) -> codegen_result_t

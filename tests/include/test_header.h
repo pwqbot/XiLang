@@ -17,7 +17,8 @@ concept is_one_of_ast_node =
     std::same_as<T, xi::Xi_String> || std::same_as<T, xi::Xi_Iden> ||
     std::same_as<T, xi::Xi_Binop> || std::same_as<T, xi::Xi_Unop> ||
     std::same_as<T, xi::Xi_If> || std::same_as<T, xi::Xi_Integer> ||
-    std::same_as<T, xi::Xi_Lam>;
+    std::same_as<T, xi::Xi_Lam> || std::same_as<T, xi::Xi_SetGetM> || 
+std::same_as<T, xi::Xi_Set>;
 
 template <typename T>
 concept is_one_of_type_node =

@@ -88,8 +88,8 @@ inline auto operator<=>(const function &lhs, const function &rhs)
 
 struct set
 {
-    std::string          name;
-    std::vector<Xi_Type> members = {};
+    std::string                                  name;
+    std::vector<std::pair<std::string, Xi_Type>> members = {};
 };
 
 inline auto operator<=>(const set &lhs, const set &rhs) -> std::partial_ordering

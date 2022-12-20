@@ -183,8 +183,8 @@ TEST_CASE("Type Assign Set", "[Xi_Set]")
             .name = "point",
             .members =
                 {
-                    type::i64{},
-                    type::i64{},
+                    {"x", type::i64{}},
+                    {"y", type::i64{}},
                 },
         })
     );
@@ -216,20 +216,114 @@ TEST_CASE("Type Assign Set", "[Xi_Set]")
                 .name = "point",
                 .members =
                     {
-                        type::i64{},
-                        type::i64{},
+                        {"x", type::i64{}},
+                        {"y", type::i64{}},
                     },
             },
             type::set{
                 .name = "point",
                 .members =
                     {
-                        type::i64{},
-                        type::i64{},
+                        {"x", type::i64{}},
+                        {"y", type::i64{}},
                     },
             },
         })
     );
+}
+
+TEST_CASE("Type Assign SetGetM")
+{
+    LocalVariableRecord record;
+    record.insert(
+        {"p",
+         type::set{
+             .name = "point",
+             .members =
+                 {
+                     {"x", type::i64{}},
+                     {"y", type::i64{}},
+                 },
+         }}
+    );
+    auto set_get_m = Xi_SetGetM{
+        .set_var_name = "p",
+        .member_name  = "x",
+    };
+
+    REQUIRE_THAT(TypeAssign(set_get_m, record), TypeAssignMatcher{type::i64{}});
+
+    auto set_getm = Xi_Program{
+        {
+            Xi_Set{
+                .name = "point",
+                .members =
+                    {
+                        {"x", "i64"},
+                        {"y", "i64"},
+                    },
+            },
+            Xi_Decl{
+                .name        = "f",
+                .return_type = "i64",
+                .params_type = {"point"},
+            },
+            Xi_Func{
+                .name   = "f",
+                .params = {"p"},
+                .expr =
+                    Xi_SetGetM{
+                        .set_var_name = "p",
+                        .member_name  = "x",
+                    },
+            },
+        },
+    };
+    REQUIRE_THAT(
+        TypeAssign(set_getm),
+        TypeAssignMatcher(std::vector<type::Xi_Type>{
+            type::set{
+                .name = "point",
+                .members =
+                    {
+                        {"x", type::i64{}},
+                        {"y", type::i64{}},
+                    },
+            },
+            type::function{
+                .return_type = type::i64{},
+                .param_types =
+                    {
+                        type::set{
+                            .name = "point",
+                            .members =
+                                {
+                                    {"x", type::i64{}},
+                                    {"y", type::i64{}},
+                                },
+                        },
+                    },
+                .is_vararg = false,
+            },
+            type::function{
+                .return_type = type::i64{},
+                .param_types =
+                    {
+                        type::set{
+                            .name = "point",
+                            .members =
+                                {
+                                    {"x", type::i64{}},
+                                    {"y", type::i64{}},
+                                },
+                        },
+                    },
+                .is_vararg = false,
+            },
+        })
+    );
+
+    ClearTypeAssignState();
 }
 
 TEST_CASE("Type Assign Binop", "[Xi_Binop]")

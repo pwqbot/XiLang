@@ -219,6 +219,22 @@ struct fmt::formatter<xi::Xi_Func> : fmt::formatter<xi::Xi_Expr>
 };
 
 template <>
+struct fmt::formatter<xi::Xi_Array> : fmt::formatter<xi::Xi_Expr>
+{
+    template <typename FormatContext>
+    auto format(const xi::Xi_Array &i, FormatContext &ctx) const
+    {
+        const auto exprs = fmt::format("{}", i.elements) | wd;
+        return fmt::format_to(
+            ctx.out(),
+            "Xi_Array\n"
+            "{}",
+            exprs
+        );
+    }
+};
+
+template <>
 struct fmt::formatter<xi::Xi_Decl> : fmt::formatter<xi::Xi_Expr>
 {
     template <typename FormatContext>
@@ -243,10 +259,22 @@ struct fmt::formatter<xi::Xi_Set> : fmt::formatter<xi::Xi_Expr>
     {
         return fmt::format_to(
             ctx.out(),
-            " Xi_Set {}\n"
+            "Xi_Set {}\n"
             "{}",
             i.name,
             i.members
+        );
+    }
+};
+
+template <>
+struct fmt::formatter<xi::Xi_SetGetM> : fmt::formatter<xi::Xi_Expr>
+{
+    template <typename FormatContext>
+    auto format(const xi::Xi_SetGetM &i, FormatContext &ctx) const
+    {
+        return fmt::format_to(
+            ctx.out(), "Xi_SetGetM {}.{}\n", i.set_var_name, i.member_name
         );
     }
 };
