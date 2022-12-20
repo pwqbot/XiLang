@@ -9,12 +9,9 @@
 namespace xi
 {
 
-inline const Parser auto Xi_type =
-    token(
-        some(s_alphanum || s_underscore || s_lbracket || s_rbracket) ||
-        str("...")
-    ) >>
-    [](const std::string &name) -> Parser auto
+inline const Parser auto
+    Xi_type = token(some(s_alphanum || s_underscore) || str("...")) >>
+              [](const std::string &name) -> Parser auto
 {
     return unit(name);
 };

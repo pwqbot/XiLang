@@ -47,6 +47,18 @@ TEST_CASE("Parser Xi_Decl", "[Xi_DeclExpr]")
             ""
         )
     );
+
+    REQUIRE_THAT(
+        Xi_decl("fn func:: i64 -> arr[arr[i64]]"),
+        AstNodeMatcher(
+            Xi_Decl{
+                Xi_Iden{"func"},
+                "arr[arr[i64]]",
+                {"i64"},
+            },
+            ""
+        )
+    );
 }
 
 } // namespace xi

@@ -105,6 +105,31 @@ auto findTypeInSymbolTable(std::string_view name, Xi_Stmt node)
     {
         return t.value();
     }
+
+    // check if it is an array
+    auto l_bracket_pos = name.find('[');
+    auto r_bracket_pos = name.find_last_of(']');
+    auto is_array = l_bracket_pos != std::string_view::npos and
+                    r_bracket_pos != std::string_view::npos and
+                    r_bracket_pos > l_bracket_pos and
+                    name.substr(0, l_bracket_pos) == "arr";
+    if (is_array)
+    {
+        auto inner_type_name =
+
+            name.substr(l_bracket_pos + 1, r_bracket_pos - l_bracket_pos - 1);
+        auto expect_inner_type = findTypeInSymbolTable(inner_type_name, node);
+        if (!expect_inner_type)
+        {
+            return tl::make_unexpected(TypeAssignError{
+                TypeAssignError::UnknownType,
+                fmt::format("Unknown type {}", inner_type_name),
+                node,
+            });
+        }
+        return type::array{expect_inner_type.value()};
+    }
+
     if (auto type = GetSymbolTable().find(std::string(name));
         type != GetSymbolTable().end())
     {

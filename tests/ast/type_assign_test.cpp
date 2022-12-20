@@ -30,6 +30,47 @@ struct TypeAssignMatcher : Catch::Matchers::MatcherGenericBase
     }
 };
 
+TEST_CASE("findTypeInSymbolTable")
+{
+    const auto *i64 = "i64";
+    REQUIRE_THAT(
+        findTypeInSymbolTable(i64, {}), TypeAssignMatcher(type::i64{})
+    );
+
+    const auto *real = "real";
+    REQUIRE_THAT(
+        findTypeInSymbolTable(real, {}), TypeAssignMatcher(type::real{})
+    );
+
+    const auto *buer = "buer";
+    REQUIRE_THAT(
+        findTypeInSymbolTable(buer, {}), TypeAssignMatcher(type::buer{})
+    );
+
+    const auto *str = "string";
+    REQUIRE_THAT(
+        findTypeInSymbolTable(str, {}), TypeAssignMatcher(type::string{})
+    );
+
+    const auto *arr_i64 = "arr[i64]";
+    REQUIRE_THAT(
+        findTypeInSymbolTable(arr_i64, {}),
+        TypeAssignMatcher(type::array{type::i64{}})
+    );
+
+    const auto *arr = "arr[arr[i64]]";
+    REQUIRE_THAT(
+        findTypeInSymbolTable(arr, {}),
+        TypeAssignMatcher(type::array{
+            type::Xi_Type{
+                type::array{
+                    type::i64{},
+                },
+            },
+        })
+    );
+}
+
 TEST_CASE("Type Assign Basic", "[Xi_Integer]")
 {
     REQUIRE_THAT(TypeAssign(Xi_Integer{123}), TypeAssignMatcher{type::i64{}});
@@ -100,6 +141,25 @@ TEST_CASE("Type Assign Decl", "[Xi_Decl]")
     REQUIRE(!decl_vararg_no_last_result.has_value());
     REQUIRE(
         decl_vararg_no_last_result.error().err == TypeAssignError::VarargNotLast
+    );
+
+    ClearTypeAssignState();
+    auto decl_array = Xi_Decl{
+        .name        = "f",
+        .return_type = "i64",
+        .params_type = {"i64", "arr[i64]"},
+    };
+    REQUIRE_THAT(
+        TypeAssign(decl_array),
+        TypeAssignMatcher(type::function{
+            .return_type = type::i64{},
+            .param_types =
+                {
+                    type::i64{},
+                    type::array{type::i64{}},
+                },
+            .is_vararg = false,
+        })
     );
 }
 

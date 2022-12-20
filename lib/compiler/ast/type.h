@@ -65,17 +65,6 @@ using Xi_Type = std::variant<
     recursive_wrapper<set>,
     unknown>;
 
-struct array
-{
-    Xi_Type inner_type;
-};
-
-inline auto operator<=>(const array &lhs, const array &rhs)
-    -> std::partial_ordering
-{
-    return lhs.inner_type <=> rhs.inner_type;
-}
-
 struct function
 {
     Xi_Type              return_type;
@@ -110,6 +99,18 @@ inline auto operator<=>(const set &lhs, const set &rhs) -> std::partial_ordering
         return cmp;
     }
     return lhs.members <=> rhs.members;
+}
+
+struct array
+{
+    Xi_Type inner_type;
+    explicit array(Xi_Type inner_type_) : inner_type(std::move(inner_type_)) {}
+};
+
+inline auto operator<=>(const array &lhs, const array &rhs)
+    -> std::partial_ordering
+{
+    return lhs.inner_type <=> rhs.inner_type;
 }
 
 inline constexpr auto BuiltinTypes =

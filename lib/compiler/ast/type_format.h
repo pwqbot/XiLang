@@ -67,9 +67,9 @@ template <>
 struct fmt::formatter<xi::type::array> : fmt::formatter<std::string>
 {
     template <typename FormatContext>
-    auto format(const xi::type::array /*unused*/, FormatContext &ctx) const
+    auto format(const xi::type::array arr, FormatContext &ctx) const
     {
-        return fmt::format_to(ctx.out(), "array");
+        return fmt::format_to(ctx.out(), "array {}", arr.inner_type);
     }
 };
 

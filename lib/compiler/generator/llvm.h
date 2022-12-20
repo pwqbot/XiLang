@@ -99,6 +99,14 @@ auto XiTypeToLLVMType(type::Xi_Type xi_t) -> ExpectedCodeGen<llvm::Type *>
             {
                 return llvm::StructType::getTypeByName(*context, t.name);
             }
+            else if constexpr (std::same_as<T, recursive_wrapper<type::array>>)
+            {
+                return XiTypeToLLVMType(t.get().inner_type) >>=
+                       [](auto inner_type) -> ExpectedCodeGen<llvm::Type *>
+                {
+                    return llvm::PointerType::get(inner_type, 0);
+                };
+            }
             return tl::unexpected(
                 ErrorCodeGen(ErrorCodeGen::UnknownType, fmt::format("{}", t))
             );
