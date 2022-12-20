@@ -169,10 +169,66 @@ TEST_CASE("Type Assign Decl", "[Xi_Decl]")
 
 TEST_CASE("Type Assign Set", "[Xi_Set]")
 {
-    auto set = Xi_Set{"point", {{"x", "i64"}, {"y", "i64"}}};
+    auto set = Xi_Set{
+        .name = "point",
+        .members =
+            {
+                {"x", "i64"},
+                {"y", "i64"},
+            },
+    };
     REQUIRE_THAT(
         TypeAssign(set),
-        TypeAssignMatcher(type::set{"point", {type::i64{}, type::i64{}}})
+        TypeAssignMatcher(type::set{
+            .name = "point",
+            .members =
+                {
+                    type::i64{},
+                    type::i64{},
+                },
+        })
+    );
+
+    auto set_constructor = Xi_Program{
+        {Xi_Set{
+             .name = "point",
+             .members =
+                 {
+                     {"x", "i64"},
+                     {"y", "i64"},
+                 },
+         },
+         Xi_Call{
+             .name = "point",
+             .args =
+                 {
+                     Xi_Integer{1},
+                     Xi_Integer{2},
+                 },
+         }},
+    };
+
+    ClearTypeAssignState();
+    REQUIRE_THAT(
+        TypeAssign(set_constructor),
+        TypeAssignMatcher(std::vector<type::Xi_Type>{
+            type::set{
+                .name = "point",
+                .members =
+                    {
+                        type::i64{},
+                        type::i64{},
+                    },
+            },
+            type::set{
+                .name = "point",
+                .members =
+                    {
+                        type::i64{},
+                        type::i64{},
+                    },
+            },
+        })
     );
 }
 

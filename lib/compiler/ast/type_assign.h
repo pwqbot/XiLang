@@ -193,7 +193,7 @@ auto TypeAssign(Xi_Set &set) -> TypeAssignResult
 
         // create constructor
         GetSymbolTable().insert({
-            {fmt::format("new_{}", set.name), SymbolType::Type},
+            {set.name, SymbolType::Function},
             type::function{
                 .return_type = set_type,
                 .param_types = member_types,
@@ -365,9 +365,8 @@ auto TypeAssign(Xi_Decl &decl) -> TypeAssignResult
         });
     }
 
-    return findTypeInSymbolTable(
-               decl.return_type, SymbolType::All, decl
-           ) >>= [&decl](auto return_type)
+    return findTypeInSymbolTable(decl.return_type, SymbolType::All, decl) >>=
+           [&decl](auto return_type)
     {
         return flatmap(
                    decl.params_type,
@@ -456,8 +455,9 @@ auto TypeAssign(Xi_Func &func_def) -> TypeAssignResult
         });
     }
 
-    return findTypeInSymbolTable(func_def.name, SymbolType::Function, func_def) >>=
-           [&func_def](auto Xi_Type_decl_type)
+    return findTypeInSymbolTable(
+               func_def.name, SymbolType::Function, func_def
+           ) >>= [&func_def](auto Xi_Type_decl_type)
     {
         return std::visit(
             [&func_def]<typename T>(T decl_type_wrapper) -> TypeAssignResult
