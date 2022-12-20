@@ -700,6 +700,11 @@ auto TypeAssign(Xi_Func &func_def) -> TypeAssignResult
     };
 }
 
+auto TypeAssign(Xi_Comment /*unused*/) -> TypeAssignResult
+{
+    return xi::type::unknown{};
+}
+
 auto TypeAssign(Xi_Stmt &stmt) -> TypeAssignResult
 {
     return std::visit(

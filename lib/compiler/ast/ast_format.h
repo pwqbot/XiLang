@@ -282,6 +282,16 @@ struct fmt::formatter<xi::Xi_Set> : fmt::formatter<xi::Xi_Expr>
 };
 
 template <>
+struct fmt::formatter<xi::Xi_Comment> : fmt::formatter<xi::Xi_Expr>
+{
+    template <typename FormatContext>
+    auto format(const xi::Xi_Comment &i, FormatContext &ctx) const
+    {
+        return fmt::format_to(ctx.out(), "Xi_Comment {}", i.text);
+    }
+};
+
+template <>
 struct fmt::formatter<xi::Xi_Stmt> : fmt::formatter<xi::Xi_Expr>
 {
     template <typename FormatContext>

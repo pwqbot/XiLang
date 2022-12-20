@@ -29,6 +29,7 @@ calIntersecPoint_ l lines x = let toAdd = toI64 @isIntersec@ l lines[x - 1]
                               else (calIntersecPoint_ @ l lines x - 1 ) + toAdd
 
 
+// calculate the number of intersection points of a line and a set of lines
 fn calIntersecPoint :: arr[line] -> i64 -> i64
 calIntersecPoint lines_ length = if length == 1
                                  then 0

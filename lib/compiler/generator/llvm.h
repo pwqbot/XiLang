@@ -525,6 +525,10 @@ auto CodeGen(Xi_Func xi_func) -> codegen_result_t
     };
 }
 
+auto CodeGen(Xi_Comment) -> codegen_result_t {
+    return {};
+}
+
 auto CodeGen(Xi_Stmt stmt) -> codegen_result_t
 {
     return std::visit(

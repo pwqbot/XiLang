@@ -237,7 +237,13 @@ struct Xi_Func
     auto                     operator<=>(const Xi_Func &rhs) const = default;
 };
 
-using Xi_Stmt = std::variant<Xi_Expr, Xi_Func, Xi_Decl, Xi_Set>;
+struct Xi_Comment
+{
+    std::string text;
+    auto        operator<=>(const Xi_Comment &rhs) const = default;
+};
+
+using Xi_Stmt = std::variant<Xi_Expr, Xi_Func, Xi_Decl, Xi_Set, Xi_Comment>;
 
 struct Xi_Program
 {
