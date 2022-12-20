@@ -34,33 +34,37 @@ TEST_CASE("findTypeInSymbolTable")
 {
     const auto *i64 = "i64";
     REQUIRE_THAT(
-        findTypeInSymbolTable(i64, {}), TypeAssignMatcher(type::i64{})
+        findTypeInSymbolTable(i64, SymbolType::Type, {}),
+        TypeAssignMatcher(type::i64{})
     );
 
     const auto *real = "real";
     REQUIRE_THAT(
-        findTypeInSymbolTable(real, {}), TypeAssignMatcher(type::real{})
+        findTypeInSymbolTable(real, SymbolType::Type, {}),
+        TypeAssignMatcher(type::real{})
     );
 
     const auto *buer = "buer";
     REQUIRE_THAT(
-        findTypeInSymbolTable(buer, {}), TypeAssignMatcher(type::buer{})
+        findTypeInSymbolTable(buer, SymbolType::Type, {}),
+        TypeAssignMatcher(type::buer{})
     );
 
     const auto *str = "string";
     REQUIRE_THAT(
-        findTypeInSymbolTable(str, {}), TypeAssignMatcher(type::string{})
+        findTypeInSymbolTable(str, SymbolType::Type, {}),
+        TypeAssignMatcher(type::string{})
     );
 
     const auto *arr_i64 = "arr[i64]";
     REQUIRE_THAT(
-        findTypeInSymbolTable(arr_i64, {}),
+        findTypeInSymbolTable(arr_i64, SymbolType::Type, {}),
         TypeAssignMatcher(type::array{type::i64{}})
     );
 
     const auto *arr = "arr[arr[i64]]";
     REQUIRE_THAT(
-        findTypeInSymbolTable(arr, {}),
+        findTypeInSymbolTable(arr, SymbolType::Type, {}),
         TypeAssignMatcher(type::array{
             type::Xi_Type{
                 type::array{

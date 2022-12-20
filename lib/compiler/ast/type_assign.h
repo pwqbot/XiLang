@@ -3,16 +3,25 @@
 #include <compiler/ast/utils.h>
 #include <compiler/functional/monad.h>
 #include <compiler/util/expected.h>
+#include <map>
 #include <range/v3/algorithm/find_if.hpp>
-#include <unordered_map>
 #include <variant>
 
 namespace xi
 {
 
-static auto GetSymbolTable() -> std::unordered_map<std::string, type::Xi_Type> &
+enum class SymbolType
 {
-    static std::unordered_map<std::string, type::Xi_Type> symbol_table;
+    Function,
+    Type,
+    All,
+};
+
+static auto GetSymbolTable()
+    -> std::map<std::pair<std::string, SymbolType>, type::Xi_Type> &
+{
+    static std::map<std::pair<std::string, SymbolType>, type::Xi_Type>
+        symbol_table{};
     return symbol_table;
 }
 
@@ -97,43 +106,63 @@ auto TypeAssign(
     return type::buer{};
 }
 
-auto findTypeInSymbolTable(std::string_view name, Xi_Stmt node)
+auto findTypeInSymbolTable(std::string_view name, SymbolType st, Xi_Stmt node)
     -> TypeAssignResult
 {
-    auto t = type::ToBuiltinTypes(name);
-    if (t.has_value())
+    if (st == SymbolType::Type || st == SymbolType::All)
     {
-        return t.value();
-    }
-
-    // check if it is an array
-    auto l_bracket_pos = name.find('[');
-    auto r_bracket_pos = name.find_last_of(']');
-    auto is_array = l_bracket_pos != std::string_view::npos and
-                    r_bracket_pos != std::string_view::npos and
-                    r_bracket_pos > l_bracket_pos and
-                    name.substr(0, l_bracket_pos) == "arr";
-    if (is_array)
-    {
-        auto inner_type_name =
-
-            name.substr(l_bracket_pos + 1, r_bracket_pos - l_bracket_pos - 1);
-        auto expect_inner_type = findTypeInSymbolTable(inner_type_name, node);
-        if (!expect_inner_type)
+        auto t = type::ToBuiltinTypes(name);
+        if (t.has_value())
         {
-            return tl::make_unexpected(TypeAssignError{
-                TypeAssignError::UnknownType,
-                fmt::format("Unknown type {}", inner_type_name),
-                node,
-            });
+            return t.value();
         }
-        return type::array{expect_inner_type.value()};
+
+        // check if it is an array
+        auto l_bracket_pos = name.find('[');
+        auto r_bracket_pos = name.find_last_of(']');
+        auto is_array      = l_bracket_pos != std::string_view::npos and
+                        r_bracket_pos != std::string_view::npos and
+                        r_bracket_pos > l_bracket_pos and
+                        name.substr(0, l_bracket_pos) == "arr";
+        if (is_array)
+        {
+            auto inner_type_name =
+
+                name.substr(
+                    l_bracket_pos + 1, r_bracket_pos - l_bracket_pos - 1
+                );
+            auto expect_inner_type =
+                findTypeInSymbolTable(inner_type_name, st, node);
+            if (!expect_inner_type)
+            {
+                return tl::make_unexpected(TypeAssignError{
+                    TypeAssignError::UnknownType,
+                    fmt::format("Unknown type {}", inner_type_name),
+                    node,
+                });
+            }
+            return type::array{expect_inner_type.value()};
+        }
     }
 
-    if (auto type = GetSymbolTable().find(std::string(name));
-        type != GetSymbolTable().end())
+    if (st == SymbolType::All)
     {
-        return type->second;
+        for (const auto &st_ : {SymbolType::Function, SymbolType::Type})
+        {
+            auto it = GetSymbolTable().find({std::string(name), st_});
+            if (it != GetSymbolTable().end())
+            {
+                return it->second;
+            }
+        }
+    }
+    else
+    {
+        if (auto type = GetSymbolTable().find({std::string(name), st});
+            type != GetSymbolTable().end())
+        {
+            return type->second;
+        }
     }
     return tl::make_unexpected(TypeAssignError{
         TypeAssignError::UnknownType, fmt::format("{}", name), node});
@@ -141,7 +170,7 @@ auto findTypeInSymbolTable(std::string_view name, Xi_Stmt node)
 
 auto TypeAssign(Xi_Set &set) -> TypeAssignResult
 {
-    if (GetSymbolTable().contains(set.name))
+    if (GetSymbolTable().contains({set.name, SymbolType::Type}))
     {
         return tl::make_unexpected(TypeAssignError{
             TypeAssignError::DuplicateDeclaration,
@@ -152,14 +181,46 @@ auto TypeAssign(Xi_Set &set) -> TypeAssignResult
                set.members,
                [set](std::pair<std::string, std::string> name_type)
                {
-                   return findTypeInSymbolTable(name_type.second, set);
+                   return findTypeInSymbolTable(
+                       name_type.second, SymbolType::Type, set
+                   );
                }
            ) >>= [&set](auto member_types) -> TypeAssignResult
     {
         auto set_type = type::set{set.name, member_types};
         set.type      = set_type;
-        GetSymbolTable().insert({set.name, set_type});
+        GetSymbolTable().insert({{set.name, SymbolType::Type}, set_type});
+
+        // create constructor
+        GetSymbolTable().insert({
+            {fmt::format("new_{}", set.name), SymbolType::Type},
+            type::function{
+                .return_type = set_type,
+                .param_types = member_types,
+            },
+        });
         return set.type;
+    };
+}
+
+auto TypeAssign(Xi_Array &arr, LocalVariableRecord record)
+{
+    return flatmap(
+               arr.elements,
+               [record](Xi_Expr &expr)
+               {
+                   return TypeAssign(expr, record);
+               }
+           ) >>= [&arr](auto member_types) -> TypeAssignResult
+    {
+        if (!ranges::equal(member_types, member_types))
+        {
+            return tl::make_unexpected(TypeAssignError{
+                TypeAssignError::TypeMismatch,
+                fmt::format("Array elements are not of the same type"),
+                arr});
+        }
+        return arr.type = type::array{member_types[0]};
     };
 }
 
@@ -295,7 +356,7 @@ auto TypeAssign(Xi_Unop &unop, LocalVariableRecord record) -> TypeAssignResult
 
 auto TypeAssign(Xi_Decl &decl) -> TypeAssignResult
 {
-    if (GetSymbolTable().contains(decl.name))
+    if (GetSymbolTable().contains({decl.name, SymbolType::Function}))
     {
         return tl::make_unexpected(TypeAssignError{
             TypeAssignError::DuplicateDeclaration,
@@ -304,14 +365,15 @@ auto TypeAssign(Xi_Decl &decl) -> TypeAssignResult
         });
     }
 
-    return findTypeInSymbolTable(decl.return_type, decl) >>=
-           [&decl](auto return_type)
+    return findTypeInSymbolTable(
+               decl.return_type, SymbolType::All, decl
+           ) >>= [&decl](auto return_type)
     {
         return flatmap(
                    decl.params_type,
                    [decl](auto x)
                    {
-                       return findTypeInSymbolTable(x, decl);
+                       return findTypeInSymbolTable(x, SymbolType::All, decl);
                    }
                ) >>= [return_type, &decl](std::vector<type::Xi_Type> param_types
                      ) -> TypeAssignResult
@@ -337,7 +399,9 @@ auto TypeAssign(Xi_Decl &decl) -> TypeAssignResult
                 func_type.is_vararg = true;
             }
 
-            GetSymbolTable().insert({decl.name, func_type});
+            GetSymbolTable().insert(
+                {{decl.name, SymbolType::Function}, func_type}
+            );
             return decl.type = func_type;
         };
     };
@@ -392,7 +456,7 @@ auto TypeAssign(Xi_Func &func_def) -> TypeAssignResult
         });
     }
 
-    return findTypeInSymbolTable(func_def.name, func_def) >>=
+    return findTypeInSymbolTable(func_def.name, SymbolType::Function, func_def) >>=
            [&func_def](auto Xi_Type_decl_type)
     {
         return std::visit(
@@ -534,9 +598,10 @@ auto TypeAssign(Xi_Call call_expr, LocalVariableRecord record)
                }
            ) >>= [&call_expr, record](auto args_type)
     {
-        return findTypeInSymbolTable(call_expr.name, call_expr) >>=
-               [args_type, &call_expr, record](auto func_type
-               ) -> TypeAssignResult
+        return findTypeInSymbolTable(
+                   call_expr.name, SymbolType::Function, call_expr
+               ) >>= [args_type, &call_expr, record](auto func_type
+                     ) -> TypeAssignResult
         {
             return std::visit(
                 [&call_expr,
@@ -552,7 +617,8 @@ auto TypeAssign(Xi_Call call_expr, LocalVariableRecord record)
                             return tl::make_unexpected(TypeAssignError{
                                 TypeAssignError::TypeMismatch,
                                 fmt::format(
-                                    "param type mismatch, expect {}, find {}",
+                                    "param type mismatch, expect {}, find "
+                                    "{}",
                                     func_type_.get().param_types,
                                     args_type
                                 ),
