@@ -16,13 +16,19 @@ fn test_array :: arr[i64] -> i64
 
 set point = ((x i64) (y i64))
 
+set point2 = ((p1 point) (p2 point))
+
 fn test_set :: point -> i64
 test_set p = p.x + p.y
 
+fn test_set2 :: point2 -> i64
+test_set2 p = test_set(p.p1) + test_set(p.p2)
+
 fn main :: i64
 main = printf(
-    "pow(2 10) = %d, test_let = %d, test_set = %d" 
+    "pow(2 10) = %d, test_let = %d, test_set = %d, test_set2 = %d" 
     pow(check(2 == 3 1 2) 10) 
     test_let(1)
     test_set(point(3 100))
+    test_set2(point2(point(1 2) point(3 4)))
 )
