@@ -1,8 +1,8 @@
 #include "test_header.h"
 
 #include <compiler/ast/ast.h>
-#include <compiler/parser/set.h>
 #include <compiler/parser/math_expr.h>
+#include <compiler/parser/set.h>
 
 namespace xi
 {

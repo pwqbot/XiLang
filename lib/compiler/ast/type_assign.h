@@ -363,6 +363,18 @@ auto TypeAssign(Xi_Binop &binop, LocalVariableRecord record) -> TypeAssignResult
             }
             switch (binop.op)
             {
+            case Xi_Op::Mod:
+                if (lhs_type == type::i64{})
+                {
+                    return binop.type = lhs_type;
+                }
+                return tl::make_unexpected(TypeAssignError{
+                    TypeAssignError::TypeMismatch,
+                    fmt::format(
+                        "expect int, lhs: {}, rhs: {}", lhs_type, rhs_type
+                    ),
+                    binop,
+                });
             case Xi_Op::Add:
             case Xi_Op::Sub:
             case Xi_Op::Mul:

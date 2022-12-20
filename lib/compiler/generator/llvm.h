@@ -356,6 +356,12 @@ auto CodeGen(Xi_Binop bop) -> codegen_result_t
                 return builder->CreateICmpULE(lhs, rhs, "cmptmp");
             case Xi_Op::Geq:
                 return builder->CreateICmpUGE(lhs, rhs, "cmptmp");
+            case Xi_Op::Mod:
+                return builder->CreateSRem(lhs, rhs, "modtmp");
+            case Xi_Op::And:
+                return builder->CreateAnd(lhs, rhs, "andtmp");
+            case Xi_Op::Or:
+                return builder->CreateOr(lhs, rhs, "ortmp");
             default:
                 return tl::unexpected(ErrorCodeGen(
                     ErrorCodeGen::UnknownOperator, magic_enum::enum_name(bop.op)

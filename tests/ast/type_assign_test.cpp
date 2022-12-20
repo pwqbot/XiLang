@@ -275,8 +275,8 @@ TEST_CASE("Type Assign SetGetM")
                 .expr =
                     Xi_Binop{
                         .lhs = Xi_Iden{"p"},
-                        .rhs  = Xi_Iden{"x"},
-                        .op = Xi_Op::Dot,
+                        .rhs = Xi_Iden{"x"},
+                        .op  = Xi_Op::Dot,
                     },
             },
         },
