@@ -21,6 +21,7 @@ llvm_map_components_to_libnames(
   target
   mc
   codegen
+  passes
   ${LLVM_TARGETS_TO_BUILD})
 message(STATUS "LLVM libs: ${llvm_libs}")
 

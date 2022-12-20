@@ -8,19 +8,28 @@
 #include <compiler/parser/utils.h>
 #include <compiler/util/expected.h>
 #include <llvm/ADT/APFloat.h>
+#include <llvm/Analysis/LoopAnalysisManager.h>
 #include <llvm/IR/Constants.h>
 #include <llvm/IR/DataLayout.h>
 #include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Intrinsics.h>
 #include <llvm/IR/LegacyPassManager.h>
+#include <llvm/IR/PassManager.h>
 #include <llvm/IR/Verifier.h>
 #include <llvm/MC/TargetRegistry.h>
+#include <llvm/Passes/OptimizationLevel.h>
+#include <llvm/Passes/PassBuilder.h>
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/Host.h>
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/Target/TargetMachine.h>
 #include <llvm/Target/TargetOptions.h>
+#include <llvm/Transforms/IPO.h>
+#include <llvm/Transforms/IPO/PassManagerBuilder.h>
+#include <llvm/Transforms/InstCombine/InstCombine.h>
+#include <llvm/Transforms/Scalar.h>
+#include <llvm/Transforms/Scalar/GVN.h>
 #include <map>
 #include <spdlog/spdlog.h>
 #include <variant>
@@ -29,12 +38,11 @@ namespace xi
 {
 using codegen_result_t = ExpectedCodeGen<llvm::Value *>;
 
-static std::unique_ptr<llvm::LLVMContext>   context;
-static std::unique_ptr<llvm::IRBuilder<>>   builder;
-static std::unique_ptr<llvm::Module>        module;
-static std::unique_ptr<llvm::DataLayout>    dataLayout;
-static std::map<std::string, llvm::Value *> namedValues;
-constexpr int                               llvm_int_precision = 64;
+static std::unique_ptr<llvm::LLVMContext>                 context;
+static std::unique_ptr<llvm::IRBuilder<>>                 builder;
+static std::unique_ptr<llvm::Module>                      module;
+static std::map<std::string, llvm::Value *>               namedValues;
+constexpr int llvm_int_precision = 64;
 
 inline void InitializeModule()
 {
@@ -42,7 +50,6 @@ inline void InitializeModule()
     context                             = std::make_unique<llvm::LLVMContext>();
     module  = std::make_unique<llvm::Module>(moduleName, *context);
     builder = std::make_unique<llvm::IRBuilder<>>(*context);
-    // dataLayout = std::make_unique<llvm::DataLayout>(module->getDataLayout());
 }
 
 auto CodeGen(Xi_Expr expr) -> codegen_result_t;
@@ -509,6 +516,7 @@ auto CodeGen(Xi_Func xi_func) -> codegen_result_t
         {
             builder->CreateRet(body.value());
             llvm::verifyFunction(*llvm_func);
+            // Optimize the function.
             return llvm_func;
         }
 
@@ -589,16 +597,33 @@ auto GenObj(std::string_view output_file)
         return 1;
     }
 
-    llvm::legacy::PassManager pass;
-    auto                      FileType = llvm::CGFT_ObjectFile;
+    // llvm::legacy::PassManager pass;
+    llvm::LoopAnalysisManager     LAM;
+    llvm::ModuleAnalysisManager   MAM;
+    llvm::FunctionAnalysisManager FAM;
+    llvm::CGSCCAnalysisManager    CGAM;
 
-    if (TargetMachine->addPassesToEmitFile(pass, dest, nullptr, FileType))
+    llvm::PassBuilder PB;
+    PB.registerModuleAnalyses(MAM);
+    PB.registerCGSCCAnalyses(CGAM);
+    PB.registerFunctionAnalyses(FAM);
+    PB.registerLoopAnalyses(LAM);
+    PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
+    llvm::ModulePassManager MPM =
+        PB.buildPerModuleDefaultPipeline(llvm::OptimizationLevel::O2);
+
+    llvm::ModulePassManager pass;
+    pass.run(*module, MAM);
+
+    auto                      FileType = llvm::CGFT_ObjectFile;
+    llvm::legacy::PassManager old_pass;
+    if (TargetMachine->addPassesToEmitFile(old_pass, dest, nullptr, FileType))
     {
         llvm::errs() << "TargetMachine can't emit a file of this type";
         return 1;
     }
 
-    pass.run(*module);
+    old_pass.run(*module);
     dest.flush();
     llvm::outs() << "Wrote " << output_file << "\n";
     return 1;
