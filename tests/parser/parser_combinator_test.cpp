@@ -1,6 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
-#include <compiler/parser/parser_combinator.h>
 #include <compiler/parser/basic_parsers.h>
+#include <compiler/parser/parser_combinator.h>
 
 namespace xi
 {
@@ -44,7 +44,12 @@ TEST_CASE("Test >>")
 
 TEST_CASE("Test Satisfy")
 {
-    auto parser             = satisfy([](char c) { return c == 'a'; });
+    auto parser = satisfy(
+        [](char c)
+        {
+            return c == 'a';
+        }
+    );
     auto [result1, result2] = parser("abc").value();
     REQUIRE(result1 == 'a');
     REQUIRE(result2 == "bc");

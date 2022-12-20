@@ -57,8 +57,9 @@ using ExpectedTypeAssign  = tl::expected<T, TypeAssignError>;
 using TypeAssignResult    = tl::expected<type::Xi_Type, TypeAssignError>;
 using LocalVariableRecord = std::unordered_map<std::string, type::Xi_Type>;
 
-auto TypeAssign(Xi_Expr &expr, LocalVariableRecord = LocalVariableRecord{})
-    -> TypeAssignResult;
+auto TypeAssign(
+    Xi_Expr &expr, LocalVariableRecord /*record*/ = LocalVariableRecord{}
+) -> TypeAssignResult;
 
 template <typename T>
 struct unit_<ExpectedTypeAssign<T>>
@@ -125,7 +126,9 @@ auto TypeAssign(Xi_Set &set) -> TypeAssignResult
     return flatmap(
                set.members,
                [set](std::pair<std::string, std::string> name_type)
-               { return findTypeInSymbolTable(name_type.second, set); }
+               {
+                   return findTypeInSymbolTable(name_type.second, set);
+               }
            ) >>= [&set](auto member_types) -> TypeAssignResult
     {
         auto set_type = type::set{set.name, member_types};
@@ -150,7 +153,8 @@ auto TypeAssign(Xi_Binop &binop, LocalVariableRecord record) -> TypeAssignResult
                     fmt::format(
                         "expect same type, lhs: {}, rhs: {}", lhs_type, rhs_type
                     ),
-                    binop});
+                    binop,
+                });
             }
             switch (binop.op)
             {
@@ -169,7 +173,8 @@ auto TypeAssign(Xi_Binop &binop, LocalVariableRecord record) -> TypeAssignResult
                         lhs_type,
                         rhs_type
                     ),
-                    binop});
+                    binop,
+                });
             case Xi_Op::Eq:
             case Xi_Op::Neq:
                 if (lhs_type == type::i64{} || lhs_type == type::real{} ||
@@ -184,7 +189,8 @@ auto TypeAssign(Xi_Binop &binop, LocalVariableRecord record) -> TypeAssignResult
                         lhs_type,
                         rhs_type
                     ),
-                    binop});
+                    binop,
+                });
             case Xi_Op::Lt:
             case Xi_Op::Gt:
                 if (lhs_type == type::i64{} || lhs_type == type::real{})
@@ -196,7 +202,8 @@ auto TypeAssign(Xi_Binop &binop, LocalVariableRecord record) -> TypeAssignResult
                     fmt::format(
                         "expect buer, lhs: {}, rhs: {}", lhs_type, rhs_type
                     ),
-                    binop});
+                    binop,
+                });
             case Xi_Op::Or:
             case Xi_Op::And:
                 if (lhs_type == type::buer{})
@@ -208,7 +215,8 @@ auto TypeAssign(Xi_Binop &binop, LocalVariableRecord record) -> TypeAssignResult
                     fmt::format(
                         "expect buer, lhs: {}, rhs: {}", lhs_type, rhs_type
                     ),
-                    binop});
+                    binop,
+                });
             default:
                 return lhs_type;
             }
@@ -230,7 +238,8 @@ auto TypeAssign(Xi_Unop &unop, LocalVariableRecord record) -> TypeAssignResult
                 return tl::make_unexpected(TypeAssignError{
                     TypeAssignError::TypeMismatch,
                     fmt::format("expect i64, has {}", expr_type),
-                    unop});
+                    unop,
+                });
             }
             else
             {
@@ -242,7 +251,8 @@ auto TypeAssign(Xi_Unop &unop, LocalVariableRecord record) -> TypeAssignResult
                 return tl::make_unexpected(TypeAssignError{
                     TypeAssignError::TypeMismatch,
                     fmt::format("expect buer, has {}", expr_type),
-                    unop});
+                    unop,
+                });
             }
             else
             {
@@ -250,7 +260,10 @@ auto TypeAssign(Xi_Unop &unop, LocalVariableRecord record) -> TypeAssignResult
             }
         default:
             return tl::make_unexpected(TypeAssignError{
-                TypeAssignError::TypeMismatch, "", unop});
+                TypeAssignError::TypeMismatch,
+                "",
+                unop,
+            });
         }
     };
 }
@@ -262,7 +275,8 @@ auto TypeAssign(Xi_Decl &decl) -> TypeAssignResult
         return tl::make_unexpected(TypeAssignError{
             TypeAssignError::DuplicateDeclaration,
             fmt::format("Decl {}", decl.name),
-            decl});
+            decl,
+        });
     }
 
     return findTypeInSymbolTable(decl.return_type, decl) >>=
@@ -270,12 +284,17 @@ auto TypeAssign(Xi_Decl &decl) -> TypeAssignResult
     {
         return flatmap(
                    decl.params_type,
-                   [decl](auto x) { return findTypeInSymbolTable(x, decl); }
+                   [decl](auto x)
+                   {
+                       return findTypeInSymbolTable(x, decl);
+                   }
                ) >>= [return_type, &decl](std::vector<type::Xi_Type> param_types
                      ) -> TypeAssignResult
         {
             auto func_type = type::function{
-                .return_type = return_type, .param_types = param_types};
+                .return_type = return_type,
+                .param_types = param_types,
+            };
 
             auto vararg_iter =
                 ranges::find(param_types, type::Xi_Type{type::vararg{}});
@@ -286,7 +305,8 @@ auto TypeAssign(Xi_Decl &decl) -> TypeAssignResult
                     return tl::make_unexpected(TypeAssignError{
                         TypeAssignError::VarargNotLast,
                         fmt::format("vararg must be the last param"),
-                        decl});
+                        decl,
+                    });
                 }
                 func_type.param_types.pop_back();
                 func_type.is_vararg = true;
@@ -315,7 +335,8 @@ auto TypeAssign(Xi_If &if_expr, LocalVariableRecord record) -> TypeAssignResult
                     return tl::make_unexpected(TypeAssignError{
                         TypeAssignError::TypeMismatch,
                         fmt::format("expect buer, find {}", cond_type),
-                        if_expr});
+                        if_expr,
+                    });
                 }
                 if (then_type != else_type)
                 {
@@ -342,7 +363,8 @@ auto TypeAssign(Xi_Func &func_def) -> TypeAssignResult
         return tl::make_unexpected(TypeAssignError{
             TypeAssignError::DuplicateDefinition,
             fmt::format("Func {}", func_def.name),
-            func_def});
+            func_def,
+        });
     }
 
     return findTypeInSymbolTable(func_def.name, func_def) >>=
@@ -365,7 +387,8 @@ auto TypeAssign(Xi_Func &func_def) -> TypeAssignResult
                                 decl_type.param_types.size(),
                                 func_def.params.size()
                             ),
-                            func_def});
+                            func_def,
+                        });
                     }
 
                     LocalVariableRecord record;
@@ -381,7 +404,8 @@ auto TypeAssign(Xi_Func &func_def) -> TypeAssignResult
                                 fmt::format(
                                     "Decl function parameter {}", func_param
                                 ),
-                                func_def});
+                                func_def,
+                            });
                         }
                         record.insert({func_param, decl_param});
                     }
@@ -389,7 +413,9 @@ auto TypeAssign(Xi_Func &func_def) -> TypeAssignResult
                     return flatmap_(
                                func_def.let_idens,
                                [record](auto &x)
-                               { return TypeAssign(x.expr, record); }
+                               {
+                                   return TypeAssign(x.expr, record);
+                               }
                            ) >>=
                            [&func_def, record, decl_type](
                                std::vector<type::Xi_Type> let_expr_types
@@ -407,7 +433,8 @@ auto TypeAssign(Xi_Func &func_def) -> TypeAssignResult
                                     fmt::format(
                                         "Decl let variable {}", let_var.name
                                     ),
-                                    func_def});
+                                    func_def,
+                                });
                             }
 
                             let_var.type = let_expr_type;
@@ -415,8 +442,8 @@ auto TypeAssign(Xi_Func &func_def) -> TypeAssignResult
                         }
 
                         return TypeAssign(func_def.expr, record) >>=
-                               [decl_type,
-                                &func_def](auto func_def_expr_type) -> TypeAssignResult
+                               [decl_type, &func_def](auto func_def_expr_type
+                               ) -> TypeAssignResult
                         {
                             if (func_def_expr_type != decl_type.return_type)
                             {
@@ -427,7 +454,8 @@ auto TypeAssign(Xi_Func &func_def) -> TypeAssignResult
                                         decl_type.return_type,
                                         func_def_expr_type
                                     ),
-                                    func_def});
+                                    func_def,
+                                });
                             }
                             GetFunctionDefinitionTable().insert(
                                 {func_def.name, func_def.type}
@@ -443,7 +471,8 @@ auto TypeAssign(Xi_Func &func_def) -> TypeAssignResult
                         fmt::format(
                             "expect function, find {}", decl_type_wrapper
                         ),
-                        func_def});
+                        func_def,
+                    });
                 }
             },
             Xi_Type_decl_type
@@ -453,7 +482,13 @@ auto TypeAssign(Xi_Func &func_def) -> TypeAssignResult
 
 auto TypeAssign(Xi_Stmt &stmt) -> TypeAssignResult
 {
-    return std::visit([](auto &x) mutable { return TypeAssign(x); }, stmt);
+    return std::visit(
+        [](auto &x) mutable
+        {
+            return TypeAssign(x);
+        },
+        stmt
+    );
 }
 
 auto TypeAssign(Xi_Lam & /*unused*/, LocalVariableRecord /*unused*/)
@@ -468,7 +503,10 @@ auto TypeAssign(Xi_Call call_expr, LocalVariableRecord record)
 {
     return flatmap_(
                call_expr.args,
-               [record](auto &x) { return TypeAssign(x, record); }
+               [record](auto &x)
+               {
+                   return TypeAssign(x, record);
+               }
            ) >>= [&call_expr, record](auto args_type)
     {
         return findTypeInSymbolTable(call_expr.name, call_expr) >>=
@@ -493,7 +531,8 @@ auto TypeAssign(Xi_Call call_expr, LocalVariableRecord record)
                                     func_type_.get().param_types,
                                     args_type
                                 ),
-                                call_expr});
+                                call_expr,
+                            });
                         }
                         return call_expr.type = func_type_.get().return_type;
                     }
@@ -504,7 +543,8 @@ auto TypeAssign(Xi_Call call_expr, LocalVariableRecord record)
                             fmt::format(
                                 "expect function type, find {}", func_type_
                             ),
-                            call_expr});
+                            call_expr,
+                        });
                     }
                 },
                 func_type
@@ -521,12 +561,13 @@ auto TypeAssign(Xi_Iden iden, LocalVariableRecord record) -> TypeAssignResult
         return tl::make_unexpected(TypeAssignError{
             TypeAssignError::UnknownVariable,
             fmt::format("undeclared variable {}", iden.name),
-            iden});
+            iden,
+        });
     }
     return iden.type = iden_type->second;
 }
 
-auto TypeAssign(std::monostate /*unused*/, LocalVariableRecord)
+auto TypeAssign(std::monostate /*unused*/, LocalVariableRecord /*unused*/)
     -> TypeAssignResult
 {
     return tl::make_unexpected(TypeAssignError{
@@ -553,7 +594,10 @@ auto TypeAssign(
 auto TypeAssign(Xi_Expr &expr, LocalVariableRecord record) -> TypeAssignResult
 {
     return std::visit(
-        [record](auto &expr_) mutable { return TypeAssign(expr_, record); },
+        [record](auto &expr_) mutable
+        {
+            return TypeAssign(expr_, record);
+        },
         expr
     );
 }
@@ -561,7 +605,13 @@ auto TypeAssign(Xi_Expr &expr, LocalVariableRecord record) -> TypeAssignResult
 auto TypeAssign(Xi_Program &program)
     -> ExpectedTypeAssign<std::vector<type::Xi_Type>>
 {
-    return flatmap_(program.stmts, [](auto &x) { return TypeAssign(x); });
+    return flatmap_(
+        program.stmts,
+        [](auto &x)
+        {
+            return TypeAssign(x);
+        }
+    );
 }
 
 } // namespace xi

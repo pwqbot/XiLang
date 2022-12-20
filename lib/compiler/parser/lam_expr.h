@@ -23,8 +23,11 @@ inline auto Xi_args(std::string_view input) -> Parsed_t<std::vector<Xi_Iden>>
                  return unit(args);
              };
          }) ||
-        Xi_iden >> [](const Xi_Iden &arg)
-            { return unit(std::vector<Xi_Iden>{arg}); }
+        Xi_iden >>
+            [](const Xi_Iden &arg)
+            {
+                return unit(std::vector<Xi_Iden>{arg});
+            }
     )(input);
 }
 

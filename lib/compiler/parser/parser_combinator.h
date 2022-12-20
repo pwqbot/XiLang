@@ -58,10 +58,8 @@ constexpr auto unit(T thing) -> Parser auto
 }
 
 template <typename V>
-concept is_variant = requires(V v) {
-                         []<typename... Ts>(std::variant<Ts...> const &) {
-                         }(v);
-                     };
+concept is_variant =
+    requires(V v) { []<typename... Ts>(std::variant<Ts...> const &) {}(v); };
 
 template <typename F>
 concept no_overload = requires(F f
@@ -130,8 +128,11 @@ constexpr auto operator>>(P parser, F func) -> auto
                 },
                 result->first
             );
-            return n_parser.and_then([result](auto f)
-                                     { return std::invoke(f, result->second); }
+            return n_parser.and_then(
+                [result](auto f)
+                {
+                    return std::invoke(f, result->second);
+                }
             );
         }
         return std::nullopt;
@@ -206,7 +207,10 @@ auto many(P parser) -> Parser auto
     return reduce_many{
         std::string{},
         parser,
-        [](auto acc, auto c) { return acc + c; },
+        [](auto acc, auto c)
+        {
+            return acc + c;
+        },
     };
 }
 

@@ -16,7 +16,9 @@ constexpr auto wd =
     ranges::actions::split('\n') |
     ranges::actions::transform(
         [](auto &&line)
-        { return fmt::vformat("{:\t>1}{}\n", fmt::make_format_args("", line)); }
+        {
+            return fmt::vformat("{:\t>1}{}\n", fmt::make_format_args("", line));
+        }
     ) |
     ranges::actions::join | ranges::actions::reverse |
     ranges::actions::drop(1) | ranges::actions::reverse;
@@ -144,8 +146,12 @@ struct fmt::formatter<xi::Xi_Lam> : fmt::formatter<xi::Xi_Expr>
 
         auto args =
             l.args |
-            ranges::views::transform([](auto &&arg)
-                                     { return fmt::format("{}, ", arg); }) |
+            ranges::views::transform(
+                [](auto &&arg)
+                {
+                    return fmt::format("{}, ", arg);
+                }
+            ) |
             ranges::actions::join; // i don't know why can't drop join view
         // join(", ") will add new line
         args = args | ranges::views::reverse | ranges::views::drop(2) |
@@ -253,7 +259,9 @@ struct fmt::formatter<xi::Xi_Stmt> : fmt::formatter<xi::Xi_Expr>
     {
         return std::visit(
             [&ctx](auto &&stmt)
-            { return fmt::format_to(ctx.out(), "Xi_Stmt {}", stmt); },
+            {
+                return fmt::format_to(ctx.out(), "Xi_Stmt {}", stmt);
+            },
             i
         );
     }

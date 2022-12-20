@@ -118,7 +118,10 @@ auto CodeGen(Xi_Set set) -> codegen_result_t
     {
         ranges::for_each(
             types,
-            [&struct_type](llvm::Type *type) { struct_type->setBody(type); }
+            [&struct_type](llvm::Type *type)
+            {
+                struct_type->setBody(type);
+            }
         );
         // emit code
         return {};
@@ -240,8 +243,13 @@ auto CodeGen(Xi_Call call_expr) -> codegen_result_t
 {
     llvm::Function *calleeF = module->getFunction(call_expr.name);
 
-    return flatmap(call_expr.args, [](auto arg) { return CodeGen(arg); }) >>=
-           [calleeF](std::vector<llvm::Value *> argsV) -> codegen_result_t
+    return flatmap(
+               call_expr.args,
+               [](auto arg)
+               {
+                   return CodeGen(arg);
+               }
+           ) >>= [calleeF](std::vector<llvm::Value *> argsV) -> codegen_result_t
     {
         return builder->CreateCall(calleeF, argsV, "calltmp");
     };
@@ -303,7 +311,13 @@ auto CodeGen(Xi_Decl decl) -> codegen_result_t
 
 auto CodeGen(Xi_Expr expr) -> codegen_result_t
 {
-    return std::visit([](auto expr_) { return CodeGen(expr_); }, expr);
+    return std::visit(
+        [](auto expr_)
+        {
+            return CodeGen(expr_);
+        },
+        expr
+    );
 }
 
 auto CodeGen(Xi_Func xi_func) -> codegen_result_t
@@ -325,7 +339,10 @@ auto CodeGen(Xi_Func xi_func) -> codegen_result_t
 
     return flatmap(
                xi_func.let_idens,
-               [](Xi_Iden iden) { return CodeGen(iden.expr); }
+               [](Xi_Iden iden)
+               {
+                   return CodeGen(iden.expr);
+               }
            ) >>= [&llvm_func, xi_func](auto idens_code) -> codegen_result_t
     {
         for (const auto &[iden_code, let_var] :
@@ -349,14 +366,25 @@ auto CodeGen(Xi_Func xi_func) -> codegen_result_t
 
 auto CodeGen(Xi_Stmt stmt) -> codegen_result_t
 {
-    return std::visit([](auto stmt_) { return CodeGen(stmt_); }, stmt);
+    return std::visit(
+        [](auto stmt_)
+        {
+            return CodeGen(stmt_);
+        },
+        stmt
+    );
 }
 
 auto CodeGen(Xi_Program program) -> ExpectedCodeGen<std::string>
 {
     InitializeModule();
-    return flatmap(program.stmts, [](auto arg) { return CodeGen(arg); }) >>=
-           [](auto) -> ExpectedCodeGen<std::string>
+    return flatmap(
+               program.stmts,
+               [](auto arg)
+               {
+                   return CodeGen(arg);
+               }
+           ) >>= [](auto) -> ExpectedCodeGen<std::string>
     {
         std::string              output;
         llvm::raw_string_ostream os(output);

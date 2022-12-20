@@ -124,7 +124,11 @@ inline constexpr auto BuiltinTypes =
 inline auto ToBuiltinTypes(std::string_view s) -> std::optional<Xi_Type>
 {
     const auto *it = ranges::find_if(
-        BuiltinTypes, [&](auto &&pair) { return pair.first == s; }
+        BuiltinTypes,
+        [&](auto &&pair)
+        {
+            return pair.first == s;
+        }
     );
     if (it != BuiltinTypes.end())
     {

@@ -62,7 +62,7 @@ auto flatmap(std::vector<T> v, Func &&f)
 }
 
 template <typename T, typename Func>
-auto flatmap_(std::vector<T>& v, Func &&f)
+auto flatmap_(std::vector<T> &v, Func &&f)
 {
     const auto mapped = v | ranges::views::transform(f) | ranges::to_vector;
     return sequence(mapped);

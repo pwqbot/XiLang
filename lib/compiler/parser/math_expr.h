@@ -115,7 +115,10 @@ inline auto Xi_factor(std::string_view input) -> Parsed_t<Xi_Expr>
 inline const Parser auto Xi_term = Xi_factor >> [](Xi_Expr lhs)
 {
     return (some(combine_to_unop(Xi_mul || Xi_divide, Xi_factor), binop_fold) >>
-            [lhs](Xi_Expr rhs) { return Xi_binop_fold_go(lhs, rhs); }) ||
+            [lhs](Xi_Expr rhs)
+            {
+                return Xi_binop_fold_go(lhs, rhs);
+            }) ||
            unit(lhs);
 };
 
@@ -161,21 +164,30 @@ inline const Parser auto Xi_relation = Xi_cmp >> [](Xi_Expr lhs)
                 combine_to_unop(Xi_lt || Xi_gt || Xi_le || Xi_ge, Xi_cmp),
                 binop_fold
             ) >>
-            [lhs](auto rhs) { return Xi_binop_fold_go(lhs, rhs); }) ||
+            [lhs](auto rhs)
+            {
+                return Xi_binop_fold_go(lhs, rhs);
+            }) ||
            unit(lhs);
 };
 
 inline const Parser auto Xi_equality = Xi_relation >> [](Xi_Expr lhs)
 {
     return (some(combine_to_unop(Xi_eq || Xi_ne, Xi_relation), binop_fold) >>
-            [lhs](Xi_Expr rhs) { return Xi_binop_fold_go(lhs, rhs); }) ||
+            [lhs](Xi_Expr rhs)
+            {
+                return Xi_binop_fold_go(lhs, rhs);
+            }) ||
            unit(lhs);
 };
 
 inline const auto Xi_bool_conjunction = Xi_equality >> [](Xi_Expr lhs)
 {
     return (some(combine_to_unop(Xi_and, Xi_equality), binop_fold) >>
-            [lhs](Xi_Expr rhs) { return Xi_binop_fold_go(lhs, rhs); }) ||
+            [lhs](Xi_Expr rhs)
+            {
+                return Xi_binop_fold_go(lhs, rhs);
+            }) ||
            unit(lhs);
 };
 

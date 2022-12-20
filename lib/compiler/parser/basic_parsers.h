@@ -79,7 +79,12 @@ constexpr auto token(Parser auto parser) -> Parser auto
 
 constexpr auto symbol(char x) -> Parser auto
 {
-    return satisfy([x](char c) { return c == x; });
+    return satisfy(
+        [x](char c)
+        {
+            return c == x;
+        }
+    );
 }
 
 constexpr auto op(std::string_view op) -> Parser auto
@@ -140,8 +145,12 @@ inline const Parser auto Xi_not    = op("!");
 
 inline const Parser auto s_iden = token(some(s_alphanum || s_underscore));
 
-const auto Xi_iden = s_iden >> filter([](std::string_view s)
-                                      { return !IsKeyWords(s); }) >>
+const auto Xi_iden = s_iden >> filter(
+                                   [](std::string_view s)
+                                   {
+                                       return !IsKeyWords(s);
+                                   }
+                               ) >>
                      [](auto name)
 {
     return unit(Xi_Iden{
@@ -155,9 +164,13 @@ const auto Xi_idenexpr = Xi_iden >> [](auto iden)
     return unit(Xi_Expr(iden));
 };
 // string literal
-inline const Parser auto
-    Xi_string = token(s_quote) >
-                many(satisfy([](char c) { return c != '\"'; })) >> [](auto s)
+inline const Parser auto Xi_string = token(s_quote) > many(satisfy(
+                                                          [](char c)
+                                                          {
+                                                              return c != '\"';
+                                                          }
+                                                      )) >>
+                                     [](auto s)
 {
     return s_quote >> [s](auto)
     {

@@ -13,7 +13,7 @@ AlignConsecutiveMacros: AcrossEmptyLinesAndComments
 AlignConsecutiveDeclarations: Consecutive
 AlignConsecutiveAssignments: Consecutive
 
-AllowShortLambdasOnASingleLine: Inline
+AllowShortLambdasOnASingleLine: Empty
 AllowShortFunctionsOnASingleLine: Inline
 EmptyLineBeforeAccessModifier: Always
 AlwaysBreakTemplateDeclarations: Yes

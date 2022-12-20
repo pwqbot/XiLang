@@ -112,7 +112,9 @@ struct fmt::formatter<xi::type::Xi_Type> : fmt::formatter<std::string>
     {
         return std::visit(
             [&ctx](auto &&type)
-            { return fmt::format_to(ctx.out(), "{}", type); },
+            {
+                return fmt::format_to(ctx.out(), "{}", type);
+            },
             i
         );
     }

@@ -24,10 +24,15 @@ int main()
         {
             fmt::print("Parse successfully\n");
             fmt::print("AST:\n {}\n", ast_result.value().first);
-            auto ast = ast_result.value().first;
+            auto ast      = ast_result.value().first;
             auto ast_type = TypeAssign(ast);
-            if (!ast_type.has_value()) {
-                fmt::print("Type error {}\n {}\n", ast_type.error().what(), ast_type.error().node);
+            if (!ast_type.has_value())
+            {
+                fmt::print(
+                    "Type error {}\n {}\n",
+                    ast_type.error().what(),
+                    ast_type.error().node
+                );
                 return 1;
             }
 

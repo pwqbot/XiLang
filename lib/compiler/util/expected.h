@@ -1,7 +1,7 @@
 #pragma once
 
-#include <tl/expected.hpp>
 #include <fmt/core.h>
+#include <tl/expected.hpp>
 
 namespace xi
 {

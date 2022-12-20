@@ -88,21 +88,34 @@ constexpr auto KeyWords = std::array<std::string_view, 6>{
 
 constexpr auto IsKeyWords(std::string_view str) -> bool
 {
-    return ranges::find_if(KeyWords, [&](auto kw) { return kw == str; }) !=
-           KeyWords.end();
+    return ranges::find_if(
+               KeyWords,
+               [&](auto kw)
+               {
+                   return kw == str;
+               }
+           ) != KeyWords.end();
 }
 
 constexpr auto OpStr_To_Xi_Op(std::string_view s) -> Xi_Op
 {
     return ranges::find_if(
-               OpMaps, [&](auto p) { return p.first == s; }
+               OpMaps,
+               [&](auto p)
+               {
+                   return p.first == s;
+               }
     )->second;
 }
 
 constexpr auto Xi_Op_To_OpStr(Xi_Op op) -> std::string_view
 {
     return ranges::find_if(
-               OpMaps, [&](auto p) { return p.second == op; }
+               OpMaps,
+               [&](auto p)
+               {
+                   return p.second == op;
+               }
     )->first;
 }
 
@@ -187,12 +200,12 @@ inline auto operator<=>(const Xi_Iden &lhs, const Xi_Iden &rhs)
 
 struct Xi_Func
 {
-    std::string                             name;
-    std::vector<std::string>                params;
-    Xi_Expr                                 expr;
-    type::Xi_Type                           type      = type::unknown{};
-    std::vector<Xi_Iden> let_idens = {};
-    auto operator<=>(const Xi_Func &rhs) const        = default;
+    std::string              name;
+    std::vector<std::string> params;
+    Xi_Expr                  expr;
+    type::Xi_Type            type      = type::unknown{};
+    std::vector<Xi_Iden>     let_idens = {};
+    auto                     operator<=>(const Xi_Func &rhs) const = default;
 };
 
 using Xi_Stmt = std::variant<Xi_Expr, Xi_Func, Xi_Decl, Xi_Set>;
