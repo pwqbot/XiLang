@@ -5,10 +5,10 @@
 namespace xi
 {
 
-TEST_CASE("Parser Xi_Lam call", "[Xi_CallExpr]")
+TEST_CASE("Parse function call", "[Xi_Call]")
 {
     REQUIRE_THAT(
-        Xi_call("func(a b c)"),
+        Xi_call("func @ a b c"),
         AstNodeMatcher(
             Xi_Call{
                 Xi_Iden{"func"},
@@ -23,7 +23,7 @@ TEST_CASE("Parser Xi_Lam call", "[Xi_CallExpr]")
     );
 
     REQUIRE_THAT(
-        Xi_call("func()"),
+        Xi_call("func@"),
         AstNodeMatcher(
             Xi_Call{
                 Xi_Iden{"func"},
@@ -34,7 +34,7 @@ TEST_CASE("Parser Xi_Lam call", "[Xi_CallExpr]")
     );
 
     REQUIRE_THAT(
-        Xi_call("func(1 2 3)"),
+        Xi_call("func@1 2 3"),
         AstNodeMatcher(
             Xi_Call{
                 Xi_Iden{"func"},
@@ -49,7 +49,7 @@ TEST_CASE("Parser Xi_Lam call", "[Xi_CallExpr]")
     );
 
     REQUIRE_THAT(
-        Xi_call("func(1 + 1 2 3)"),
+        Xi_call("func@1 + 1 2 3"),
         AstNodeMatcher(
             Xi_Call{
                 Xi_Iden{"func"},
@@ -68,7 +68,7 @@ TEST_CASE("Parser Xi_Lam call", "[Xi_CallExpr]")
     );
 
     REQUIRE_THAT(
-        Xi_call("func(1 b true)"),
+        Xi_call("func@1 b true"),
         AstNodeMatcher(
             Xi_Call{
                 Xi_Iden{"func"},
@@ -83,12 +83,12 @@ TEST_CASE("Parser Xi_Lam call", "[Xi_CallExpr]")
     );
 
     REQUIRE_THAT(
-        Xi_call("printf(\" pow(2 10) = %d \" pow(check(2 == 3 1 2) 10))"),
+        Xi_call("printf@\" pow@2 10 = %d \" pow@ (check @ 2 == 3 1 2) 10"),
         AstNodeMatcher(
             Xi_Call{
                 Xi_Iden{"printf"},
                 {
-                    Xi_String{" pow(2 10) = %d "},
+                    Xi_String{" pow@2 10 = %d "},
                     Xi_Call{
                         Xi_Iden{"pow"},
                         {

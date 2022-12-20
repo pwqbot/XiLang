@@ -100,7 +100,7 @@ TEST_CASE("Parse program", "[Xi_Expr]")
         Xi_program("fn add :: i64 -> i64 -> i64\n"
                    "add x y = x + y\n"
                    "fn add2 :: i64 -> i64 -> i64\n"
-                   "add2 x y = add(x y) + add (x y)"),
+                   "add2 x y = (add @x y) + (add @x y)"),
         AstNodeMatcher(
             Xi_Program{std::vector<Xi_Stmt>{
                 Xi_Decl{
@@ -167,7 +167,7 @@ TEST_CASE("Parse program", "[Xi_Expr]")
                    "2 * 3\n"
                    "true\n"
                    "?x y -> (x + y - 1)\n"
-                   "f(1 b true)\n"
+                   "f @ 1 b true\n"
                    "[1, 2, 3, 4, 5]"),
         AstNodeMatcher(
             Xi_Program{std::vector<Xi_Stmt>{

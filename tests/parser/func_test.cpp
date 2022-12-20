@@ -21,7 +21,7 @@ TEST_CASE("Parse Xi_func", "[Xi_Xi]")
     );
 
     REQUIRE_THAT(
-        Xi_func("x = 1 + 3 + f(1 2 3)"),
+        Xi_func("x = 1 + 3 + f @ 1 2 3"),
         AstNodeMatcher(
             Xi_Func{
                 .name   = "x",

@@ -8,11 +8,24 @@
 namespace xi
 {
 
+inline const auto Xi_exprBreakNewline = s_whitespace >>
+                                        [](std::string spaces) -> Parser auto
+{
+    return [spaces](std::string_view input) -> Parsed_t<Xi_Expr>
+    {
+        if (spaces.contains('\n'))
+        {
+            return std::nullopt;
+        }
+        return Xi_expr(input);
+    };
+};
+
 inline const auto Xi_call = Xi_iden >> [](const Xi_Iden &iden)
 {
-    return token(s_lparen) >
+    return token(symbol('@')) >
            many(
-               Xi_expr,
+               Xi_exprBreakNewline,
                [](std::vector<Xi_Expr> lhs, const Xi_Expr &rhs)
                {
                    lhs.push_back(rhs);
@@ -22,10 +35,7 @@ inline const auto Xi_call = Xi_iden >> [](const Xi_Iden &iden)
            ) >>
            [iden](const std::vector<Xi_Expr> &args)
     {
-        return token(s_rparen) >> [iden, args](auto)
-        {
-            return unit(Xi_Expr{Xi_Call{iden, args}});
-        };
+        return unit(Xi_Expr{Xi_Call{iden, args}});
     };
 };
-}
+} // namespace xi
