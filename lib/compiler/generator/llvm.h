@@ -4,6 +4,7 @@
 #include <compiler/ast/ast_format.h>
 #include <compiler/ast/type.h>
 #include <compiler/generator/error.h>
+#include <compiler/parser/basic_parsers.h>
 #include <compiler/parser/utils.h>
 #include <compiler/util/expected.h>
 #include <llvm/ADT/APFloat.h>
@@ -20,6 +21,7 @@
 #include <llvm/Target/TargetOptions.h>
 #include <map>
 #include <spdlog/spdlog.h>
+#include <variant>
 
 namespace xi
 {
@@ -118,21 +120,33 @@ auto XiTypeToLLVMType(type::Xi_Type xi_t) -> ExpectedCodeGen<llvm::Type *>
 // generate user defined type
 auto CodeGen(Xi_Set set) -> codegen_result_t
 {
-    auto *struct_type  = llvm::StructType::create(*context, set.name);
-    auto  set_type     = std::get<recursive_wrapper<type::set>>(set.type).get();
-    auto  member_types = set_type.members;
+    auto set_type     = std::get<recursive_wrapper<type::set>>(set.type).get();
+    auto member_types = set_type.members;
     return flatmap(member_types, XiTypeToLLVMType) >>=
-           [&struct_type](std::vector<llvm::Type *> types) -> codegen_result_t
+           [set](std::vector<llvm::Type *> llvm_members_type) -> codegen_result_t
     {
-        ranges::for_each(
-            types,
-            [&struct_type](llvm::Type *type)
-            {
-                struct_type->setBody(type);
-            }
+        auto *struct_type = llvm::StructType::create(*context, llvm_members_type, set.name);
+        // generate constructor
+        auto *constructor = llvm::Function::Create(
+            llvm::FunctionType::get(struct_type, llvm_members_type, false),
+            llvm::Function::ExternalLinkage,
+            fmt::format("{}.new", set.name),
+            module.get()
         );
-        // emit code
-        return {};
+
+        auto *entry = llvm::BasicBlock::Create(*context, "entry", constructor);
+        builder->SetInsertPoint(entry);
+        // create struct in stack
+        auto *struct_ptr = builder->CreateAlloca(struct_type);
+
+        for (auto &arg : constructor->args())
+        {
+            auto *field = builder->CreateStructGEP(struct_type, struct_ptr, 0);
+            builder->CreateStore(&arg, field);
+        }
+        builder->CreateRet(struct_ptr);
+
+        return struct_ptr;
     };
 }
 
