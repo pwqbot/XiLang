@@ -3,8 +3,8 @@
 #include <compare>
 #include <compiler/ast/type.h>
 #include <compiler/ast/type_format.h>
-#include <compiler/ast/utils.h>
-#include <compiler/parser/utils.h>
+#include <compiler/utils/variant_cmp.h>
+#include <compiler/utils/recursive_wrapper.h>
 #include <fmt/format.h>
 #include <magic_enum.hpp>
 #include <range/v3/algorithm/find_if.hpp>

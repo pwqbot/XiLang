@@ -1,6 +1,6 @@
 #pragma once
 
-#include <compiler/parser/utils.h>
+#include <compiler/utils/recursive_wrapper.h>
 #include <variant>
 
 namespace xi

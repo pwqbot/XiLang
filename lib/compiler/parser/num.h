@@ -12,11 +12,11 @@ inline const Parser auto Xi_integer = token(maybe(symbol('-'))) >> [](auto x)
 {
     return token(s_natural) >> [x](auto nat)
     {
-        if (x)
-        {
-            return unit(Xi_Expr{Xi_Integer{.value{-std::stoi(nat)}}});
-        }
-        return unit(Xi_Expr{Xi_Integer{.value{std::stoi(nat)}}});
+        return unit(Xi_Expr{
+            Xi_Integer{
+                .value = x ? -std::stoi(nat) : std::stoi(nat),
+            },
+        });
     };
 };
 
@@ -25,10 +25,14 @@ inline const Parser auto Xi_real = Xi_integer >> [](const Xi_Integer &integer)
 {
     return token(s_dot) > token(s_natural) >> [integer](auto nat)
     {
-        return unit(Xi_Expr{Xi_Real{
-            .value{std::stod(std::to_string(integer.value) + "." + nat)}}});
+        return unit(Xi_Expr{
+            Xi_Real{
+                .value = std::stod(std::to_string(integer.value) + "." + nat),
+            },
+        });
     };
 };
 
 inline const Parser auto Xi_number = Xi_real || Xi_integer;
+
 } // namespace xi

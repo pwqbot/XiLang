@@ -12,7 +12,7 @@ namespace xi
 
 inline const Parser auto Xi_set_type = token(some(s_alphanum || s_underscore)
                                        ) >>
-                                       [](const std::string &name)
+                                       [](std::string name)
 {
     return unit(name);
 };

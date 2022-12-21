@@ -2,9 +2,9 @@
 
 #include <compiler/ast/ast.h>
 #include <compiler/ast/type_format.h>
-#include <compiler/ast/utils.h>
+#include <compiler/utils/variant_cmp.h>
 #include <compiler/functional/monad.h>
-#include <compiler/util/expected.h>
+#include <compiler/utils/expected.h>
 #include <map>
 #include <range/v3/algorithm/find_if.hpp>
 #include <variant>

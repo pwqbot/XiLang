@@ -1,7 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <compiler/ast/ast.h>
 #include <compiler/ast/ast_format.h>
-#include <compiler/parser/utils.h>
+#include <compiler/utils/recursive_wrapper.h>
 #include <test_header.h>
 
 namespace xi

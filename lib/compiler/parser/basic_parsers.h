@@ -164,6 +164,7 @@ const auto Xi_idenexpr = Xi_iden >> [](auto iden)
 {
     return unit(Xi_Expr(iden));
 };
+
 // string literal
 inline const Parser auto Xi_string = token(s_quote) > many(satisfy(
                                                           [](char c)
@@ -173,10 +174,7 @@ inline const Parser auto Xi_string = token(s_quote) > many(satisfy(
                                                       )) >>
                                      [](auto s)
 {
-    return s_quote >> [s](auto)
-    {
-        return unit(Xi_Expr{Xi_String{s}});
-    };
+    return s_quote > unit(Xi_Expr{Xi_String{s}});
 };
 
 } // namespace xi

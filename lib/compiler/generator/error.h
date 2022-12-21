@@ -1,7 +1,7 @@
 #pragma once
 
 #include <compiler/functional/monad.h>
-#include <compiler/util/expected.h>
+#include <compiler/utils/expected.h>
 #include <fmt/core.h>
 #include <magic_enum.hpp>
 #include <string>

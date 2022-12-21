@@ -146,15 +146,11 @@ inline auto Xi_arithmeticexpr(std::string_view input) -> Parsed_t<Xi_Expr>
 // <boolvalue> ::= <boolean> | <mathexpr> <cmpop> <mathexpr> | "(" <boolexpr>
 // ")"
 
-inline const Parser auto Xi_true = token(str("true")) >> [](auto)
-{
-    return unit(Xi_Expr{Xi_Boolean{true}});
-};
+inline const Parser auto Xi_true = token(str("true")) >
+                                   unit(Xi_Expr{Xi_Boolean{true}});
 
-inline const Parser auto Xi_false = token(str("false")) >> [](auto)
-{
-    return unit(Xi_Expr{Xi_Boolean{false}});
-};
+inline const Parser auto Xi_false = token(str("false")) >
+                                    unit(Xi_Expr{Xi_Boolean{false}});
 
 inline const Parser auto Xi_boolean = Xi_true || Xi_false;
 

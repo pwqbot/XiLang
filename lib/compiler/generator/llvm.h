@@ -5,8 +5,8 @@
 #include <compiler/ast/type.h>
 #include <compiler/generator/error.h>
 #include <compiler/parser/basic_parsers.h>
-#include <compiler/parser/utils.h>
-#include <compiler/util/expected.h>
+#include <compiler/utils/recursive_wrapper.h>
+#include <compiler/utils/expected.h>
 #include <llvm/ADT/APFloat.h>
 #include <llvm/Analysis/LoopAnalysisManager.h>
 #include <llvm/IR/Constants.h>

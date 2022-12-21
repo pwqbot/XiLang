@@ -1,17 +1,14 @@
 #pragma once
 
 #include <array>
-#include <compiler/ast/utils.h>
-#include <compiler/parser/utils.h>
+#include <compiler/utils/variant_cmp.h>
+#include <compiler/utils/recursive_wrapper.h>
 #include <optional>
 #include <range/v3/algorithm.hpp>
 #include <variant>
 #include <vector>
 
-namespace xi
-{
-
-namespace type
+namespace xi::type
 {
 
 struct i64
@@ -143,6 +140,4 @@ inline auto ToBuiltinTypes(std::string_view s) -> std::optional<Xi_Type>
     return std::nullopt;
 }
 
-} // namespace type
-
-} // namespace xi
+} // namespace xi::type
