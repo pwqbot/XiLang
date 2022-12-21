@@ -10,25 +10,19 @@ definition of the grammar of the language.
 
 see how it parse a `if ... then ... else ...` expr
 ```cpp
-const auto Xi_if = token(s_if) > Xi_expr >> [](const Xi_Expr &cond)
+inline const auto Xi_if = token(s_if) > Xi_expr >> [](Xi_Expr cond)
 {
-    return token(s_then) >> [cond](auto)
+    return token(s_then) > Xi_expr >> [cond](Xi_Expr then)
     {
-        return Xi_expr >> [cond](const Xi_Expr &then)
+        return token(s_else) > Xi_expr >> [cond, then](Xi_Expr els)
         {
-            return token(s_else) >> [cond, then](auto)
-            {
-                return Xi_expr >> [cond, then](const Xi_Expr &els)
-                {
-                    return unit(Xi_Expr{
-                        Xi_If{
-                            .cond = cond,
-                            .then = then,
-                            .els  = els,
-                        },
-                    });
-                };
-            };
+            return unit(Xi_Expr{
+                Xi_If{
+                    .cond = cond,
+                    .then = then,
+                    .els  = els,
+                },
+            });
         };
     };
 };
