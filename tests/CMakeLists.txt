@@ -5,4 +5,4 @@ include(Catch fmt::fmt)
 
 include(catchtest)
 
-catchtest("parser;generator")
+catchtest("parser;generator;ast")

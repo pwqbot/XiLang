@@ -1,16 +1,16 @@
 #pragma once
 
+#include "compiler/ast/type.h"
+#include "compiler/ast/type_format.h"
+#include "compiler/utils/recursive_wrapper.h"
+#include "compiler/utils/variant_cmp.h"
+
 #include <compare>
-#include <compiler/ast/type.h>
-#include <compiler/ast/type_format.h>
-#include <compiler/utils/recursive_wrapper.h>
-#include <compiler/utils/variant_cmp.h>
 #include <fmt/format.h>
 #include <magic_enum.hpp>
 #include <range/v3/algorithm/find_if.hpp>
 #include <range/v3/view.hpp>
 #include <string>
-#include <type_traits>
 #include <utility>
 #include <variant>
 
@@ -296,28 +296,6 @@ inline auto operator<=>(const Xi_Unop &lhs, const Xi_Unop &rhs)
     return lhs.op <=> rhs.op;
 }
 
-struct Xi_If
-{
-    Xi_Expr       cond;
-    Xi_Expr       then;
-    Xi_Expr       els;
-    type::Xi_Type type = type::unknown{};
-};
-
-inline auto operator<=>(const Xi_If &lhs, const Xi_If &rhs)
-    -> std::partial_ordering
-{
-    if (auto cmp = lhs.cond <=> rhs.cond; cmp != nullptr)
-    {
-        return cmp;
-    }
-    if (auto cmp = lhs.then <=> rhs.then; cmp != nullptr)
-    {
-        return cmp;
-    }
-    return lhs.els <=> rhs.els;
-}
-
 struct Xi_Lam
 {
     std::vector<Xi_Iden> args;
@@ -333,40 +311,6 @@ inline auto operator<=>(const Xi_Lam &lhs, const Xi_Lam &rhs)
         return cmp;
     }
     return lhs.body <=> rhs.body;
-}
-
-struct Xi_Call
-{
-    std::string          name;
-    std::vector<Xi_Expr> args;
-    type::Xi_Type        type = type::unknown{};
-};
-
-inline auto operator<=>(const Xi_Call &lhs, const Xi_Call &rhs)
-    -> std::partial_ordering
-{
-    if (auto cmp = lhs.args <=> rhs.args; cmp != nullptr)
-    {
-        return cmp;
-    }
-    return lhs.name <=> rhs.name;
-}
-
-struct Xi_ArrayIndex
-{
-    std::string   array_var_name;
-    Xi_Expr       index;
-    type::Xi_Type type = type::unknown{};
-};
-
-inline auto operator<=>(const Xi_ArrayIndex &lhs, const Xi_ArrayIndex &rhs)
-    -> std::partial_ordering
-{
-    if (auto cmp = lhs.array_var_name <=> rhs.array_var_name; cmp != nullptr)
-    {
-        return cmp;
-    }
-    return lhs.index <=> rhs.index;
 }
 
 } // namespace xi

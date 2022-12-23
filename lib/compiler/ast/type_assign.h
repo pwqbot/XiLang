@@ -1,10 +1,17 @@
-#include "compiler/ast/type.h"
+#pragma once
 
-#include <compiler/ast/ast.h>
-#include <compiler/ast/type_format.h>
-#include <compiler/functional/monad.h>
-#include <compiler/utils/expected.h>
-#include <compiler/utils/variant_cmp.h>
+#include "compiler/ast/array_index.h"
+#include "compiler/ast/ast.h"
+#include "compiler/ast/ast_format.h"
+#include "compiler/ast/call.h"
+#include "compiler/ast/if.h"
+#include "compiler/ast/error.h"
+#include "compiler/ast/type.h"
+#include "compiler/ast/type_format.h"
+#include "compiler/functional/monad.h"
+#include "compiler/utils/expected.h"
+#include "compiler/utils/variant_cmp.h"
+
 #include <map>
 #include <range/v3/algorithm/find_if.hpp>
 #include <variant>
@@ -12,75 +19,13 @@
 namespace xi
 {
 
-enum class SymbolType
-{
-    Function,
-    Type,
-    All,
-};
-
-static auto GetSymbolTable()
-    -> std::map<std::pair<std::string, SymbolType>, type::Xi_Type> &
-{
-    static std::map<std::pair<std::string, SymbolType>, type::Xi_Type>
-        symbol_table{};
-    return symbol_table;
-}
-
-static auto GetFunctionDefinitionTable()
-    -> std::unordered_map<std::string, type::Xi_Type> &
-{
-    static std::unordered_map<std::string, type::Xi_Type> symbol_table;
-    return symbol_table;
-}
-
 inline auto ClearTypeAssignState()
 {
     GetSymbolTable().clear();
     GetFunctionDefinitionTable().clear();
 }
 
-struct TypeAssignError
-{
-    enum Error
-    {
-        UnknownType,
-        DuplicateDeclaration,
-        DuplicateDefinition,
-        TypeMismatch,
-        ParameterCountMismatch,
-        UnknownVariable,
-        UnknownMember,
-        VarargNotLast,
-    };
-
-    Error       err;
-    std::string message;
-    Xi_Stmt     node;
-    auto        what() -> std::string
-    {
-        return fmt::format(
-            "TypeAssignError: {} {}", magic_enum::enum_name(err), message
-        );
-    }
-};
-
-template <typename T>
-using ExpectedTypeAssign  = tl::expected<T, TypeAssignError>;
-using TypeAssignResult    = tl::expected<type::Xi_Type, TypeAssignError>;
-using LocalVariableRecord = std::unordered_map<std::string, type::Xi_Type>;
-
-auto TypeAssign(
-    Xi_Expr &expr, LocalVariableRecord /*record*/ = LocalVariableRecord{}
-) -> TypeAssignResult;
-
-template <typename T>
-struct unit_<ExpectedTypeAssign<T>>
-{
-    static auto unit(T t) -> ExpectedTypeAssign<T> { return t; }
-};
-
-auto TypeAssign(
+inline auto TypeAssign(
     Xi_Integer /*unused*/,
     LocalVariableRecord /*unused*/ = LocalVariableRecord{}
 ) -> TypeAssignResult
@@ -88,21 +33,21 @@ auto TypeAssign(
     return type::i64{};
 }
 
-auto TypeAssign(
+inline auto TypeAssign(
     Xi_Real /*unused*/, LocalVariableRecord /*unused*/ = LocalVariableRecord{}
 ) -> TypeAssignResult
 {
     return type::real{};
 }
 
-auto TypeAssign(
+inline auto TypeAssign(
     Xi_String /*unused*/, LocalVariableRecord /*unused*/ = LocalVariableRecord{}
 ) -> TypeAssignResult
 {
     return type::string{};
 }
 
-auto TypeAssign(
+inline auto TypeAssign(
     Xi_Boolean /*unused*/,
     LocalVariableRecord /*unused*/ = LocalVariableRecord{}
 ) -> TypeAssignResult
@@ -110,69 +55,7 @@ auto TypeAssign(
     return type::buer{};
 }
 
-auto findTypeInSymbolTable(std::string_view name, SymbolType st, Xi_Stmt node)
-    -> TypeAssignResult
-{
-    if (st == SymbolType::Type || st == SymbolType::All)
-    {
-        auto t = type::ToBuiltinTypes(name);
-        if (t.has_value())
-        {
-            return t.value();
-        }
-
-        // check if it is an array
-        auto l_bracket_pos = name.find('[');
-        auto r_bracket_pos = name.find_last_of(']');
-        auto is_array      = l_bracket_pos != std::string_view::npos and
-                        r_bracket_pos != std::string_view::npos and
-                        r_bracket_pos > l_bracket_pos and
-                        name.substr(0, l_bracket_pos) == "arr";
-        if (is_array)
-        {
-            auto inner_type_name =
-
-                name.substr(
-                    l_bracket_pos + 1, r_bracket_pos - l_bracket_pos - 1
-                );
-            auto expect_inner_type =
-                findTypeInSymbolTable(inner_type_name, st, node);
-            if (!expect_inner_type)
-            {
-                return tl::make_unexpected(TypeAssignError{
-                    TypeAssignError::UnknownType,
-                    fmt::format("Unknown type {}", inner_type_name),
-                    node,
-                });
-            }
-            return type::array{expect_inner_type.value()};
-        }
-    }
-
-    if (st == SymbolType::All)
-    {
-        for (const auto &st_ : {SymbolType::Function, SymbolType::Type})
-        {
-            auto it = GetSymbolTable().find({std::string(name), st_});
-            if (it != GetSymbolTable().end())
-            {
-                return it->second;
-            }
-        }
-    }
-    else
-    {
-        if (auto type = GetSymbolTable().find({std::string(name), st});
-            type != GetSymbolTable().end())
-        {
-            return type->second;
-        }
-    }
-    return tl::make_unexpected(TypeAssignError{
-        TypeAssignError::UnknownType, fmt::format("{}", name), node});
-}
-
-auto TypeAssign(Xi_Set &set) -> TypeAssignResult
+inline auto TypeAssign(Xi_Set &set) -> TypeAssignResult
 {
     if (GetSymbolTable().contains({set.name, SymbolType::Type}))
     {
@@ -217,56 +100,8 @@ auto TypeAssign(Xi_Set &set) -> TypeAssignResult
     };
 }
 
-auto TypeAssign(Xi_ArrayIndex &index, LocalVariableRecord record)
-{
-    auto tmpIden = Xi_Expr{Xi_Iden{
-        .name = index.array_var_name,
-        .expr = std::monostate{},
-    }};
-    return TypeAssign(tmpIden, record) >>=
-           [&index, record](type::Xi_Type array_type_v)
-    {
-        return std::visit(
-            [&index, record](auto array_type_wrapper) -> TypeAssignResult
-            {
-                if constexpr (std::same_as<
-                                  std::decay_t<decltype(array_type_wrapper)>,
-                                  recursive_wrapper<type::array>>)
-                {
-                    return TypeAssign(index.index, record) >>=
-                           [&index,
-                            &array_type_wrapper](type::Xi_Type index_type
-                           ) -> TypeAssignResult
-                    {
-                        if (index_type != type::i64{})
-                        {
-                            return tl::make_unexpected(TypeAssignError{
-                                TypeAssignError::TypeMismatch,
-                                fmt::format(
-                                    "array index must be i64, but got {}",
-                                    index_type
-                                ),
-                                index,
-                            });
-                        }
-                        return array_type_wrapper.get().inner_type;
-                    };
-                }
-                else
-                {
-                    return tl::make_unexpected(TypeAssignError{
-                        TypeAssignError::TypeMismatch,
-                        fmt::format("{}", array_type_wrapper),
-                        index,
-                    });
-                }
-            },
-            array_type_v
-        );
-    };
-}
-
-auto TypeAssign(Xi_Array &arr, LocalVariableRecord record)
+inline auto TypeAssign(Xi_Array &arr, LocalVariableRecord record)
+    -> TypeAssignResult
 {
     return flatmap(
                arr.elements,
@@ -287,7 +122,7 @@ auto TypeAssign(Xi_Array &arr, LocalVariableRecord record)
     };
 }
 
-auto typeAssignDot(Xi_Binop &binop, LocalVariableRecord record)
+inline auto typeAssignDot(Xi_Binop &binop, LocalVariableRecord record)
     -> TypeAssignResult
 {
     return TypeAssign(binop.lhs, record) >>=
@@ -341,7 +176,8 @@ auto typeAssignDot(Xi_Binop &binop, LocalVariableRecord record)
     };
 }
 
-auto TypeAssign(Xi_Binop &binop, LocalVariableRecord record) -> TypeAssignResult
+inline auto TypeAssign(Xi_Binop &binop, LocalVariableRecord record)
+    -> TypeAssignResult
 {
     if (binop.op == Xi_Op::Dot)
     {
@@ -444,7 +280,8 @@ auto TypeAssign(Xi_Binop &binop, LocalVariableRecord record) -> TypeAssignResult
     };
 }
 
-auto TypeAssign(Xi_Unop &unop, LocalVariableRecord record) -> TypeAssignResult
+inline auto TypeAssign(Xi_Unop &unop, LocalVariableRecord record)
+    -> TypeAssignResult
 {
     return TypeAssign(unop.expr, record) >>=
            [&unop](type::Xi_Type expr_type) -> TypeAssignResult
@@ -488,7 +325,7 @@ auto TypeAssign(Xi_Unop &unop, LocalVariableRecord record) -> TypeAssignResult
     };
 }
 
-auto TypeAssign(Xi_Decl &decl) -> TypeAssignResult
+inline auto TypeAssign(Xi_Decl &decl) -> TypeAssignResult
 {
     if (GetSymbolTable().contains({decl.name, SymbolType::Function}))
     {
@@ -540,45 +377,7 @@ auto TypeAssign(Xi_Decl &decl) -> TypeAssignResult
     };
 }
 
-auto TypeAssign(Xi_If &if_expr, LocalVariableRecord record) -> TypeAssignResult
-{
-    return TypeAssign(if_expr.cond, record) >>=
-           [&if_expr, record](auto cond_type) -> TypeAssignResult
-    {
-        return TypeAssign(if_expr.then, record) >>=
-               [cond_type, &if_expr, record](auto then_type) -> TypeAssignResult
-        {
-            return TypeAssign(if_expr.els, record) >>=
-                   [cond_type, then_type, &if_expr](auto else_type
-                   ) -> TypeAssignResult
-            {
-                if (cond_type != type::buer{})
-                {
-                    return tl::make_unexpected(TypeAssignError{
-                        TypeAssignError::TypeMismatch,
-                        fmt::format("expect buer, find {}", cond_type),
-                        if_expr,
-                    });
-                }
-                if (then_type != else_type)
-                {
-                    return tl::make_unexpected(TypeAssignError{
-                        TypeAssignError::TypeMismatch,
-                        fmt::format(
-                            "expect same type, lhs: {}, rhs {}",
-                            then_type,
-                            else_type
-                        ),
-                        if_expr,
-                    });
-                }
-                return if_expr.type = then_type;
-            };
-        };
-    };
-}
-
-auto TypeAssign(Xi_Func &func_def) -> TypeAssignResult
+inline auto TypeAssign(Xi_Func &func_def) -> TypeAssignResult
 {
     if (GetFunctionDefinitionTable().contains(func_def.name))
     {
@@ -703,12 +502,12 @@ auto TypeAssign(Xi_Func &func_def) -> TypeAssignResult
     };
 }
 
-auto TypeAssign(Xi_Comment /*unused*/) -> TypeAssignResult
+inline auto TypeAssign(Xi_Comment /*unused*/) -> TypeAssignResult
 {
     return xi::type::unknown{};
 }
 
-auto TypeAssign(Xi_Stmt &stmt) -> TypeAssignResult
+inline auto TypeAssign(Xi_Stmt &stmt) -> TypeAssignResult
 {
     return std::visit(
         [](auto &x) mutable
@@ -719,71 +518,15 @@ auto TypeAssign(Xi_Stmt &stmt) -> TypeAssignResult
     );
 }
 
-auto TypeAssign(Xi_Lam & /*unused*/, LocalVariableRecord /*unused*/)
+inline auto TypeAssign(Xi_Lam & /*unused*/, LocalVariableRecord /*unused*/)
     -> TypeAssignResult
 {
     return tl::make_unexpected(TypeAssignError{
         TypeAssignError::TypeMismatch, "not implemented", Xi_Lam{}});
 }
 
-auto TypeAssign(Xi_Call call_expr, LocalVariableRecord record)
+inline auto TypeAssign(Xi_Iden iden, LocalVariableRecord record)
     -> TypeAssignResult
-{
-    return flatmap_(
-               call_expr.args,
-               [record](auto &x)
-               {
-                   return TypeAssign(x, record);
-               }
-           ) >>= [&call_expr, record](auto args_type)
-    {
-        return findTypeInSymbolTable(
-                   call_expr.name, SymbolType::Function, call_expr
-               ) >>= [args_type, &call_expr, record](auto func_type
-                     ) -> TypeAssignResult
-        {
-            return std::visit(
-                [&call_expr,
-                 args_type]<typename T>(T &&func_type_) -> TypeAssignResult
-                {
-                    if constexpr (std::same_as<
-                                      std::decay_t<T>,
-                                      recursive_wrapper<type::function>>)
-                    {
-                        if (!func_type_.get().is_vararg &&
-                            func_type_.get().param_types != args_type)
-                        {
-                            return tl::make_unexpected(TypeAssignError{
-                                TypeAssignError::TypeMismatch,
-                                fmt::format(
-                                    "param type mismatch, expect {}, find "
-                                    "{}",
-                                    func_type_.get().param_types,
-                                    args_type
-                                ),
-                                call_expr,
-                            });
-                        }
-                        return call_expr.type = func_type_.get().return_type;
-                    }
-                    else
-                    {
-                        return tl::make_unexpected(TypeAssignError{
-                            TypeAssignError::TypeMismatch,
-                            fmt::format(
-                                "expect function type, find {}", func_type_
-                            ),
-                            call_expr,
-                        });
-                    }
-                },
-                func_type
-            );
-        };
-    };
-}
-
-auto TypeAssign(Xi_Iden iden, LocalVariableRecord record) -> TypeAssignResult
 {
     auto iden_type = record.find(iden.name);
     if (iden_type == record.end())
@@ -797,7 +540,8 @@ auto TypeAssign(Xi_Iden iden, LocalVariableRecord record) -> TypeAssignResult
     return iden.type = iden_type->second;
 }
 
-auto TypeAssign(std::monostate /*unused*/, LocalVariableRecord /*unused*/)
+inline auto
+TypeAssign(std::monostate /*unused*/, LocalVariableRecord /*unused*/)
     -> TypeAssignResult
 {
     return tl::make_unexpected(TypeAssignError{
@@ -805,7 +549,8 @@ auto TypeAssign(std::monostate /*unused*/, LocalVariableRecord /*unused*/)
 }
 
 template <typename T>
-auto TypeAssign(recursive_wrapper<T> &wrapper, LocalVariableRecord record)
+inline auto
+TypeAssign(recursive_wrapper<T> &wrapper, LocalVariableRecord record)
     -> TypeAssignResult
 {
     auto &x = wrapper.get();
@@ -813,7 +558,7 @@ auto TypeAssign(recursive_wrapper<T> &wrapper, LocalVariableRecord record)
 }
 
 template <typename T>
-auto TypeAssign(
+inline auto TypeAssign(
     recursive_wrapper<T &> &wrapper, LocalVariableRecord /*unused*/ record
 ) -> TypeAssignResult
 {
@@ -821,18 +566,7 @@ auto TypeAssign(
     return TypeAssign(x, record);
 }
 
-auto TypeAssign(Xi_Expr &expr, LocalVariableRecord record) -> TypeAssignResult
-{
-    return std::visit(
-        [record](auto &expr_) mutable
-        {
-            return TypeAssign(expr_, record);
-        },
-        expr
-    );
-}
-
-auto TypeAssign(Xi_Program &program)
+inline auto TypeAssign(Xi_Program &program)
     -> ExpectedTypeAssign<std::vector<type::Xi_Type>>
 {
     return flatmap_(

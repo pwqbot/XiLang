@@ -1,7 +1,12 @@
 add_subdirectory(parser)
+add_subdirectory(utils)
 add_subdirectory(ast)
 add_subdirectory(generator)
 add_subdirectory(functional)
 
 get_filename_component(parent_dir ../ ABSOLUTE)
+target_include_directories(utils INTERFACE ${parent_dir})
 target_include_directories(parser PUBLIC ${parent_dir})
+target_include_directories(ast PUBLIC ${parent_dir})
+target_include_directories(generator PUBLIC ${parent_dir})
+target_include_directories(functional INTERFACE ${parent_dir})
