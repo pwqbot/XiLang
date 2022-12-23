@@ -220,10 +220,10 @@ inline auto operator<=>(const Xi_Iden &lhs, const Xi_Iden &rhs)
     {
         return cmp;
     }
-    // if (auto cmp = lhs.expr <=> rhs.expr; cmp != nullptr)
-    // {
-    //     return cmp;
-    // }
+    if (auto cmp = lhs.expr <=> rhs.expr; cmp != nullptr)
+    {
+        return cmp;
+    }
     return lhs.type <=> rhs.type;
 }
 
