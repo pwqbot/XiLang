@@ -13,7 +13,7 @@ TEST_CASE("Parser Xi_Decl", "[Xi_DeclExpr]")
         Xi_decl("fn func :: i64"),
         AstNodeMatcher(
             Xi_Decl{
-                Xi_Iden{"func"},
+                "func",
                 "i64",
                 {},
             },
@@ -25,7 +25,7 @@ TEST_CASE("Parser Xi_Decl", "[Xi_DeclExpr]")
         Xi_decl("fn func :: real -> ... -> i64"),
         AstNodeMatcher(
             Xi_Decl{
-                Xi_Iden{"func"},
+                "func",
                 "i64",
                 {"real", "..."},
             },
@@ -37,7 +37,7 @@ TEST_CASE("Parser Xi_Decl", "[Xi_DeclExpr]")
         Xi_decl("fn func :: i64 -> i64 -> i64"),
         AstNodeMatcher(
             Xi_Decl{
-                Xi_Iden{"func"},
+                "func",
                 "i64",
                 {
                     "i64",
@@ -52,7 +52,7 @@ TEST_CASE("Parser Xi_Decl", "[Xi_DeclExpr]")
         Xi_decl("fn func:: i64 -> arr[arr[i64]]"),
         AstNodeMatcher(
             Xi_Decl{
-                Xi_Iden{"func"},
+                "func",
                 "arr[arr[i64]]",
                 {"i64"},
             },

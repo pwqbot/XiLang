@@ -12,13 +12,25 @@ TEST_CASE("Parse Xi_Lam", "[Xi_Expr]")
         AstNodeMatcher(
             Xi_Lam{
                 {
-                    Xi_Iden{"x"},
-                    Xi_Iden{"y"},
+                    Xi_Iden{
+                        .name = "x",
+                        .expr = std::monostate{},
+                    },
+                    Xi_Iden{
+                        .name = "y",
+                        .expr = std::monostate{},
+                    },
                 },
                 Xi_Binop{
-                    Xi_Iden{"x"},
+                    Xi_Iden{
+                        .name = "x",
+                        .expr = std::monostate{},
+                    },
                     Xi_Binop{
-                        Xi_Iden{"y"},
+                        Xi_Iden{
+                            .name = "y",
+                            .expr = std::monostate{},
+                        },
                         Xi_Integer{1},
                         Xi_Op::Add,
                     },
@@ -34,13 +46,13 @@ TEST_CASE("Parse Xi_Lam", "[Xi_Expr]")
         AstNodeMatcher(
             Xi_Lam{
                 {
-                    Xi_Iden{"x"},
+                    Xi_Iden{.name = "x", .expr = std::monostate{}},
                 },
                 Xi_Binop{
                     Xi_Binop{
-                        Xi_Iden{"x"},
+                        Xi_Iden{.name = "x", .expr = std::monostate{}},
                         Xi_Binop{
-                            Xi_Iden{"y"},
+                            Xi_Iden{.name = "y", .expr = std::monostate{}},
                             Xi_Integer{1},
                             Xi_Op::Add,
                         },
@@ -63,20 +75,21 @@ TEST_CASE("Parse Xi_Lam", "[Xi_Expr]")
         AstNodeMatcher(
             Xi_Lam{
                 {
-                    Xi_Iden{"x"},
-                    Xi_Iden{"y"},
+                    Xi_Iden{.name = "x", .expr = std::monostate{}},
+                    Xi_Iden{.name = "y", .expr = std::monostate{}},
                 },
                 Xi_Lam{
-                    {Xi_Iden{"z"}},
-                    Xi_Binop{
-                        Xi_Iden{"x"},
+                    .args = {Xi_Iden{.name = "z", .expr = std::monostate{}}},
+                    .body =
                         Xi_Binop{
-                            Xi_Iden{"y"},
-                            Xi_Iden{"z"},
+                            Xi_Iden{.name = "x", .expr = std::monostate{}},
+                            Xi_Binop{
+                                Xi_Iden{.name = "y", .expr = std::monostate{}},
+                                Xi_Iden{.name = "z", .expr = std::monostate{}},
+                                Xi_Op::Add,
+                            },
                             Xi_Op::Add,
                         },
-                        Xi_Op::Add,
-                    },
                 },
             },
             ""

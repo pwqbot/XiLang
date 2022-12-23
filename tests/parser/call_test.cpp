@@ -11,12 +11,13 @@ TEST_CASE("Parse function call", "[Xi_Call]")
         Xi_call("func @ a b c"),
         AstNodeMatcher(
             Xi_Call{
-                Xi_Iden{"func"},
-                {
-                    Xi_Iden{"a"},
-                    Xi_Iden{"b"},
-                    Xi_Iden{"c"},
-                },
+                .name = "func",
+                .args =
+                    {
+                        Xi_Iden{.name = "a", .expr = std::monostate{}},
+                        Xi_Iden{.name = "b", .expr = std::monostate{}},
+                        Xi_Iden{.name = "c", .expr = std::monostate{}},
+                    },
             },
             ""
         )
@@ -26,8 +27,8 @@ TEST_CASE("Parse function call", "[Xi_Call]")
         Xi_call("func@"),
         AstNodeMatcher(
             Xi_Call{
-                Xi_Iden{"func"},
-                {},
+                .name = "func",
+                .args = {},
             },
             ""
         )
@@ -37,12 +38,13 @@ TEST_CASE("Parse function call", "[Xi_Call]")
         Xi_call("func@1 2 3"),
         AstNodeMatcher(
             Xi_Call{
-                Xi_Iden{"func"},
-                {
-                    Xi_Integer{1},
-                    Xi_Integer{2},
-                    Xi_Integer{3},
-                },
+                .name = "func",
+                .args =
+                    {
+                        Xi_Integer{1},
+                        Xi_Integer{2},
+                        Xi_Integer{3},
+                    },
             },
             ""
         )
@@ -52,16 +54,17 @@ TEST_CASE("Parse function call", "[Xi_Call]")
         Xi_call("func@1 + 1 2 3"),
         AstNodeMatcher(
             Xi_Call{
-                Xi_Iden{"func"},
-                {
-                    Xi_Binop{
-                        Xi_Integer{1},
-                        Xi_Integer{1},
-                        Xi_Op::Add,
+                .name = "func",
+                .args =
+                    {
+                        Xi_Binop{
+                            .lhs = Xi_Integer{1},
+                            .rhs = Xi_Integer{1},
+                            .op  = Xi_Op::Add,
+                        },
+                        Xi_Integer{2},
+                        Xi_Integer{3},
                     },
-                    Xi_Integer{2},
-                    Xi_Integer{3},
-                },
             },
             ""
         )
@@ -71,12 +74,16 @@ TEST_CASE("Parse function call", "[Xi_Call]")
         Xi_call("func@1 b true"),
         AstNodeMatcher(
             Xi_Call{
-                Xi_Iden{"func"},
-                {
-                    Xi_Integer{1},
-                    Xi_Iden{"b"},
-                    Xi_Boolean{true},
-                },
+                .name = "func",
+                .args =
+                    {
+                        Xi_Integer{1},
+                        Xi_Iden{
+                            .name = "b",
+                            .expr = std::monostate{},
+                        },
+                        Xi_Boolean{true},
+                    },
             },
             ""
         )
@@ -86,28 +93,31 @@ TEST_CASE("Parse function call", "[Xi_Call]")
         Xi_call("printf@\" pow@2 10 = %d \" pow@ (check @ 2 == 3 1 2) 10"),
         AstNodeMatcher(
             Xi_Call{
-                Xi_Iden{"printf"},
-                {
-                    Xi_String{" pow@2 10 = %d "},
-                    Xi_Call{
-                        Xi_Iden{"pow"},
-                        {
-                            Xi_Call{
-                                Xi_Iden{"check"},
+                .name = "printf",
+                .args =
+                    {
+                        Xi_String{" pow@2 10 = %d "},
+                        Xi_Call{
+                            .name = "pow",
+                            .args =
                                 {
-                                    Xi_Binop{
-                                        Xi_Integer{2},
-                                        Xi_Integer{3},
-                                        Xi_Op::Eq,
+                                    Xi_Call{
+                                        .name = "check",
+                                        .args =
+                                            {
+                                                Xi_Binop{
+                                                    .lhs = Xi_Integer{2},
+                                                    .rhs = Xi_Integer{3},
+                                                    .op  = Xi_Op::Eq,
+                                                },
+                                                Xi_Integer{1},
+                                                Xi_Integer{2},
+                                            },
                                     },
-                                    Xi_Integer{1},
-                                    Xi_Integer{2},
+                                    Xi_Integer{10},
                                 },
-                            },
-                            Xi_Integer{10},
                         },
                     },
-                },
             },
             ""
         )

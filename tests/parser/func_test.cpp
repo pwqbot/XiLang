@@ -58,15 +58,17 @@ TEST_CASE("Parse Xi_func", "[Xi_Xi]")
                 .name = "func",
                 .params =
                     {
-                        Xi_Iden{"x"},
-                        Xi_Iden{"y"},
+                        "x",
+                        "y",
                     },
                 .expr =
                     Xi_Binop{
-                        .lhs = Xi_Iden{"x"},
+                        .lhs = Xi_Iden{.name = "x", .expr = std::monostate{}},
                         .rhs =
                             Xi_Binop{
-                                .lhs = Xi_Iden{"y"},
+                                .lhs =
+                                    Xi_Iden{
+                                        .name = "y", .expr = std::monostate{}},
                                 .rhs = Xi_Integer{1},
                                 .op  = Xi_Op::Add,
                             },
@@ -141,11 +143,11 @@ TEST_CASE("Parse Func with let", "[Parser][Xi_Func]")
                 .name = "func",
                 .params =
                     {
-                        Xi_Iden{"x"},
-                        Xi_Iden{"y"},
+                        "x",
+                        "y",
                     },
                 .expr = {Xi_Binop{
-                    Xi_Iden{"z"},
+                    Xi_Iden{.name = "z", .expr = std::monostate{}},
                     Xi_Integer{1},
                     Xi_Op::Add,
                 }},
@@ -155,8 +157,10 @@ TEST_CASE("Parse Func with let", "[Parser][Xi_Func]")
                             .name = "z",
                             .expr =
                                 Xi_Binop{
-                                    Xi_Iden{"x"},
-                                    Xi_Iden{"y"},
+                                    Xi_Iden{
+                                        .name = "x", .expr = std::monostate{}},
+                                    Xi_Iden{
+                                        .name = "y", .expr = std::monostate{}},
                                     Xi_Op::Add,
                                 },
                         },
@@ -173,12 +177,12 @@ TEST_CASE("Parse Func with let", "[Parser][Xi_Func]")
                 .name = "func",
                 .params =
                     {
-                        Xi_Iden{"x"},
+                        "x",
                     },
                 .expr =
                     {
                         Xi_ArrayIndex{
-                            Xi_Iden{"a"},
+                            Xi_Iden{.name = "a", .expr = std::monostate{}},
                             Xi_Integer{0},
                         },
                     },

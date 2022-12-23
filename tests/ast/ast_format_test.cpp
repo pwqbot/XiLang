@@ -133,7 +133,7 @@ TEST_CASE("Format Xi_If", "[Xi_If]")
 TEST_CASE("Format Xi_Iden", "[Xi_Iden]")
 {
     {
-        auto result = Xi_Iden{"hello"};
+        auto result = Xi_Iden{.name = "hello", .expr = std::monostate{}};
         REQUIRE(fmt::format("{}", result) == "Xi_Iden hello unknown");
     }
 }
@@ -141,7 +141,13 @@ TEST_CASE("Format Xi_Iden", "[Xi_Iden]")
 TEST_CASE("Format Xi_Lam", "[Xi_Lam]")
 {
     {
-        auto result = Xi_Lam{{Xi_Iden{"x"}}, Xi_Integer{456}};
+        auto result = Xi_Lam{
+            .args =
+                {
+                    Xi_Iden{.name = "x", .expr = std::monostate{}},
+                },
+            .body = Xi_Integer{456},
+        };
         REQUIRE(
             fmt::format("{}", result) == "Xi_Lam\n"
                                          "\tA Xi_Iden x unknown\n"
@@ -150,8 +156,15 @@ TEST_CASE("Format Xi_Lam", "[Xi_Lam]")
     }
 
     {
-        auto result =
-            Xi_Lam{{Xi_Iden{"x"}, Xi_Iden{"y"}, Xi_Iden{"z"}}, Xi_Integer{456}};
+        auto result = Xi_Lam{
+            .args =
+                {
+                    Xi_Iden{.name = "x", .expr = std::monostate{}},
+                    Xi_Iden{.name = "y", .expr = std::monostate{}},
+                    Xi_Iden{.name = "z", .expr = std::monostate{}},
+                },
+            .body = Xi_Integer{456},
+        };
         REQUIRE(
             fmt::format("{}", result) ==
             "Xi_Lam\n"

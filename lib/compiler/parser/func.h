@@ -11,7 +11,10 @@ const auto Xi_assign = s_iden >> [](std::string name)
 {
     return token(symbol('=')) > Xi_expr >> [=](Xi_Expr expr)
     {
-        return unit(Xi_Iden{.name = name, .expr = expr});
+        return unit(Xi_Iden{
+            .name = name,
+            .expr = expr,
+        });
     };
 };
 

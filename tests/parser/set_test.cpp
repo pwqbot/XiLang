@@ -43,8 +43,8 @@ TEST_CASE("Parse get set member")
         Xi_expr("a.x"),
         AstNodeMatcher(
             Xi_Binop{
-                .lhs = Xi_Iden{"a"},
-                .rhs = Xi_Iden{"x"},
+                .lhs = Xi_Iden{.name = "a", .expr = std::monostate{}},
+                .rhs = Xi_Iden{.name = "x", .expr = std::monostate{}},
                 .op  = Xi_Op::Dot,
             },
             ""

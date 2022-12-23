@@ -97,21 +97,37 @@ TEST_CASE("Parse String", "[Xi_String]")
 
 TEST_CASE("Parse Xi_Iden", "[Xi_Iden]")
 {
-    auto [iden1, iden2] = Xi_iden("abc").value();
-    REQUIRE(iden1 == Xi_Iden{"abc"});
-    REQUIRE(iden2.empty());
+    REQUIRE_THAT(
+        Xi_iden("abc"),
+        AstNodeMatcher(Xi_Iden{
+            .name = "abc",
+            .expr = std::monostate{},
+        })
+    );
 
-    auto [iden3, iden4] = Xi_iden("abc123").value();
-    REQUIRE(iden3 == Xi_Iden{"abc123"});
-    REQUIRE(iden4.empty());
+    REQUIRE_THAT(
+        Xi_iden("abc123"),
+        AstNodeMatcher(Xi_Iden{
+            .name = "abc123",
+            .expr = std::monostate{},
+        })
+    );
 
-    auto [iden5, iden6] = Xi_iden("abc_123").value();
-    REQUIRE(iden5 == Xi_Iden{"abc_123"});
-    REQUIRE(iden6.empty());
+    REQUIRE_THAT(
+        Xi_iden("abc_123"),
+        AstNodeMatcher(Xi_Iden{
+            .name = "abc_123",
+            .expr = std::monostate{},
+        })
+    );
 
-    auto [iden7, iden8] = Xi_iden("abc 123").value();
-    REQUIRE(iden7 == Xi_Iden{"abc"});
-    REQUIRE(iden8 == " 123");
+    REQUIRE_THAT(
+        Xi_iden("abc 123"),
+        AstNodeMatcher(Xi_Iden{
+            .name = "abc",
+            .expr = std::monostate{},
+        }, " 123")
+    );
 }
 
 } // namespace xi

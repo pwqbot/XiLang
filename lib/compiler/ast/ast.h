@@ -3,8 +3,8 @@
 #include <compare>
 #include <compiler/ast/type.h>
 #include <compiler/ast/type_format.h>
-#include <compiler/utils/variant_cmp.h>
 #include <compiler/utils/recursive_wrapper.h>
+#include <compiler/utils/variant_cmp.h>
 #include <fmt/format.h>
 #include <magic_enum.hpp>
 #include <range/v3/algorithm/find_if.hpp>
@@ -204,7 +204,7 @@ inline auto operator<=>(const Xi_Array &lhs, const Xi_Array &rhs)
 struct Xi_Iden
 {
     std::string   name;
-    Xi_Expr       expr = std::monostate{};
+    Xi_Expr       expr;
     type::Xi_Type type = type::unknown{};
                   operator std::string() const { return name; }
     auto          operator==(const Xi_Iden &b) const -> bool

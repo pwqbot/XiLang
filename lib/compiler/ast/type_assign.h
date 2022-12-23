@@ -2,9 +2,9 @@
 
 #include <compiler/ast/ast.h>
 #include <compiler/ast/type_format.h>
-#include <compiler/utils/variant_cmp.h>
 #include <compiler/functional/monad.h>
 #include <compiler/utils/expected.h>
+#include <compiler/utils/variant_cmp.h>
 #include <map>
 #include <range/v3/algorithm/find_if.hpp>
 #include <variant>
@@ -219,7 +219,10 @@ auto TypeAssign(Xi_Set &set) -> TypeAssignResult
 
 auto TypeAssign(Xi_ArrayIndex &index, LocalVariableRecord record)
 {
-    auto tmpIden = Xi_Expr{Xi_Iden{.name = index.array_var_name}};
+    auto tmpIden = Xi_Expr{Xi_Iden{
+        .name = index.array_var_name,
+        .expr = std::monostate{},
+    }};
     return TypeAssign(tmpIden, record) >>=
            [&index, record](type::Xi_Type array_type_v)
     {

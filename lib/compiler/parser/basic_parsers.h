@@ -156,7 +156,7 @@ const auto Xi_iden = s_iden >> filter(
 {
     return unit(Xi_Iden{
         .name = name,
-        // .expr = std::monostate{},
+        .expr = std::monostate{},
     });
 };
 

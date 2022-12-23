@@ -112,16 +112,18 @@ TEST_CASE("Parse mathexpr", "[Xi_MathExpr]")
     REQUIRE(
         integer11 ==
         Xi_Binop{
-            Xi_Binop{
+            .lhs =
                 Xi_Binop{
-                    Xi_Integer{1},
-                    Xi_Integer{2},
-                    Xi_Op::Mul,
-                },
-                Xi_Integer{3},
-                Xi_Op::Mul},
-            Xi_Integer{4},
-            Xi_Op::Add,
+                    .lhs =
+                        Xi_Binop{
+                            .lhs = Xi_Integer{1},
+                            .rhs = Xi_Integer{2},
+                            .op  = Xi_Op::Mul,
+                        },
+                    .rhs = Xi_Integer{3},
+                    .op  = Xi_Op::Mul},
+            .rhs = Xi_Integer{4},
+            .op  = Xi_Op::Add,
         }
     );
 }
@@ -132,9 +134,13 @@ TEST_CASE("Parse mathexpr with identify", "[Xi_MathExpr]")
     REQUIRE(
         integer1 ==
         Xi_Binop{
-            Xi_Iden{"a"},
-            Xi_Integer{2},
-            Xi_Op::Add,
+            .lhs =
+                Xi_Iden{
+                    .name = "a",
+                    .expr = std::monostate{},
+                },
+            .rhs = Xi_Integer{2},
+            .op  = Xi_Op::Add,
         }
     );
 
@@ -142,42 +148,37 @@ TEST_CASE("Parse mathexpr with identify", "[Xi_MathExpr]")
     REQUIRE(
         integer3 ==
         Xi_Binop{
-            Xi_Iden{"a"},
-            Xi_Iden{"b"},
-            Xi_Op::Add,
+            .lhs = Xi_Iden{.name = "a", .expr = std::monostate{}},
+            .rhs = Xi_Iden{.name = "b", .expr = std::monostate{}},
+            .op  = Xi_Op::Add,
         }
     );
 
     REQUIRE_THAT(
         Xi_arithmeticexpr("(a_1 + b) * 3"),
-        AstNodeMatcher(
+        AstNodeMatcher(Xi_Binop{
             Xi_Binop{
-                Xi_Binop{
-                    Xi_Iden{"a_1"},
-                    Xi_Iden{"b"},
-                    Xi_Op::Add,
-                },
-                Xi_Integer{3},
-                Xi_Op::Mul,
+                .lhs = Xi_Iden{.name = "a_1", .expr = std::monostate{}},
+                .rhs = Xi_Iden{.name = "b", .expr = std::monostate{}},
+                .op  = Xi_Op::Add,
             },
-            ""
-        )
+            Xi_Integer{3},
+            Xi_Op::Mul,
+        })
     );
 
     REQUIRE_THAT(
         Xi_arithmeticexpr(" (x + y - 1)"),
-        AstNodeMatcher(
-            Xi_Binop{Xi_Binop{
-                Xi_Iden{"x"},
+        AstNodeMatcher(Xi_Binop{
+            .lhs = Xi_Iden{.name = "x", .expr = std::monostate{}},
+            .rhs =
                 Xi_Binop{
-                    Xi_Iden{"y"},
+                    Xi_Iden{.name = "y", .expr = std::monostate{}},
                     Xi_Integer{1},
                     Xi_Op::Sub,
                 },
-                Xi_Op::Add,
-            }},
-            ""
-        )
+            .op = Xi_Op::Add,
+        })
     );
     REQUIRE(Xi_arithmeticexpr(" (x + y - 1)") == Xi_expr(" (x + y - 1)"));
 }

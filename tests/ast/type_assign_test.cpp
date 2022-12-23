@@ -89,10 +89,10 @@ TEST_CASE("Type Assign Iden")
 {
     LocalVariableRecord record;
     record.insert({"x", type::i64{}});
-    auto iden_x = Xi_Iden{"x"};
+    auto iden_x = Xi_Iden{.name = "x", .expr = std::monostate{}};
     REQUIRE_THAT(TypeAssign(iden_x, record), TypeAssignMatcher{type::i64{}});
 
-    auto iden_y = Xi_Iden{"y"};
+    auto iden_y = Xi_Iden{.name = "y", .expr = std::monostate{}};
     REQUIRE(!TypeAssign(iden_y, record).has_value());
 }
 
@@ -247,8 +247,8 @@ TEST_CASE("Type Assign SetGetM")
          }}
     );
     auto set_get_m = Xi_Binop{
-        .lhs = Xi_Iden{"p"},
-        .rhs = Xi_Iden{"x"},
+        .lhs = Xi_Iden{.name = "p", .expr = std::monostate{}},
+        .rhs = Xi_Iden{.name = "x", .expr = std::monostate{}},
         .op  = Xi_Op::Dot,
     };
 
@@ -274,8 +274,8 @@ TEST_CASE("Type Assign SetGetM")
                 .params = {"p"},
                 .expr =
                     Xi_Binop{
-                        .lhs = Xi_Iden{"p"},
-                        .rhs = Xi_Iden{"x"},
+                        .lhs = Xi_Iden{.name = "p", .expr = std::monostate{}},
+                        .rhs = Xi_Iden{.name = "x", .expr = std::monostate{}},
                         .op  = Xi_Op::Dot,
                     },
             },
@@ -381,7 +381,16 @@ TEST_CASE("Type Assign Func")
     auto func_match = Xi_Program{
         {
             Xi_Decl{"f", "i64", {"i64", "i64"}},
-            Xi_Func{"f", {{Xi_Iden{"x"}, Xi_Iden{"y"}}}, Xi_Integer{2}},
+            Xi_Func{
+                "f",
+                {
+                    {
+                        Xi_Iden{.name = "x", .expr = std::monostate{}},
+                        Xi_Iden{.name = "y", .expr = std::monostate{}},
+                    },
+                },
+                Xi_Integer{2},
+            },
         },
     };
     REQUIRE_THAT(
@@ -397,8 +406,18 @@ TEST_CASE("Type Assign Func")
             Xi_Decl{"f", "buer", {"i64", "i64"}},
             Xi_Func{
                 "f",
-                {{Xi_Iden{"x"}, Xi_Iden{"y"}}},
-                Xi_Binop{Xi_Iden{"x"}, Xi_Iden{"y"}, Xi_Op::Lt}},
+                {
+                    {
+                        Xi_Iden{.name = "x", .expr = std::monostate{}},
+                        Xi_Iden{.name = "y", .expr = std::monostate{}},
+                    },
+                },
+                Xi_Binop{
+                    Xi_Iden{.name = "x", .expr = std::monostate{}},
+                    Xi_Iden{.name = "y", .expr = std::monostate{}},
+                    Xi_Op::Lt,
+                },
+            },
         },
     };
     REQUIRE_THAT(
@@ -415,8 +434,18 @@ TEST_CASE("Type Assign Func")
             Xi_Decl{"f", "buer", {"i64", "i64"}},
             Xi_Func{
                 "f",
-                {{Xi_Iden{"x"}, Xi_Iden{"y"}}},
-                Xi_Binop{Xi_Iden{"x"}, Xi_Iden{"y"}, Xi_Op::And}},
+                {
+                    {
+                        Xi_Iden{.name = "x", .expr = std::monostate{}},
+                        Xi_Iden{.name = "y", .expr = std::monostate{}},
+                    },
+                },
+                Xi_Binop{
+                    Xi_Iden{.name = "x", .expr = std::monostate{}},
+                    Xi_Iden{.name = "y", .expr = std::monostate{}},
+                    Xi_Op::And,
+                },
+            },
         },
     };
     auto func_mismatch_binop_type = TypeAssign(func_mismatch_binop);
@@ -435,16 +464,26 @@ TEST_CASE("Assign Func with let")
                 .return_type = "i64",
                 .params_type = {"i64", "i64"}},
             Xi_Func{
-                .name   = "f",
-                .params = {{Xi_Iden{"x"}, Xi_Iden{"y"}}},
+                .name = "f",
+                .params =
+                    {
+                        {
+                            Xi_Iden{.name = "x", .expr = std::monostate{}},
+                            Xi_Iden{.name = "y", .expr = std::monostate{}},
+                        },
+                    },
                 .expr =
                     Xi_Binop{
-                        .lhs = Xi_Iden{"x"},
+                        .lhs = Xi_Iden{.name = "x", .expr = std::monostate{}},
                         .rhs =
                             Xi_Binop{
-                                .lhs = Xi_Iden{"y"},
-                                .rhs = Xi_Iden{"z"},
-                                .op  = Xi_Op::Add,
+                                .lhs =
+                                    Xi_Iden{
+                                        .name = "y", .expr = std::monostate{}},
+                                .rhs =
+                                    Xi_Iden{
+                                        .name = "z", .expr = std::monostate{}},
+                                .op = Xi_Op::Add,
                             },
                         .op = Xi_Op::Add,
                     },
@@ -471,16 +510,26 @@ TEST_CASE("Assign Func with let")
                 .return_type = "i64",
                 .params_type = {"i64", "i64"}},
             Xi_Func{
-                .name   = "f",
-                .params = {{Xi_Iden{"x"}, Xi_Iden{"y"}}},
+                .name = "f",
+                .params =
+                    {
+                        {
+                            Xi_Iden{.name = "x", .expr = std::monostate{}},
+                            Xi_Iden{.name = "y", .expr = std::monostate{}},
+                        },
+                    },
                 .expr =
                     Xi_Binop{
-                        .lhs = Xi_Iden{"x"},
+                        .lhs = Xi_Iden{.name = "x", .expr = std::monostate{}},
                         .rhs =
                             Xi_Binop{
-                                .lhs = Xi_Iden{"y"},
-                                .rhs = Xi_Iden{"z"},
-                                .op  = Xi_Op::Add,
+                                .lhs =
+                                    Xi_Iden{
+                                        .name = "y", .expr = std::monostate{}},
+                                .rhs =
+                                    Xi_Iden{
+                                        .name = "z", .expr = std::monostate{}},
+                                .op = Xi_Op::Add,
                             },
                         .op = Xi_Op::Add,
                     },
@@ -503,8 +552,25 @@ TEST_CASE("Assign Call")
     auto func_call_match = Xi_Program{
         {
             Xi_Decl{"f", "i64", {"i64", "i64"}},
-            Xi_Func{"f", {{Xi_Iden{"x"}, Xi_Iden{"y"}}}, Xi_Integer{2}},
-            Xi_Call{"f", {Xi_Integer{2}, Xi_Integer{2}}},
+            Xi_Func{
+                .name = "f",
+                .params =
+                    {
+                        {
+                            Xi_Iden{.name = "x", .expr = std::monostate{}},
+                            Xi_Iden{.name = "y", .expr = std::monostate{}},
+                        },
+                    },
+                .expr = Xi_Integer{2},
+            },
+            Xi_Call{
+                .name = "f",
+                .args =
+                    {
+                        Xi_Integer{2},
+                        Xi_Integer{2},
+                    },
+            },
         },
     };
     REQUIRE_THAT(
@@ -524,9 +590,15 @@ TEST_CASE("Assign Call")
                 .return_type = "i64",
                 .params_type = {"i64", "i64"}},
             Xi_Func{
-                .name   = "f",
-                .params = {{Xi_Iden{"x"}, Xi_Iden{"y"}}},
-                .expr   = Xi_Integer{2}},
+                .name = "f",
+                .params =
+                    {
+                        {
+                            Xi_Iden{.name = "x", .expr = std::monostate{}},
+                            Xi_Iden{.name = "y", .expr = std::monostate{}},
+                        },
+                    },
+                .expr = Xi_Integer{2}},
             Xi_Call{.name = "f", .args = {Xi_Boolean{true}, Xi_Integer{2}}},
         },
     };

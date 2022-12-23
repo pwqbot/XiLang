@@ -26,7 +26,11 @@ TEST_CASE("Parse program", "[Xi_Expr]")
             Xi_Program{
                 {
                     Xi_Decl{
-                        .name        = Xi_Iden{"test_array"},
+                        .name =
+                            Xi_Iden{
+                                .name = "test_array",
+                                .expr = std::monostate{},
+                            },
                         .return_type = "arr[i64]",
                         .params_type = {"i64"},
                     },
@@ -72,7 +76,7 @@ TEST_CASE("Parse program", "[Xi_Expr]")
         AstNodeMatcher(
             Xi_Program{std::vector<Xi_Stmt>{
                 Xi_Decl{
-                    Xi_Iden{"add"},
+                    Xi_Iden{.name = "add", .expr = std::monostate{}},
                     "i64",
                     {
                         "i64",
@@ -80,16 +84,19 @@ TEST_CASE("Parse program", "[Xi_Expr]")
                     },
                 },
                 Xi_Func{
-                    Xi_Iden{"add"},
-                    {
-                        Xi_Iden{"x"},
-                        Xi_Iden{"y"},
+                    .name = "add",
+                    .params{
+                        Xi_Iden{.name = "x", .expr = std::monostate{}},
+                        Xi_Iden{.name = "y", .expr = std::monostate{}},
                     },
-                    Xi_Binop{
-                        Xi_Iden{"x"},
-                        Xi_Iden{"y"},
-                        Xi_Op::Add,
-                    },
+                    .expr =
+                        Xi_Binop{
+                            .lhs =
+                                Xi_Iden{.name = "x", .expr = std::monostate{}},
+                            .rhs =
+                                Xi_Iden{.name = "y", .expr = std::monostate{}},
+                            .op = Xi_Op::Add,
+                        },
                 },
             }},
             ""
@@ -104,58 +111,74 @@ TEST_CASE("Parse program", "[Xi_Expr]")
         AstNodeMatcher(
             Xi_Program{std::vector<Xi_Stmt>{
                 Xi_Decl{
-                    Xi_Iden{"add"},
-                    "i64",
-                    {
-                        "i64",
-                        "i64",
-                    },
-                    false,
+                    .name        = "add",
+                    .return_type = "i64",
+                    .params_type =
+                        {
+                            "i64",
+                            "i64",
+                        },
+                    .is_vararg = false,
                 },
                 Xi_Func{
-                    Xi_Iden{"add"},
-                    {
-                        Xi_Iden{"x"},
-                        Xi_Iden{"y"},
-                    },
-                    Xi_Binop{
-                        Xi_Iden{"x"},
-                        Xi_Iden{"y"},
-                        Xi_Op::Add,
-                    },
+                    .name = "add",
+                    .params =
+                        {
+                            Xi_Iden{.name = "x", .expr = std::monostate{}},
+                            Xi_Iden{.name = "y", .expr = std::monostate{}},
+                        },
+                    .expr =
+                        Xi_Binop{
+                            Xi_Iden{.name = "x", .expr = std::monostate{}},
+                            Xi_Iden{.name = "y", .expr = std::monostate{}},
+                            Xi_Op::Add,
+                        },
                 },
                 Xi_Decl{
-                    Xi_Iden{"add2"},
-                    "i64",
-                    {
-                        "i64",
-                        "i64",
-                    },
-                    false,
+                    .name        = "add2",
+                    .return_type = "i64",
+                    .params_type =
+                        {
+                            "i64",
+                            "i64",
+                        },
+                    .is_vararg = false,
                 },
                 Xi_Func{
-                    Xi_Iden{"add2"},
-                    {
-                        Xi_Iden{"x"},
-                        Xi_Iden{"y"},
-                    },
-                    Xi_Binop{
-                        Xi_Call{
-                            Xi_Iden{"add"},
-                            {
-                                Xi_Iden{"x"},
-                                Xi_Iden{"y"},
-                            },
+                    .name = "add2",
+                    .params =
+                        {
+                            Xi_Iden{.name = "x", .expr = std::monostate{}},
+                            Xi_Iden{.name = "y", .expr = std::monostate{}},
                         },
-                        Xi_Call{
-                            Xi_Iden{"add"},
-                            {
-                                Xi_Iden{"x"},
-                                Xi_Iden{"y"},
+                    .expr =
+                        Xi_Binop{
+                            Xi_Call{
+                                .name = "add",
+                                .args =
+                                    {
+                                        Xi_Iden{
+                                            .name = "x",
+                                            .expr = std::monostate{}},
+                                        Xi_Iden{
+                                            .name = "y",
+                                            .expr = std::monostate{}},
+                                    },
                             },
+                            Xi_Call{
+                                .name = "add",
+                                .args =
+                                    {
+                                        Xi_Iden{
+                                            .name = "x",
+                                            .expr = std::monostate{}},
+                                        Xi_Iden{
+                                            .name = "y",
+                                            .expr = std::monostate{}},
+                                    },
+                            },
+                            Xi_Op::Add,
                         },
-                        Xi_Op::Add,
-                    },
                 },
             }},
             ""
@@ -183,37 +206,41 @@ TEST_CASE("Parse program", "[Xi_Expr]")
                 },
                 Xi_Boolean{true},
                 Xi_Lam{
-                    {
-                        Xi_Iden{"x"},
-                        Xi_Iden{"y"},
-                    },
-                    Xi_Binop{
-                        Xi_Iden{"x"},
-                        Xi_Binop{
-                            Xi_Iden{"y"},
-                            Xi_Integer{1},
-                            Xi_Op::Sub,
+                    .args =
+                        {
+                            Xi_Iden{.name = "x", .expr = std::monostate{}},
+                            Xi_Iden{.name = "y", .expr = std::monostate{}},
                         },
-                        Xi_Op::Add,
-                    },
+                    .body =
+                        Xi_Binop{
+                            Xi_Iden{.name = "x", .expr = std::monostate{}},
+                            Xi_Binop{
+                                Xi_Iden{.name = "y", .expr = std::monostate{}},
+                                Xi_Integer{1},
+                                Xi_Op::Sub,
+                            },
+                            Xi_Op::Add,
+                        },
                 },
                 Xi_Call{
-                    Xi_Iden{"f"},
-                    {
-                        Xi_Integer{1},
-                        Xi_Iden{"b"},
-                        Xi_Boolean{true},
-                    },
+                    .name = "f",
+                    .args =
+                        {
+                            Xi_Integer{1},
+                            Xi_Iden{.name = "b", .expr = std::monostate{}},
+                            Xi_Boolean{true},
+                        },
                 },
                 Xi_Array{
-                    5,
-                    {
-                        Xi_Integer{1},
-                        Xi_Integer{2},
-                        Xi_Integer{3},
-                        Xi_Integer{4},
-                        Xi_Integer{5},
-                    },
+                    .size = 5,
+                    .elements =
+                        {
+                            Xi_Integer{1},
+                            Xi_Integer{2},
+                            Xi_Integer{3},
+                            Xi_Integer{4},
+                            Xi_Integer{5},
+                        },
                 },
             }},
             ""
