@@ -1,5 +1,6 @@
 #include "test_header.h"
 
+#include <compiler/ast/ast.h>
 #include <compiler/parser/math_expr.h>
 
 namespace xi
@@ -7,169 +8,219 @@ namespace xi
 
 TEST_CASE("Parse boolean", "[Xi_Expr][Xi_Boolean]")
 {
-    auto [result1, result2] = Xi_boolean("trueabc").value();
-    REQUIRE(result1 == Xi_Boolean{true});
-    REQUIRE(result2 == "abc");
+    // TODO(ding.wang): make this invalid
+    REQUIRE_THAT(
+        Xi_boolean("trueabc"), AstNodeMatcher(Xi_Boolean{true}, "abc")
+    );
 
-    auto [result3, result4] = Xi_boolean("falseabc").value();
-    REQUIRE(result3 == Xi_Boolean{false});
-    REQUIRE(result4 == "abc");
+    REQUIRE_THAT(
+        Xi_boolean("falseabc"), AstNodeMatcher(Xi_Boolean{false}, "abc")
+    );
 }
 
-TEST_CASE("Parse boolexpr", "[Xi_Expr][Xi_Boolean]")
+TEST_CASE("Parse basic bool expr", "[Xi_Boolean]")
 {
-    auto [boolean1, boolean2] = Xi_mathexpr("true && false").value();
-    REQUIRE(
-        boolean1 ==
-        Xi_Binop{
-            Xi_Boolean{true},
-            Xi_Boolean{false},
-            Xi_Op::And,
-        }
+    REQUIRE_THAT(
+        Xi_expr("1 == 2"),
+        AstNodeMatcher(Xi_Binop{
+            .lhs = Xi_Integer{1},
+            .rhs = Xi_Integer{2},
+            .op  = Xi_Op::Eq,
+        })
     );
 
-    auto [boolean3, boolean4] = Xi_mathexpr("true || false").value();
-    REQUIRE(
-        boolean3 ==
-        Xi_Binop{
-            Xi_Boolean{true},
-            Xi_Boolean{false},
-            Xi_Op::Or,
-        }
+    REQUIRE_THAT(
+        Xi_expr("1 != 2"),
+        AstNodeMatcher(Xi_Binop{
+            .lhs = Xi_Integer{1},
+            .rhs = Xi_Integer{2},
+            .op  = Xi_Op::Neq,
+        })
     );
 
-    auto [boolean5, boolean6] = Xi_mathexpr("true && false || true").value();
-    REQUIRE(
-        boolean5 ==
-        Xi_Binop{
-            Xi_Binop{
-                Xi_Boolean{true},
-                Xi_Boolean{false},
-                Xi_Op::And,
-            },
-            Xi_Boolean{true},
-            Xi_Op::Or,
-        }
+    REQUIRE_THAT(
+        Xi_expr("1 > 2"),
+        AstNodeMatcher(Xi_Binop{
+            .lhs = Xi_Integer{1},
+            .rhs = Xi_Integer{2},
+            .op  = Xi_Op::Gt,
+        })
     );
 
-    auto [boolean7, boolean8] = Xi_mathexpr("true || false && true").value();
-    REQUIRE(
-        boolean7 ==
-        Xi_Binop{
-            Xi_Boolean{true},
-            Xi_Binop{
-                Xi_Boolean{false},
-                Xi_Boolean{true},
-                Xi_Op::And,
-            },
-            Xi_Op::Or,
-        }
+    // REQUIRE_THAT(
+    //     Xi_expr("1 >= 2"),
+    //     AstNodeMatcher(Xi_Binop{
+    //         .lhs = Xi_Integer{1},
+    //         .rhs = Xi_Integer{2},
+    //         .op  = Xi_Op::Geq,
+    //     })
+    // );
+
+    REQUIRE_THAT(
+        Xi_expr("1 < 2"),
+        AstNodeMatcher(Xi_Binop{
+            .lhs = Xi_Integer{1},
+            .rhs = Xi_Integer{2},
+            .op  = Xi_Op::Lt,
+        })
     );
 
-    auto [boolean9, boolean10] =
-        Xi_mathexpr("true && false || true && false").value();
-    REQUIRE(
-        boolean9 ==
-        Xi_Binop{
-            Xi_Binop{
-                Xi_Boolean{true},
-                Xi_Boolean{false},
-                Xi_Op::And,
-            },
-            Xi_Binop{
-                Xi_Boolean{true},
-                Xi_Boolean{false},
-                Xi_Op::And,
-            },
-            Xi_Op::Or,
-        }
+    // REQUIRE_THAT(
+    //     Xi_expr("1 <= 2"),
+    //     AstNodeMatcher(Xi_Binop{
+    //         .lhs = Xi_Integer{1},
+    //         .rhs = Xi_Integer{2},
+    //         .op  = Xi_Op::Leq,
+    //     })
+    // );
+
+    REQUIRE_THAT(
+        Xi_expr("true && false"),
+        AstNodeMatcher(Xi_Binop{
+            .lhs = Xi_Boolean{true},
+            .rhs = Xi_Boolean{false},
+            .op  = Xi_Op::And,
+        })
+    );
+
+    REQUIRE_THAT(
+        Xi_expr("true || false"),
+        AstNodeMatcher(Xi_Binop{
+            .lhs = Xi_Boolean{true},
+            .rhs = Xi_Boolean{false},
+            .op  = Xi_Op::Or,
+        })
+    );
+}
+
+TEST_CASE("Parse composed boolexpr", "[Xi_Expr][Xi_Boolean]")
+{
+    REQUIRE_THAT(
+        Xi_expr("true && false || true"),
+        AstNodeMatcher(Xi_Binop{
+            .lhs =
+                Xi_Binop{
+                    Xi_Boolean{true},
+                    Xi_Boolean{false},
+                    Xi_Op::And,
+                },
+            .rhs = Xi_Boolean{true},
+            .op  = Xi_Op::Or,
+        })
+    );
+
+    REQUIRE_THAT(
+        Xi_expr("true || false && true"),
+        AstNodeMatcher(Xi_Binop{
+            .lhs = Xi_Boolean{true},
+            .rhs =
+                Xi_Binop{
+                    Xi_Boolean{false},
+                    Xi_Boolean{true},
+                    Xi_Op::And,
+                },
+            .op = Xi_Op::Or,
+        })
+    );
+
+    REQUIRE_THAT(
+        Xi_expr("true && false || true && false"),
+        AstNodeMatcher(Xi_Binop{
+            .lhs =
+                Xi_Binop{
+                    .lhs = Xi_Boolean{true},
+                    .rhs = Xi_Boolean{false},
+                    .op  = Xi_Op::And,
+                },
+            .rhs =
+                Xi_Binop{
+                    .lhs = Xi_Boolean{true},
+                    .rhs = Xi_Boolean{false},
+                    .op  = Xi_Op::And,
+                },
+            .op = Xi_Op::Or,
+        })
     );
 
     // test paren
-    auto [boolean11, boolean12] =
-        Xi_mathexpr("(true || false) && true").value();
-    REQUIRE(
-        boolean11 ==
-        Xi_Binop{
+    REQUIRE_THAT(
+        Xi_expr("(true || false) && true"),
+        AstNodeMatcher(
             Xi_Binop{
-                Xi_Boolean{true},
-                Xi_Boolean{false},
-                Xi_Op::Or,
+                .lhs =
+                    Xi_Binop{
+                        .lhs = Xi_Boolean{true},
+                        .rhs = Xi_Boolean{false},
+                        .op  = Xi_Op::Or,
+                    },
+                .rhs = Xi_Boolean{true},
+                .op  = Xi_Op::And,
             },
-            Xi_Boolean{true},
-            Xi_Op::And,
-        }
+            ""
+        )
     );
 
-    auto [boolean13, boolean14] =
-        Xi_mathexpr("true && (false || true)").value();
-    REQUIRE(
-        boolean13 ==
-        Xi_Binop{
-            Xi_Boolean{true},
-            Xi_Binop{
-                Xi_Boolean{false},
-                Xi_Boolean{true},
-                Xi_Op::Or,
-            },
-            Xi_Op::And}
+    REQUIRE_THAT(
+        Xi_expr("true && (false || true)"),
+        AstNodeMatcher(Xi_Binop{
+            .lhs = Xi_Boolean{true},
+            .rhs =
+                Xi_Binop{
+                    Xi_Boolean{false},
+                    Xi_Boolean{true},
+                    Xi_Op::Or,
+                },
+            .op = Xi_Op::And,
+        })
     );
 
     // test mathbool
-    auto [boolean15, boolean16] = Xi_mathexpr("1 + 2 > 3 * 4").value();
-    REQUIRE(
-        boolean15 ==
-        Xi_Binop{
-            Xi_Binop{
-                Xi_Integer{1},
-                Xi_Integer{2},
-                Xi_Op::Add,
-            },
-            Xi_Binop{
-                Xi_Integer{3},
-                Xi_Integer{4},
-                Xi_Op::Mul,
-            },
-            Xi_Op::Gt,
-        }
-    );
-
-    auto [boolean17, boolean18] =
-        Xi_mathexpr("(1 + (2 + 3) < 3 * 4) || true").value();
-    REQUIRE(
-        boolean17 ==
-        Xi_Binop{
-            Xi_Binop{
+    REQUIRE_THAT(
+        Xi_expr("1 + 2 > 3 * 4"),
+        AstNodeMatcher(Xi_Binop{
+            .lhs =
                 Xi_Binop{
                     Xi_Integer{1},
-                    Xi_Binop{
-                        Xi_Integer{2},
-                        Xi_Integer{3},
-                        Xi_Op::Add,
-                    },
+                    Xi_Integer{2},
                     Xi_Op::Add,
                 },
+            .rhs =
                 Xi_Binop{
                     Xi_Integer{3},
                     Xi_Integer{4},
                     Xi_Op::Mul,
                 },
-                Xi_Op::Lt},
-            Xi_Boolean{true},
-            Xi_Op::Or,
-        }
+            .op = Xi_Op::Gt,
+        })
     );
 
     REQUIRE_THAT(
-        Xi_mathexpr("1 == 2"),
-        AstNodeMatcher(
-            Xi_Binop{
-                Xi_Integer{1},
-                Xi_Integer{2},
-                Xi_Op::Eq,
-            },
-            ""
-        )
+        Xi_expr("(1 + (2 + 3) < 3 * 4) || true"),
+        AstNodeMatcher(Xi_Binop{
+            .lhs =
+                Xi_Binop{
+                    .lhs =
+                        Xi_Binop{
+                            .lhs = Xi_Integer{1},
+                            .rhs =
+                                Xi_Binop{
+                                    .lhs = Xi_Integer{2},
+                                    .rhs = Xi_Integer{3},
+                                    .op  = Xi_Op::Add,
+                                },
+                            .op = Xi_Op::Add,
+                        },
+                    .rhs =
+                        Xi_Binop{
+                            .lhs = Xi_Integer{3},
+                            .rhs = Xi_Integer{4},
+                            .op  = Xi_Op::Mul,
+                        },
+                    .op = Xi_Op::Lt,
+                },
+            .rhs = Xi_Boolean{true},
+            .op  = Xi_Op::Or,
+        })
     );
 }
 

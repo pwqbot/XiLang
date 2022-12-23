@@ -8,7 +8,7 @@ namespace xi
 {
 
 // parse if expression: if cond then expr else expr
-const auto Xi_if = token(s_if) > Xi_expr >> [](Xi_Expr cond)
+inline const auto Xi_if = token(s_if) > Xi_expr >> [](Xi_Expr cond)
 {
     return token(s_then) > Xi_expr >> [cond](Xi_Expr then)
     {

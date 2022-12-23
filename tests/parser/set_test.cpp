@@ -40,7 +40,7 @@ TEST_CASE("Parse Xi_Set", "[Xi_DeclExpr]")
 TEST_CASE("Parse get set member")
 {
     REQUIRE_THAT(
-        Xi_mathexpr("a.x"),
+        Xi_expr("a.x"),
         AstNodeMatcher(
             Xi_Binop{
                 .lhs = Xi_Iden{"a"},

@@ -7,12 +7,12 @@
 namespace xi
 {
 
-inline const Parser auto type_s =
-    token(
-        some(s_alphanum || s_underscore || s_lbracket || s_rbracket) ||
-        str("...")
-    ) >>
-    [](std::string name) -> Parser auto
+inline const Parser auto
+    type_s = token(
+                 some(s_alphanum || s_underscore || s_lbracket || s_rbracket) ||
+                 str("...")
+             ) >>
+             [](std::string name) -> Parser auto
 {
     return unit(name);
 };

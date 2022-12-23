@@ -54,7 +54,7 @@ struct StringMaker<std::optional<T>>
 
 } // namespace Catch
 
-template <typename T, typename U>
+template <typename T, typename U = std::string>
 struct AstNodeMatcher : Catch::Matchers::MatcherGenericBase
 {
     T expected_first_;
@@ -62,6 +62,10 @@ struct AstNodeMatcher : Catch::Matchers::MatcherGenericBase
 
     explicit AstNodeMatcher(T expected_first, U expected_second) :
         expected_first_{expected_first}, expected_second_{expected_second}
+    {
+    }
+    explicit AstNodeMatcher(T expected_first) :
+        expected_first_{expected_first}
     {
     }
 

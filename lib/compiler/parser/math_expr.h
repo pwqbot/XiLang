@@ -13,7 +13,7 @@
 namespace xi
 {
 
-inline const auto unwarp_unop = [](const Xi_Expr &expr
+inline const auto unwarp_unop = [](Xi_Expr expr
                                 ) -> std::pair<Xi_Op, Xi_Expr>
 {
     return std::visit(
@@ -29,7 +29,7 @@ inline const auto unwarp_unop = [](const Xi_Expr &expr
     );
 };
 
-inline const auto binop_fold = [](const Xi_Expr &lhs, const Xi_Expr &rhs)
+inline const auto binop_fold = [](Xi_Expr lhs, Xi_Expr rhs) -> Xi_Expr
 {
     auto [lhs_op, lhs_expr] = unwarp_unop(lhs);
     auto [rhs_op, rhs_expr] = unwarp_unop(rhs);
@@ -78,10 +78,10 @@ inline const auto combine_to_unop = [](auto C1, auto C2)
 // <mathexpr> ::= <term> ("+-" <term>)*
 // <term> ::= <factor> ("*/" <factor>)*
 // <factor> ::= "(" <mathexpr> ")" | <number>
-auto Xi_mathexpr(std::string_view input) -> Parsed_t<Xi_Expr>;
+auto Xi_expr(std::string_view input) -> Parsed_t<Xi_Expr>;
 
-inline const auto Xi_parenmathexpr = token(s_lparen) > Xi_mathexpr >>
-                                     [](auto expr)
+inline const auto Xi_parenmathexpr = token(s_lparen) > Xi_expr >>
+                                     [](Xi_Expr expr)
 {
     return token(s_rparen) > unit(expr);
 };
@@ -189,19 +189,4 @@ inline const auto Xi_bool_conjunction = Xi_equality >> [](Xi_Expr lhs)
            unit(lhs);
 };
 
-inline auto Xi_mathexpr(std::string_view input) -> Parsed_t<Xi_Expr>
-{
-    return (
-        Xi_bool_conjunction >>
-        [](Xi_Expr lhs)
-        {
-            return some(
-                       combine_to_unop(Xi_or, Xi_bool_conjunction), binop_fold
-                   ) >> [lhs](Xi_Expr rhs)
-            {
-                return Xi_binop_fold_go(lhs, rhs);
-            } || unit(lhs);
-        }
-    )(input);
-}
 } // namespace xi

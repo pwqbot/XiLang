@@ -4,7 +4,6 @@
 #include <compiler/parser/basic_parsers.h>
 #include <compiler/parser/expr.h>
 #include <compiler/parser/parser_combinator.h>
-#include <magic_enum.hpp>
 
 namespace xi
 {
@@ -39,4 +38,3 @@ inline const auto
                                      })));
 
 } // namespace xi
-// namespace xi
