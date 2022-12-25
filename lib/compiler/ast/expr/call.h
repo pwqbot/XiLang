@@ -1,6 +1,6 @@
 #pragma once
 
-#include "compiler/ast/ast.h"
+#include "compiler/ast/expr/expr.h"
 #include "compiler/ast/error.h"
 #include "compiler/ast/type.h"
 

@@ -1,6 +1,6 @@
-#include "compiler/ast/call.h"
+#include "compiler/ast/expr/call.h"
 
-#include "compiler/ast/array_index.h"
+#include "compiler/ast/all.h"
 #include "compiler/ast/ast_format.h"
 #include "compiler/ast/error.h"
 #include "compiler/functional/monad.h"
@@ -19,10 +19,9 @@ auto TypeAssign(Xi_Call call_expr, LocalVariableRecord record)
                }
            ) >>= [&call_expr, record](auto args_type)
     {
-        return findTypeInSymbolTable(
-                   call_expr.name, SymbolType::Function, call_expr
-               ) >>= [args_type, &call_expr, record](auto func_type
-                     ) -> TypeAssignResult
+        return findTypeInSymbolTable(call_expr.name, SymbolType::Function) >>=
+               [args_type, &call_expr, record](auto func_type
+               ) -> TypeAssignResult
         {
             return std::visit(
                 [&call_expr,
@@ -43,7 +42,6 @@ auto TypeAssign(Xi_Call call_expr, LocalVariableRecord record)
                                     func_type_.get().param_types,
                                     args_type
                                 ),
-                                call_expr,
                             });
                         }
                         return call_expr.type = func_type_.get().return_type;
@@ -55,7 +53,6 @@ auto TypeAssign(Xi_Call call_expr, LocalVariableRecord record)
                             fmt::format(
                                 "expect function type, find {}", func_type_
                             ),
-                            call_expr,
                         });
                     }
                 },

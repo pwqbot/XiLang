@@ -1,6 +1,5 @@
 #pragma once
 
-#include "compiler/ast/ast.h"
 #include "compiler/ast/type.h"
 #include "compiler/ast/type_format.h"
 #include "compiler/functional/monad.h"
@@ -29,7 +28,6 @@ struct TypeAssignError
 
     Error       err;
     std::string message;
-    Xi_Stmt     node;
     auto        what() -> std::string
     {
         return fmt::format(
@@ -42,10 +40,6 @@ template <typename T>
 using ExpectedTypeAssign  = tl::expected<T, TypeAssignError>;
 using TypeAssignResult    = tl::expected<type::Xi_Type, TypeAssignError>;
 using LocalVariableRecord = std::unordered_map<std::string, type::Xi_Type>;
-
-auto TypeAssign(
-    Xi_Expr &expr, LocalVariableRecord /*record*/ = LocalVariableRecord{}
-) -> TypeAssignResult;
 
 template <typename T>
 struct unit_<ExpectedTypeAssign<T>>
@@ -75,8 +69,7 @@ inline auto GetFunctionDefinitionTable()
     return symbol_table;
 }
 
-auto
-findTypeInSymbolTable(std::string_view name, SymbolType st, Xi_Stmt node)
+auto findTypeInSymbolTable(std::string_view name, SymbolType st)
     -> TypeAssignResult;
 
 } // namespace xi

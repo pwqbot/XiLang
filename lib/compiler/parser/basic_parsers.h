@@ -1,9 +1,6 @@
 #pragma once
 
-#include <compiler/ast/array_index.h>
-#include <compiler/ast/if.h>
-#include <compiler/ast/ast.h>
-#include <compiler/ast/call.h>
+#include <compiler/ast/all.h>
 #include <compiler/parser/parser_combinator.h>
 #include <variant>
 

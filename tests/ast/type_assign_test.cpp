@@ -34,37 +34,37 @@ TEST_CASE("findTypeInSymbolTable")
 {
     const auto *i64 = "i64";
     REQUIRE_THAT(
-        findTypeInSymbolTable(i64, SymbolType::Type, {}),
+        findTypeInSymbolTable(i64, SymbolType::Type),
         TypeAssignMatcher(type::i64{})
     );
 
     const auto *real = "real";
     REQUIRE_THAT(
-        findTypeInSymbolTable(real, SymbolType::Type, {}),
+        findTypeInSymbolTable(real, SymbolType::Type),
         TypeAssignMatcher(type::real{})
     );
 
     const auto *buer = "buer";
     REQUIRE_THAT(
-        findTypeInSymbolTable(buer, SymbolType::Type, {}),
+        findTypeInSymbolTable(buer, SymbolType::Type),
         TypeAssignMatcher(type::buer{})
     );
 
     const auto *str = "string";
     REQUIRE_THAT(
-        findTypeInSymbolTable(str, SymbolType::Type, {}),
+        findTypeInSymbolTable(str, SymbolType::Type),
         TypeAssignMatcher(type::string{})
     );
 
     const auto *arr_i64 = "arr[i64]";
     REQUIRE_THAT(
-        findTypeInSymbolTable(arr_i64, SymbolType::Type, {}),
+        findTypeInSymbolTable(arr_i64, SymbolType::Type),
         TypeAssignMatcher(type::array{type::i64{}})
     );
 
     const auto *arr = "arr[arr[i64]]";
     REQUIRE_THAT(
-        findTypeInSymbolTable(arr, SymbolType::Type, {}),
+        findTypeInSymbolTable(arr, SymbolType::Type),
         TypeAssignMatcher(type::array{
             type::Xi_Type{
                 type::array{

@@ -1,7 +1,7 @@
-#include "compiler/ast/array_index.h"
+#include "compiler/ast/expr/array_index.h"
 
+#include "compiler/ast/all.h"
 #include "compiler/ast/ast_format.h"
-#include "compiler/ast/call.h"
 
 namespace xi
 {
@@ -24,8 +24,7 @@ auto TypeAssign(Xi_ArrayIndex &index, LocalVariableRecord record)
                                   recursive_wrapper<type::array>>)
                 {
                     return TypeAssign(index.index, record) >>=
-                           [&index,
-                            &array_type_wrapper](type::Xi_Type index_type
+                           [&array_type_wrapper](type::Xi_Type index_type
                            ) -> TypeAssignResult
                     {
                         if (index_type != type::i64{})
@@ -36,7 +35,6 @@ auto TypeAssign(Xi_ArrayIndex &index, LocalVariableRecord record)
                                     "array index must be i64, but got {}",
                                     index_type
                                 ),
-                                index,
                             });
                         }
                         return array_type_wrapper.get().inner_type;
@@ -47,7 +45,6 @@ auto TypeAssign(Xi_ArrayIndex &index, LocalVariableRecord record)
                     return tl::make_unexpected(TypeAssignError{
                         TypeAssignError::TypeMismatch,
                         fmt::format("{}", array_type_wrapper),
-                        index,
                     });
                 }
             },

@@ -42,11 +42,7 @@ int main(int argc, char *argv[])
             auto ast_type = TypeAssign(ast);
             if (!ast_type.has_value())
             {
-                spdlog::error(
-                    "Type error {}\n {}\n",
-                    ast_type.error().what(),
-                    ast_type.error().node
-                );
+                spdlog::error("Type error {}\n", ast_type.error().what() );
                 return 1;
             }
 

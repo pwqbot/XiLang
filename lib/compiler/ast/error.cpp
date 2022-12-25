@@ -1,15 +1,11 @@
-
 #include "compiler/ast/error.h"
 
-#include "compiler/ast/array_index.h"
-#include "compiler/ast/ast.h"
-#include "compiler/ast/call.h"
-#include "compiler/ast/if.h"
+#include "compiler/ast/all.h"
 
 namespace xi
 {
 
-auto findTypeInSymbolTable(std::string_view name, SymbolType st, Xi_Stmt node)
+auto findTypeInSymbolTable(std::string_view name, SymbolType st)
     -> TypeAssignResult
 {
     if (st == SymbolType::Type || st == SymbolType::All)
@@ -34,14 +30,12 @@ auto findTypeInSymbolTable(std::string_view name, SymbolType st, Xi_Stmt node)
                 name.substr(
                     l_bracket_pos + 1, r_bracket_pos - l_bracket_pos - 1
                 );
-            auto expect_inner_type =
-                findTypeInSymbolTable(inner_type_name, st, node);
+            auto expect_inner_type = findTypeInSymbolTable(inner_type_name, st);
             if (!expect_inner_type)
             {
                 return tl::make_unexpected(TypeAssignError{
                     TypeAssignError::UnknownType,
                     fmt::format("Unknown type {}", inner_type_name),
-                    node,
                 });
             }
             return type::array{expect_inner_type.value()};
@@ -75,7 +69,6 @@ auto findTypeInSymbolTable(std::string_view name, SymbolType st, Xi_Stmt node)
             magic_enum::enum_name(st),
             name
         ),
-        node,
     });
 }
 } // namespace xi
