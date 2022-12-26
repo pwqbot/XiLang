@@ -42,11 +42,12 @@ int main(int argc, char *argv[])
             auto ast_type = TypeAssign(ast);
             if (!ast_type.has_value())
             {
-                spdlog::error("Type error {}\n", ast_type.error().what() );
+                spdlog::error("Type error {}\n", ast_type.error().what());
                 return 1;
             }
 
             spdlog::info("Type:\n {}\n", ast_type.value());
+            spdlog::info("Ast With Type:\n {}\n", ast);
             auto codegen_result = xi::CodeGen(ast);
             if (!codegen_result)
             {

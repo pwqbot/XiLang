@@ -1,7 +1,7 @@
 #pragma once
 
-#include "compiler/ast/expr/expr.h"
 #include "compiler/ast/error.h"
+#include "compiler/ast/expr/expr.h"
 #include "compiler/ast/type.h"
 
 #include <compare>
@@ -35,6 +35,6 @@ inline auto operator<=>(const Xi_Iden &lhs, const Xi_Iden &rhs)
     return lhs.type <=> rhs.type;
 }
 
-auto TypeAssign(Xi_Iden iden, LocalVariableRecord record) -> TypeAssignResult;
+auto TypeAssign(Xi_Iden &iden, LocalVariableRecord record) -> TypeAssignResult;
 
 } // namespace xi

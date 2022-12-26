@@ -3,6 +3,7 @@
 #include <compiler/ast/ast.h>
 #include <compiler/ast/type.h>
 #include <compiler/ast/type_assign.h>
+#include <compiler/utils/variant_cmp.h>
 
 namespace xi
 {
@@ -22,6 +23,25 @@ struct TypeAssignMatcher : Catch::Matchers::MatcherGenericBase
             return v.value() == expected_;
         }
         return false;
+    }
+
+    auto describe() const -> std::string override
+    {
+        return fmt::format("is equal to {}", expected_);
+    }
+};
+
+template <typename T>
+struct TypeMatcher : Catch::Matchers::MatcherGenericBase
+{
+    T expected_;
+
+    explicit TypeMatcher(T expected) : expected_{expected} {}
+
+    template <typename V>
+    auto match(V v) const -> bool
+    {
+        return v == expected_;
     }
 
     auto describe() const -> std::string override
@@ -89,8 +109,10 @@ TEST_CASE("Type Assign Iden")
 {
     LocalVariableRecord record;
     record.insert({"x", type::i64{}});
-    auto iden_x = Xi_Iden{.name = "x", .expr = std::monostate{}};
-    REQUIRE_THAT(TypeAssign(iden_x, record), TypeAssignMatcher{type::i64{}});
+    auto iden_x      = Xi_Iden{.name = "x", .expr = std::monostate{}};
+    auto iden_x_type = type::i64{};
+    REQUIRE_THAT(TypeAssign(iden_x, record), TypeAssignMatcher{iden_x_type});
+    REQUIRE_THAT(iden_x.type, TypeMatcher(iden_x_type));
 
     auto iden_y = Xi_Iden{.name = "y", .expr = std::monostate{}};
     REQUIRE(!TypeAssign(iden_y, record).has_value());
@@ -102,6 +124,14 @@ TEST_CASE("Type Assign Decl", "[Xi_Decl]")
         .name        = "f",
         .return_type = "i64",
         .params_type = {"i64", "i64"},
+    };
+    auto decl_type = type::function{
+        .return_type = type::i64{},
+        .param_types =
+            {
+                type::i64{},
+                type::i64{},
+            },
     };
     REQUIRE_THAT(
         TypeAssign(decl),
@@ -115,6 +145,7 @@ TEST_CASE("Type Assign Decl", "[Xi_Decl]")
             .is_vararg = false,
         })
     );
+    REQUIRE_THAT(decl.type, TypeMatcher(decl_type));
 
     ClearTypeAssignState();
     auto decl_vararg = Xi_Decl{

@@ -211,6 +211,22 @@ struct fmt::formatter<xi::Xi_Call> : fmt::formatter<xi::Xi_Expr>
 };
 
 template <>
+struct fmt::formatter<xi::Xi_Stmt> : fmt::formatter<xi::Xi_Expr>
+{
+    template <typename FormatContext>
+    auto format(const xi::Xi_Stmt &i, FormatContext &ctx) const
+    {
+        return std::visit(
+            [&ctx](auto &&stmt)
+            {
+                return fmt::format_to(ctx.out(), "Xi_Stmt {}", stmt);
+            },
+            i
+        );
+    }
+};
+
+template <>
 struct fmt::formatter<xi::Xi_Func> : fmt::formatter<xi::Xi_Expr>
 {
     template <typename FormatContext>
@@ -293,17 +309,20 @@ struct fmt::formatter<xi::Xi_Comment> : fmt::formatter<xi::Xi_Expr>
 };
 
 template <>
-struct fmt::formatter<xi::Xi_Stmt> : fmt::formatter<xi::Xi_Expr>
+struct fmt::formatter<xi::Xi_While> : fmt::formatter<xi::Xi_Expr>
 {
     template <typename FormatContext>
-    auto format(const xi::Xi_Stmt &i, FormatContext &ctx) const
+    auto format(const xi::Xi_While &i, FormatContext &ctx) const
     {
-        return std::visit(
-            [&ctx](auto &&stmt)
-            {
-                return fmt::format_to(ctx.out(), "Xi_Stmt {}", stmt);
-            },
-            i
+        auto cond = fmt::format("{}", i.cond) | wd;
+        auto body = fmt::format("{}", i.body) | wd;
+        return fmt::format_to(
+            ctx.out(),
+            "Xi_While\n"
+            "{}\n"
+            "{}",
+            cond,
+            body
         );
     }
 };

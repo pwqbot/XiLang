@@ -8,7 +8,7 @@
 namespace xi
 {
 
-auto TypeAssign(Xi_Call call_expr, LocalVariableRecord record)
+auto TypeAssign(Xi_Call& call_expr, LocalVariableRecord record)
     -> TypeAssignResult
 {
     return flatmap_(

@@ -35,9 +35,16 @@ TypeAssign(recursive_wrapper<T> &wrapper, LocalVariableRecord record)
 }
 
 template <typename T>
-inline auto TypeAssign(
-    recursive_wrapper<T &> &wrapper, LocalVariableRecord /*unused*/ record
-) -> TypeAssignResult
+inline auto TypeAssign(recursive_wrapper<T> &wrapper) -> TypeAssignResult
+{
+    auto &x = wrapper.get();
+    return TypeAssign(x);
+}
+
+template <typename T>
+inline auto
+TypeAssign(recursive_wrapper<T &> &wrapper, LocalVariableRecord record)
+    -> TypeAssignResult
 {
     auto &x = wrapper.get();
     return TypeAssign(x, record);

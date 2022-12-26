@@ -5,8 +5,8 @@
 #include <compiler/ast/type.h>
 #include <compiler/generator/error.h>
 #include <compiler/parser/basic_parsers.h>
-#include <compiler/utils/recursive_wrapper.h>
 #include <compiler/utils/expected.h>
+#include <compiler/utils/recursive_wrapper.h>
 #include <llvm/ADT/APFloat.h>
 #include <llvm/Analysis/LoopAnalysisManager.h>
 #include <llvm/IR/Constants.h>
@@ -38,11 +38,11 @@ namespace xi
 {
 using codegen_result_t = ExpectedCodeGen<llvm::Value *>;
 
-static std::unique_ptr<llvm::LLVMContext>                 context;
-static std::unique_ptr<llvm::IRBuilder<>>                 builder;
-static std::unique_ptr<llvm::Module>                      module;
-static std::map<std::string, llvm::Value *>               namedValues;
-constexpr int llvm_int_precision = 64;
+static std::unique_ptr<llvm::LLVMContext>   context;
+static std::unique_ptr<llvm::IRBuilder<>>   builder;
+static std::unique_ptr<llvm::Module>        module;
+static std::map<std::string, llvm::Value *> namedValues;
+constexpr int                               llvm_int_precision = 64;
 
 inline void InitializeModule()
 {
@@ -240,6 +240,11 @@ auto CodeGen(Xi_Set set) -> codegen_result_t
 
         return struct_val;
     };
+}
+
+auto CodeGen(Xi_While) -> codegen_result_t
+{
+    return tl::unexpected(ErrorCodeGen(ErrorCodeGen::NotImplemented, "while"));
 }
 
 auto CodeGen(Xi_ArrayIndex index) -> codegen_result_t
@@ -525,7 +530,8 @@ auto CodeGen(Xi_Func xi_func) -> codegen_result_t
     };
 }
 
-auto CodeGen(Xi_Comment) -> codegen_result_t {
+auto CodeGen(Xi_Comment) -> codegen_result_t
+{
     return {};
 }
 

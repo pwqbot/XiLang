@@ -9,17 +9,6 @@ namespace xi
 TEST_CASE("Parse program", "[Xi_Expr]")
 {
     REQUIRE_THAT(
-        Xi_expr("1 + 1"),
-        AstNodeMatcher(
-            Xi_Binop{
-                Xi_Integer{1},
-                Xi_Integer{1},
-                Xi_Op::Add,
-            },
-            ""
-        )
-    );
-    REQUIRE_THAT(
         Xi_program("fn test_array :: i64 -> arr[i64]\n"
                    "test_array x = let a = [1, 2, 3, 4, 5] in a[0]"),
         AstNodeMatcher(
@@ -186,12 +175,12 @@ TEST_CASE("Parse program", "[Xi_Expr]")
     );
 
     REQUIRE_THAT(
-        Xi_program("1 + 2\n"
-                   "2 * 3\n"
-                   "true\n"
-                   "?x y -> (x + y - 1)\n"
-                   "f @ 1 b true\n"
-                   "[1, 2, 3, 4, 5]"),
+        Xi_program("1 + 2;\n"
+                   "2 * 3;\n"
+                   "true;\n"
+                   "?x y -> (x + y - 1);\n"
+                   "f @ 1 b true;\n"
+                   "[1, 2, 3, 4, 5];"),
         AstNodeMatcher(
             Xi_Program{std::vector<Xi_Stmt>{
                 Xi_Binop{

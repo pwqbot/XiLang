@@ -58,8 +58,19 @@ constexpr auto OpMaps = std::
         {".", Xi_Op::Dot},
     }};
 
-constexpr auto KeyWords = std::array<std::string_view, 10>{
-    "if", "then", "else", "true", "false", "xi", "let", "arr", "i64", "real"};
+constexpr auto KeyWords = std::array<std::string_view, 11>{
+    "if",
+    "then",
+    "else",
+    "true",
+    "false",
+    "xi",
+    "let",
+    "arr",
+    "i64",
+    "real",
+    "while",
+};
 
 constexpr auto IsKeyWords(std::string_view str) -> bool
 {

@@ -6,7 +6,7 @@
 namespace xi
 {
 
-auto TypeAssign(Xi_Iden iden, LocalVariableRecord record) -> TypeAssignResult
+auto TypeAssign(Xi_Iden &iden, LocalVariableRecord record) -> TypeAssignResult
 {
     auto iden_type = record.find(iden.name);
     if (iden_type == record.end())

@@ -1,5 +1,6 @@
+#pragma once
 
-#include "compiler/ast/stmt.h"
+#include "compiler/ast/stmt/stmt.h"
 #include "compiler/ast/type.h"
 #include "compiler/ast/type_assign.h"
 
@@ -15,16 +16,6 @@ struct Xi_Program
 };
 
 auto TypeAssign(Xi_Program &program)
-    -> ExpectedTypeAssign<std::vector<type::Xi_Type>>
-{
-    return flatmap_(
-        program.stmts,
-        [](auto &x)
-        {
-            return TypeAssign(x);
-        }
-    );
-}
-
+    -> ExpectedTypeAssign<std::vector<type::Xi_Type>>;
 
 } // namespace xi

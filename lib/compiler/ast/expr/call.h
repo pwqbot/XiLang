@@ -27,6 +27,7 @@ inline auto operator<=>(const Xi_Call &lhs, const Xi_Call &rhs)
     return lhs.name <=> rhs.name;
 }
 
-auto TypeAssign(Xi_Call call_expr, LocalVariableRecord record)
+auto TypeAssign(Xi_Call& call_expr, LocalVariableRecord record)
     -> TypeAssignResult;
+
 } // namespace xi
