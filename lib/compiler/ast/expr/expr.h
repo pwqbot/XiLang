@@ -1,7 +1,7 @@
 #pragma once
 
-#include "compiler/ast/expr/basic.h"
 #include "compiler/ast/error.h"
+#include "compiler/ast/expr/basic.h"
 
 #include <compare>
 #include <variant>
@@ -38,6 +38,10 @@ struct Xi_Array;
 auto operator<=>(const Xi_Array &lhs, const Xi_Array &rhs)
     -> std::partial_ordering;
 
+struct Xi_Assign;
+auto operator<=>(const Xi_Assign &lhs, const Xi_Assign &rhs)
+    -> std::partial_ordering;
+
 using Xi_Expr = std::variant<
     std::monostate,
     Xi_Integer,
@@ -51,7 +55,8 @@ using Xi_Expr = std::variant<
     recursive_wrapper<Xi_If>,
     recursive_wrapper<Xi_Lam>,
     recursive_wrapper<Xi_Call>,
-    recursive_wrapper<Xi_Array>>;
+    recursive_wrapper<Xi_Array>,
+    recursive_wrapper<Xi_Assign>>;
 
 auto TypeAssign(
     Xi_Expr &expr, LocalVariableRecord record = LocalVariableRecord{}

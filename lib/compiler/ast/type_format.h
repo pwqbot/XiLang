@@ -2,6 +2,7 @@
 
 #include <compiler/ast/type.h>
 #include <fmt/core.h>
+#include <fmt/std.h>
 
 template <>
 struct fmt::formatter<xi::type::i64> : fmt::formatter<std::string>
@@ -101,6 +102,16 @@ struct fmt::formatter<xi::type::set> : fmt::formatter<std::string>
     auto format(const xi::type::set /*unused*/, FormatContext &ctx) const
     {
         return fmt::format_to(ctx.out(), "set");
+    }
+};
+
+template <>
+struct fmt::formatter<xi::type::types> : fmt::formatter<std::string>
+{
+    template <typename FormatContext>
+    auto format(const xi::type::types, FormatContext &ctx) const
+    {
+        return fmt::format_to(ctx.out(), "types");
     }
 };
 

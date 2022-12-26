@@ -123,10 +123,24 @@ TEST_CASE("Parse Xi_Iden", "[Xi_Iden]")
 
     REQUIRE_THAT(
         Xi_iden("abc 123"),
-        AstNodeMatcher(Xi_Iden{
-            .name = "abc",
-            .expr = std::monostate{},
-        }, " 123")
+        AstNodeMatcher(
+            Xi_Iden{
+                .name = "abc",
+                .expr = std::monostate{},
+            },
+            " 123"
+        )
+    );
+
+    REQUIRE_THAT(
+        Xi_iden("abc;123"),
+        AstNodeMatcher(
+            Xi_Iden{
+                .name = "abc",
+                .expr = std::monostate{},
+            },
+            ";123"
+        )
     );
 }
 

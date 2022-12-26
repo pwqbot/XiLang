@@ -72,6 +72,10 @@ struct AstNodeMatcher : Catch::Matchers::MatcherGenericBase
     template <typename V>
     auto match(V v) const -> bool
     {
+        if(!v.has_value())
+        {
+            return false;
+        }
         auto [first, second] = v.value();
         return first == expected_first_ && second == expected_second_;
     }

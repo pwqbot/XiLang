@@ -11,6 +11,7 @@ struct Xi_While
 {
     Xi_Expr              cond;
     std::vector<Xi_Stmt> body;
+    type::Xi_Type        type = type::unknown{};
 };
 
 inline auto operator<=>(const Xi_While &lhs, const Xi_While &rhs)

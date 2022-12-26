@@ -1,8 +1,8 @@
 #pragma once
 
 #include <array>
-#include <compiler/utils/variant_cmp.h>
 #include <compiler/utils/recursive_wrapper.h>
+#include <compiler/utils/variant_cmp.h>
 #include <optional>
 #include <range/v3/algorithm.hpp>
 #include <variant>
@@ -51,6 +51,9 @@ auto operator<=>(const function &lhs, const function &rhs)
 struct set;
 auto operator<=>(const set &lhs, const set &rhs) -> std::partial_ordering;
 
+struct types;
+auto operator<=>(const types &lhs, const types &rhs) -> std::partial_ordering;
+
 using Xi_Type = std::variant<
     i64,
     real,
@@ -60,7 +63,18 @@ using Xi_Type = std::variant<
     recursive_wrapper<array>,
     recursive_wrapper<function>,
     recursive_wrapper<set>,
+    recursive_wrapper<types>,
     unknown>;
+
+struct types
+{
+    std::vector<Xi_Type> types;
+};
+
+inline auto operator<=>(const types &lhs, const types &rhs) -> std::partial_ordering
+{
+    return lhs.types <=> rhs.types;
+}
 
 struct function
 {

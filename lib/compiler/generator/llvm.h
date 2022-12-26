@@ -425,6 +425,11 @@ auto CodeGen(Xi_Lam) -> codegen_result_t
     return tl::unexpected(ErrorCodeGen(ErrorCodeGen::NotImplemented, "Lambda"));
 }
 
+auto CodeGen(Xi_Assign) -> codegen_result_t
+{
+    return tl::unexpected(ErrorCodeGen(ErrorCodeGen::NotImplemented, "Assign"));
+}
+
 auto CodeGen(Xi_String s) -> codegen_result_t
 {
     return builder->CreateGlobalStringPtr(s.value);

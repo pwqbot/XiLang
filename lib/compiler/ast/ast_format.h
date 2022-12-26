@@ -211,6 +211,26 @@ struct fmt::formatter<xi::Xi_Call> : fmt::formatter<xi::Xi_Expr>
 };
 
 template <>
+struct fmt::formatter<xi::Xi_Assign> : fmt::formatter<xi::Xi_Expr>
+{
+    template <typename FormatContext>
+    auto format(const xi::Xi_Assign &i, FormatContext &ctx) const
+    {
+        const auto name = fmt::format("{}", i.name) | wd;
+        const auto expr = fmt::format("{}", i.expr) | wd;
+        return fmt::format_to(
+            ctx.out(),
+            "Xi_Assign\n"
+            "{}\n"
+            "=\n"
+            "{}\n",
+            name,
+            expr
+        );
+    }
+};
+
+template <>
 struct fmt::formatter<xi::Xi_Stmt> : fmt::formatter<xi::Xi_Expr>
 {
     template <typename FormatContext>
@@ -324,6 +344,23 @@ struct fmt::formatter<xi::Xi_While> : fmt::formatter<xi::Xi_Expr>
             cond,
             body
         );
+    }
+};
+
+template <>
+struct fmt::formatter<xi::Xi_Stmts> : fmt::formatter<xi::Xi_Expr>
+{
+    template <typename FormatContext>
+    auto format(const xi::Xi_Stmts &i, FormatContext &ctx) const
+    {
+        auto out = ctx.out();
+        fmt::format_to(out, "Xi_stmts qwq\n");
+        for (auto &&stmt : i.stmts)
+        {
+            auto indent_stmt = fmt::format("{}", stmt) | wd;
+            fmt::format_to(out, "{}\n", indent_stmt);
+        }
+        return out;
     }
 };
 
