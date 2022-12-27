@@ -129,6 +129,8 @@ auto TypeAssign(Xi_Binop &binop, LocalVariableRecord record) -> TypeAssignResult
                 });
             case Xi_Op::Lt:
             case Xi_Op::Gt:
+            case Xi_Op::Geq:
+            case Xi_Op::Leq:
                 if (lhs_type == type::i64{} || lhs_type == type::real{})
                 {
                     return binop.type = type::buer{};

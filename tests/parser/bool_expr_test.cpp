@@ -47,14 +47,14 @@ TEST_CASE("Parse basic bool expr", "[Xi_Boolean]")
         })
     );
 
-    // REQUIRE_THAT(
-    //     Xi_expr("1 >= 2"),
-    //     AstNodeMatcher(Xi_Binop{
-    //         .lhs = Xi_Integer{1},
-    //         .rhs = Xi_Integer{2},
-    //         .op  = Xi_Op::Geq,
-    //     })
-    // );
+    REQUIRE_THAT(
+        Xi_expr("1 >= 2"),
+        AstNodeMatcher(Xi_Binop{
+            .lhs = Xi_Integer{1},
+            .rhs = Xi_Integer{2},
+            .op  = Xi_Op::Geq,
+        })
+    );
 
     REQUIRE_THAT(
         Xi_expr("1 < 2"),
@@ -65,14 +65,14 @@ TEST_CASE("Parse basic bool expr", "[Xi_Boolean]")
         })
     );
 
-    // REQUIRE_THAT(
-    //     Xi_expr("1 <= 2"),
-    //     AstNodeMatcher(Xi_Binop{
-    //         .lhs = Xi_Integer{1},
-    //         .rhs = Xi_Integer{2},
-    //         .op  = Xi_Op::Leq,
-    //     })
-    // );
+    REQUIRE_THAT(
+        Xi_expr("1 <= 2"),
+        AstNodeMatcher(Xi_Binop{
+            .lhs = Xi_Integer{1},
+            .rhs = Xi_Integer{2},
+            .op  = Xi_Op::Leq,
+        })
+    );
 
     REQUIRE_THAT(
         Xi_expr("true && false"),

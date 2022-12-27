@@ -159,7 +159,7 @@ inline const Parser auto Xi_cmp = Xi_arithmeticexpr || Xi_boolean;
 inline const Parser auto Xi_relation = Xi_cmp >> [](Xi_Expr lhs)
 {
     return (some(
-                combine_to_unop(Xi_lt || Xi_gt || Xi_le || Xi_ge, Xi_cmp),
+                combine_to_unop(Xi_le || Xi_ge || Xi_lt || Xi_gt, Xi_cmp),
                 binop_fold
             ) >>
             [lhs](auto rhs)
