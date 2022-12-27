@@ -1,26 +1,46 @@
 #pragma once
+
+#include "compiler/ast/all.h"
+#include "compiler/parser/basic_parsers.h"
+
 #include <compiler/ast/ast.h>
-#include <compiler/parser/comment_parser.h>
-#include <compiler/parser/decl.h>
 #include <compiler/parser/expr.h>
-#include <compiler/parser/func.h>
-#include <compiler/parser/set.h>
 #include <string_view>
 #include <vector>
 
 namespace xi
 {
-auto Xi_stmt(std::string_view input) -> Parsed_t<Xi_Stmt>;
+auto Xi_block_stmt_(std::string_view input) -> Parsed_t<Xi_Stmt>;
+auto Xi_top_stmt_(std::string_view input) -> Parsed_t<Xi_Stmt>;
 
-auto Xi_exprStmt = Xi_expr >> [](auto expr)
+const auto Xi_block_stmt = Xi_block_stmt_ >> [](auto stmt)
+{
+    return unit(std::move(stmt));
+};
+
+const auto Xi_top_stmt = Xi_top_stmt_ >> [](auto stmt)
+{
+    return unit(std::move(stmt));
+};
+
+const auto Xi_exprStmt = Xi_expr >> [](auto expr)
 {
     return token(symbol(';')) > unit(Xi_Stmt{expr});
 };
 
-auto Xi_while = token(str("while")) > token(symbol('(')) > Xi_expr >>
-                [](Xi_Expr cond)
+const auto Xi_return = token(str("return")) > Xi_expr >> [](Xi_Expr expr)
 {
-    return token(symbol(')')) > token(symbol('{')) > many(Xi_stmt) >>
+    return token(symbol(';')) > unit(Xi_Stmt{
+                                    Xi_Return{
+                                        expr,
+                                    },
+                                });
+};
+
+const auto Xi_while = token(str("while")) > token(symbol('(')) > Xi_expr >>
+                      [](Xi_Expr cond)
+{
+    return token(symbol(')')) > token(symbol('{')) > many(Xi_block_stmt) >>
            [=](std::vector<Xi_Stmt> body)
     {
         return token(symbol('}')) > unit(Xi_Stmt{
@@ -32,13 +52,16 @@ auto Xi_while = token(str("while")) > token(symbol('(')) > Xi_expr >>
     };
 };
 
-const auto Xi_for = token(str("for")) > Xi_expr >> [](Xi_Expr init)
+// TODO(ding.wang): remove ()
+const auto Xi_for = token(str("for")) > token(symbol('(')) > Xi_expr >>
+                    [](Xi_Expr init)
 {
     return token(symbol(';')) > Xi_expr >> [init](Xi_Expr cond)
     {
         return token(symbol(';')) > Xi_expr >> [init, cond](Xi_Expr step)
         {
-            return token(symbol('{')) > many(Xi_stmt) >>
+            return token(symbol(')')) > token(symbol('{')) >
+                   many(Xi_block_stmt) >>
                    [init, cond, step](std::vector<Xi_Stmt> body)
             {
                 body.emplace_back(step);
@@ -58,12 +81,7 @@ const auto Xi_for = token(str("for")) > Xi_expr >> [](Xi_Expr init)
     };
 };
 
-auto Xi_stmt(std::string_view input) -> Parsed_t<Xi_Stmt>
-{
-    return (Xi_decl || Xi_set || Xi_func || Xi_exprStmt || Xi_comment)(input);
-}
-
-const auto Xi_program = many(Xi_stmt) >> [](auto progam)
+const auto Xi_program = many(Xi_top_stmt) >> [](auto progam)
 {
     return unit(Xi_Program{progam});
 };

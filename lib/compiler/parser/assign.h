@@ -40,6 +40,23 @@ inline const auto Xi_compound_assign = s_iden >> [](std::string name)
     };
 };
 
-inline const auto Xi_assign = Xi_basic_assign || Xi_compound_assign;
+inline const auto Xi_pp_assign = s_iden >> [](std::string name)
+{
+    return token(op("++") || op("--")) >> [name](Xi_Op op)
+    {
+        return unit(Xi_Expr(Xi_Assign{
+            .name = name,
+            .expr =
+                Xi_Binop{
+                    .lhs = Xi_Iden{.name = name, .expr = std::monostate{}},
+                    .rhs = Xi_Integer{1},
+                    .op  = op,
+                },
+        }));
+    };
+};
+
+inline const auto Xi_assign =
+    Xi_basic_assign || Xi_compound_assign || Xi_pp_assign;
 
 } // namespace xi

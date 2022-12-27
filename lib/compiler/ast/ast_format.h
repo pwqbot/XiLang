@@ -216,15 +216,17 @@ struct fmt::formatter<xi::Xi_Assign> : fmt::formatter<xi::Xi_Expr>
     template <typename FormatContext>
     auto format(const xi::Xi_Assign &i, FormatContext &ctx) const
     {
-        const auto name = fmt::format("{}", i.name) | wd;
-        const auto expr = fmt::format("{}", i.expr) | wd;
+        const auto name  = fmt::format("{}", i.name) | wd;
+        const auto expr  = fmt::format("{}", i.expr) | wd;
+        const auto equal = fmt::format("=") | wd;
         return fmt::format_to(
             ctx.out(),
             "Xi_Assign\n"
             "{}\n"
-            "=\n"
+            "{}\n"
             "{}\n",
             name,
+            equal,
             expr
         );
     }
@@ -247,6 +249,16 @@ struct fmt::formatter<xi::Xi_Stmt> : fmt::formatter<xi::Xi_Expr>
 };
 
 template <>
+struct fmt::formatter<xi::Xi_Return> : fmt::formatter<xi::Xi_Expr>
+{
+    template <typename FormatContext>
+    auto format(const xi::Xi_Return &i, FormatContext &ctx) const
+    {
+        return fmt::format_to(ctx.out(), "Xi_Return {}", i.expr);
+    }
+};
+
+template <>
 struct fmt::formatter<xi::Xi_Func> : fmt::formatter<xi::Xi_Expr>
 {
     template <typename FormatContext>
@@ -256,15 +268,18 @@ struct fmt::formatter<xi::Xi_Func> : fmt::formatter<xi::Xi_Expr>
         const auto params    = fmt::format("{}", i.params);
         const auto expr      = fmt::format("{}", i.expr) | wd;
         const auto let_idens = fmt::format("{}", i.let_idens);
+        const auto stmts     = fmt::format("{}", i.stmts) | wd;
         return fmt::format_to(
             ctx.out(),
             "Xi_Func \n"
             "{} param: {} let: {}\n"
             "{}",
+            "{}",
             name,
             params,
             let_idens,
-            expr
+            expr,
+            stmts
         );
     }
 };

@@ -6,8 +6,9 @@
 
 namespace xi
 {
+auto Xi_block_stmt_(std::string_view input) -> Parsed_t<Xi_Stmt>;
 
-const auto Xi_assign = s_iden >> [](std::string name)
+const auto Xi_let_assign = s_iden >> [](std::string name)
 {
     return token(symbol('=')) > Xi_expr >> [=](Xi_Expr expr)
     {
@@ -18,14 +19,14 @@ const auto Xi_assign = s_iden >> [](std::string name)
     };
 };
 
-const auto Xi_let = token(str("let")) > some(Xi_assign) >>
+const auto Xi_let = token(str("let")) > some(Xi_let_assign) >>
                     [](std::vector<Xi_Iden> idens)
 {
     return token(str("in")) > unit(idens);
 };
 
 // func ::= <iden> <type>* = <expr>
-const auto Xi_func = s_iden >> [](std::string name)
+const auto Xi_expr_func = s_iden >> [](std::string name)
 {
     return many(s_iden) >> [name](std::vector<std::string> params)
     {
@@ -44,4 +45,26 @@ const auto Xi_func = s_iden >> [](std::string name)
         };
     };
 };
+
+const auto Xi_decl_func = s_iden >> [](std::string name)
+{
+    return many(s_iden) >> [name](std::vector<std::string> params)
+    {
+        return token(symbol('=')) > token(symbol('{')) > many(Xi_block_stmt_) >>
+               [params, name](std::vector<Xi_Stmt> stmts)
+        {
+            return token(symbol('}')) > unit(Xi_Stmt{
+                                            Xi_Func{
+                                                .name      = name,
+                                                .params    = params,
+                                                .expr      = std::monostate{},
+                                                .let_idens = {},
+                                                .stmts     = stmts,
+                                            },
+                                        });
+        };
+    };
+};
+
+const auto Xi_func = Xi_expr_func || Xi_decl_func;
 } // namespace xi

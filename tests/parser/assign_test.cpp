@@ -28,6 +28,36 @@ TEST_CASE("Parse basic assign")
                 },
         })
     );
+
+    REQUIRE_THAT(
+        Xi_pp_assign("a++"),
+        AstNodeMatcher(Xi_Assign{
+            .name = "a",
+            .expr =
+                Xi_Expr{
+                    Xi_Binop{
+                        .lhs = Xi_Iden{.name = "a", .expr = std::monostate{}},
+                        .rhs = Xi_Integer{1},
+                        .op  = Xi_Op::Add,
+                    },
+                },
+        })
+    );
+
+    REQUIRE_THAT(
+        Xi_assign("a--"),
+        AstNodeMatcher(Xi_Assign{
+            .name = "a",
+            .expr =
+                Xi_Expr{
+                    Xi_Binop{
+                        .lhs = Xi_Iden{.name = "a", .expr = std::monostate{}},
+                        .rhs = Xi_Integer{1},
+                        .op  = Xi_Op::Sub,
+                    },
+                },
+        })
+    );
 }
 
 } // namespace xi

@@ -3,6 +3,7 @@
 #include <compiler/ast/ast.h>
 #include <compiler/parser/array.h>
 #include <compiler/parser/array_index.h>
+#include <compiler/parser/assign.h>
 #include <compiler/parser/basic_parsers.h>
 #include <compiler/parser/call.h>
 #include <compiler/parser/expr.h>
@@ -13,8 +14,7 @@
 namespace xi
 {
 
-inline const auto unwarp_unop = [](Xi_Expr expr
-                                ) -> std::pair<Xi_Op, Xi_Expr>
+inline const auto unwarp_unop = [](Xi_Expr expr) -> std::pair<Xi_Op, Xi_Expr>
 {
     return std::visit(
         []<typename T>(const T &expr_) -> std::pair<Xi_Op, Xi_Expr>
@@ -90,7 +90,7 @@ inline auto Xi_factor(std::string_view input) -> Parsed_t<Xi_Expr>
 {
     return (
         Xi_lam || Xi_string || Xi_if || Xi_parenmathexpr || Xi_number ||
-        Xi_call || Xi_arrayIndex || Xi_idenexpr || Xi_array
+        Xi_call || Xi_arrayIndex || Xi_assign || Xi_idenexpr || Xi_array
     )(input);
 }
 

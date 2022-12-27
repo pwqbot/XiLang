@@ -61,7 +61,7 @@ TEST_CASE("Parse While")
 TEST_CASE("Parse for")
 {
     REQUIRE_THAT(
-        Xi_for("for i; i < 2; i + 1 {}"),
+        Xi_for("for (i; i < 2; i + 1) {}"),
         AstNodeMatcher(Xi_Stmts{
             .stmts =
                 {
@@ -80,6 +80,41 @@ TEST_CASE("Parse for")
                             },
                         .body =
                             {
+                                Xi_Binop{
+                                    .lhs =
+                                        Xi_Iden{
+                                            .name = "i",
+                                            .expr = std::monostate{},
+                                        },
+                                    .rhs = Xi_Integer{1},
+                                    .op  = Xi_Op::Add,
+                                },
+                            },
+                    },
+                },
+        })
+    );
+    REQUIRE_THAT(
+        Xi_for("for (i; i < 2; i + 1) { 1; }"),
+        AstNodeMatcher(Xi_Stmts{
+            .stmts =
+                {
+                    Xi_Iden{
+                        .name = "i",
+                        .expr = std::monostate{},
+                    },
+                    Xi_While{
+                        .cond =
+                            Xi_Binop{
+                                .lhs =
+                                    Xi_Iden{
+                                        .name = "i", .expr = std::monostate{}},
+                                .rhs = Xi_Integer{2},
+                                .op  = Xi_Op::Lt,
+                            },
+                        .body =
+                            {
+                                Xi_Integer{1},
                                 Xi_Binop{
                                     .lhs =
                                         Xi_Iden{

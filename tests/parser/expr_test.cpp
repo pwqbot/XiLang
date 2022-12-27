@@ -31,6 +31,47 @@ TEST_CASE("Parse expr", "[Xi_Expr]")
             ""
         )
     );
+
+    REQUIRE_THAT(
+        Xi_expr("a = 1"),
+        AstNodeMatcher(Xi_Assign{
+            .name = "a",
+            .expr =
+                Xi_Expr{
+                    Xi_Integer{1},
+                },
+        })
+    );
+
+    REQUIRE_THAT(
+        Xi_expr("a += 1"),
+        AstNodeMatcher(Xi_Assign{
+            .name = "a",
+            .expr =
+                Xi_Expr{
+                    Xi_Binop{
+                        .lhs = Xi_Iden{.name = "a", .expr = std::monostate{}},
+                        .rhs = Xi_Integer{1},
+                        .op  = Xi_Op::Add,
+                    },
+                },
+        })
+    );
+
+    REQUIRE_THAT(
+        Xi_expr("a++"),
+        AstNodeMatcher(Xi_Assign{
+            .name = "a",
+            .expr =
+                Xi_Expr{
+                    Xi_Binop{
+                        .lhs = Xi_Iden{.name = "a", .expr = std::monostate{}},
+                        .rhs = Xi_Integer{1},
+                        .op  = Xi_Op::Add,
+                    },
+                },
+        })
+    );
 }
 
 } // namespace xi

@@ -18,3 +18,4 @@
 #include "compiler/ast/stmt/stmt.h"
 #include "compiler/ast/stmt/stmts.h"
 #include "compiler/ast/stmt/while.h"
+#include "compiler/ast/stmt/return.h"

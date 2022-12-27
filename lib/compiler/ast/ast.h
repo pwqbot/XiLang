@@ -38,27 +38,30 @@ enum class Xi_Op
     Dot,
 };
 
-constexpr auto OpMaps = std::
-    array<std::pair<std::string_view, Xi_Op>, magic_enum::enum_count<Xi_Op>()>{{
-        {"+", Xi_Op::Add},
-        {"-", Xi_Op::Sub},
-        {"*", Xi_Op::Mul},
-        {"/", Xi_Op::Div},
-        {"%", Xi_Op::Mod},
-        {"^", Xi_Op::Pow},
-        {"==", Xi_Op::Eq},
-        {"!=", Xi_Op::Neq},
-        {"<", Xi_Op::Lt},
-        {">", Xi_Op::Gt},
-        {"<=", Xi_Op::Leq},
-        {">=", Xi_Op::Geq},
-        {"&&", Xi_Op::And},
-        {"||", Xi_Op::Or},
-        {"!", Xi_Op::Not},
-        {".", Xi_Op::Dot},
-    }};
+constexpr auto OpMaps = std::array<
+    std::pair<std::string_view, Xi_Op>,
+    magic_enum::enum_count<Xi_Op>() + 2>{{
+    {"+", Xi_Op::Add},
+    {"-", Xi_Op::Sub},
+    {"*", Xi_Op::Mul},
+    {"/", Xi_Op::Div},
+    {"%", Xi_Op::Mod},
+    {"^", Xi_Op::Pow},
+    {"==", Xi_Op::Eq},
+    {"!=", Xi_Op::Neq},
+    {"<", Xi_Op::Lt},
+    {">", Xi_Op::Gt},
+    {"<=", Xi_Op::Leq},
+    {">=", Xi_Op::Geq},
+    {"&&", Xi_Op::And},
+    {"||", Xi_Op::Or},
+    {"!", Xi_Op::Not},
+    {".", Xi_Op::Dot},
+    {"++", Xi_Op::Add},
+    {"--", Xi_Op::Sub},
+}};
 
-constexpr auto KeyWords = std::array<std::string_view, 11>{
+constexpr auto KeyWords = std::array<std::string_view, 12>{
     "if",
     "then",
     "else",
@@ -70,6 +73,7 @@ constexpr auto KeyWords = std::array<std::string_view, 11>{
     "i64",
     "real",
     "while",
+    "return",
 };
 
 constexpr auto IsKeyWords(std::string_view str) -> bool

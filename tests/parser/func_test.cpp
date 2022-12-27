@@ -84,7 +84,7 @@ TEST_CASE("Parse Xi_func", "[Xi_Xi]")
 TEST_CASE("Parse assign", "[Parser][Xi_Func]")
 {
     REQUIRE_THAT(
-        Xi_assign("x = 1"),
+        Xi_let_assign("x = 1"),
         AstNodeMatcher(
             Xi_Iden{
                 .name = "x",
@@ -201,6 +201,36 @@ TEST_CASE("Parse Func with let", "[Parser][Xi_Func]")
                                             Xi_Integer{5},
                                         },
                                 },
+                        },
+                    },
+            },
+            ""
+        )
+    );
+}
+
+TEST_CASE("Parse decl func")
+{
+    REQUIRE_THAT(
+        Xi_decl_func("func x y = {x + 1;}"),
+        AstNodeMatcher(
+            Xi_Func{
+                .name = "func",
+                .params =
+                    {
+                        "x",
+                        "y",
+                    },
+                .expr      = std::monostate{},
+                .let_idens = {},
+                .stmts =
+                    {
+                        Xi_Stmt{
+                            Xi_Binop{
+                                Xi_Iden{.name = "x", .expr = std::monostate{}},
+                                Xi_Integer{1},
+                                Xi_Op::Add,
+                            },
                         },
                     },
             },

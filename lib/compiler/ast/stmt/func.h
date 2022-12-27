@@ -3,6 +3,7 @@
 #include "compiler/ast/error.h"
 #include "compiler/ast/expr/expr.h"
 #include "compiler/ast/expr/iden.h"
+#include "compiler/ast/stmt/stmt.h"
 
 #include <string>
 #include <vector>
@@ -17,8 +18,34 @@ struct Xi_Func
     Xi_Expr                  expr;
     type::Xi_Type            type      = type::unknown{};
     std::vector<Xi_Iden>     let_idens = {};
-    auto                     operator<=>(const Xi_Func &rhs) const = default;
+    std::vector<Xi_Stmt>     stmts     = {};
 };
+
+inline auto operator<=>(const Xi_Func &lhs, const Xi_Func &rhs)
+    -> std::partial_ordering
+{
+    if (auto cmp = lhs.name <=> rhs.name; cmp != nullptr)
+    {
+        return cmp;
+    }
+    if (auto cmp = lhs.params <=> rhs.params; cmp != nullptr)
+    {
+        return cmp;
+    }
+    if (auto cmp = lhs.expr <=> rhs.expr; cmp != nullptr)
+    {
+        return cmp;
+    }
+    if (auto cmp = lhs.type <=> rhs.type; cmp != nullptr)
+    {
+        return cmp;
+    }
+    if (auto cmp = lhs.let_idens <=> rhs.let_idens; cmp != nullptr)
+    {
+        return cmp;
+    }
+    return lhs.stmts <=> rhs.stmts;
+}
 
 auto TypeAssign(Xi_Func &func_def) -> TypeAssignResult;
 
