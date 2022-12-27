@@ -7,7 +7,94 @@
 namespace xi
 {
 
-auto TypeAssign(Xi_Func &func_def) -> TypeAssignResult
+template <typename T>
+auto hasDuplicate(std::vector<T> v)
+{
+    std::sort(v.begin(), v.end());
+    return std::adjacent_find(v.begin(), v.end()) != v.end();
+}
+
+auto typeAssignExprFunc(
+    Xi_Func &func_def, LocalVariableRecord record, type::function decl_type
+) -> TypeAssignResult
+{
+    return flatmap_(
+               func_def.let_idens,
+               [record](auto &x)
+               {
+                   return TypeAssign(x.expr, record);
+               }
+           ) >>=
+           [&func_def, record, decl_type](
+               std::vector<type::Xi_Type> let_expr_types
+           ) mutable -> TypeAssignResult
+    {
+        if (hasDuplicate(func_def.let_idens))
+        {
+            return tl::make_unexpected(TypeAssignError{
+                TypeAssignError::DuplicateDeclaration,
+                fmt::format("Decl function parameter {}", func_def.name),
+            });
+        }
+        for (auto &&[let_var, let_expr_type] :
+             ranges::views::zip(func_def.let_idens, let_expr_types))
+        {
+            if (record.contains(let_var.name))
+            {
+                return tl::make_unexpected(TypeAssignError{
+                    TypeAssignError::DuplicateDeclaration,
+                    fmt::format("{} function let variable", let_var.name),
+                });
+            }
+
+            let_var.type = let_expr_type;
+            record.insert_or_assign(let_var.name, let_expr_type);
+        }
+
+        return TypeAssign(func_def.expr, record) >>=
+               [decl_type,
+                &func_def](auto func_def_expr_type) -> TypeAssignResult
+        {
+            if (func_def_expr_type != decl_type.return_type)
+            {
+                return tl::make_unexpected(TypeAssignError{
+                    TypeAssignError::TypeMismatch,
+                    fmt::format(
+                        "expect return {}, find {}",
+                        decl_type.return_type,
+                        func_def_expr_type
+                    ),
+                });
+            }
+            GetFunctionDefinitionTable().insert({func_def.name, decl_type});
+            return func_def.type = decl_type;
+        };
+    };
+}
+
+auto typeAssignDeclFunc(
+    Xi_Func &func_def, LocalVariableRecord record, type::function decl_type
+) -> TypeAssignResult
+{
+    GetCurrentFuncType() = decl_type;
+    return flatmap_(
+               func_def.stmts,
+               [&record](auto &x)
+               {
+                   return TypeAssign(x, record);
+               }
+           ) >>=
+           [&func_def,
+            record,
+            decl_type](std::vector<type::Xi_Type>) mutable -> TypeAssignResult
+    {
+        GetFunctionDefinitionTable().insert({func_def.name, decl_type});
+        return func_def.type = decl_type;
+    };
+}
+
+auto TypeAssign(Xi_Func &func_def, LocalVariableRecord record)
+    -> TypeAssignResult
 {
     if (GetFunctionDefinitionTable().contains(func_def.name))
     {
@@ -18,10 +105,11 @@ auto TypeAssign(Xi_Func &func_def) -> TypeAssignResult
     }
 
     return findTypeInSymbolTable(func_def.name, SymbolType::Function) >>=
-           [&func_def](auto Xi_Type_decl_type)
+           [&func_def, &record](auto Xi_Type_decl_type)
     {
         return std::visit(
-            [&func_def]<typename T>(T decl_type_wrapper) -> TypeAssignResult
+            [&func_def,
+             &record]<typename T>(T decl_type_wrapper) -> TypeAssignResult
             {
                 if constexpr (std::same_as<
                                   std::decay_t<T>,
@@ -40,75 +128,29 @@ auto TypeAssign(Xi_Func &func_def) -> TypeAssignResult
                         });
                     }
 
-                    LocalVariableRecord record;
+                    if (hasDuplicate(func_def.params))
+                    {
+                        return tl::make_unexpected(TypeAssignError{
+                            TypeAssignError::DuplicateDeclaration,
+                            fmt::format(
+                                "{} function parameter ", func_def.name
+                            ),
+                        });
+                    }
+
                     for (const auto &[decl_param, func_param] :
                          ranges::views::zip(
                              decl_type.param_types, func_def.params
                          ))
                     {
-                        if (record.contains(func_param))
-                        {
-                            return tl::make_unexpected(TypeAssignError{
-                                TypeAssignError::DuplicateDeclaration,
-                                fmt::format(
-                                    "Decl function parameter {}", func_param
-                                ),
-                            });
-                        }
-                        record.insert({func_param, decl_param});
+                        record.insert_or_assign(func_param, decl_param);
                     }
 
-                    return flatmap_(
-                               func_def.let_idens,
-                               [record](auto &x)
-                               {
-                                   return TypeAssign(x.expr, record);
-                               }
-                           ) >>=
-                           [&func_def, record, decl_type](
-                               std::vector<type::Xi_Type> let_expr_types
-                           ) mutable -> TypeAssignResult
+                    if (func_def.expr == std::monostate{})
                     {
-                        for (auto &&[let_var, let_expr_type] :
-                             ranges::views::zip(
-                                 func_def.let_idens, let_expr_types
-                             ))
-                        {
-                            if (record.contains(let_var.name))
-                            {
-                                return tl::make_unexpected(TypeAssignError{
-                                    TypeAssignError::DuplicateDeclaration,
-                                    fmt::format(
-                                        "Decl let variable {}", let_var.name
-                                    ),
-                                });
-                            }
-
-                            let_var.type = let_expr_type;
-                            record.insert({let_var.name, let_expr_type});
-                        }
-
-                        return TypeAssign(func_def.expr, record) >>=
-                               [decl_type, &func_def](auto func_def_expr_type
-                               ) -> TypeAssignResult
-                        {
-                            if (func_def_expr_type != decl_type.return_type)
-                            {
-                                return tl::make_unexpected(TypeAssignError{
-                                    TypeAssignError::TypeMismatch,
-                                    fmt::format(
-                                        "expect return {}, find {}",
-                                        decl_type.return_type,
-                                        func_def_expr_type
-                                    ),
-                                });
-                            }
-                            GetFunctionDefinitionTable().insert(
-                                {func_def.name, func_def.type}
-                            );
-                            return func_def.type = decl_type;
-                        };
-                    };
+                        return typeAssignDeclFunc(func_def, record, decl_type);
+                    }
+                    return typeAssignExprFunc(func_def, record, decl_type);
                 }
                 else
                 {

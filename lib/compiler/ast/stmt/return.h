@@ -1,7 +1,7 @@
 #pragma once
 
-#include "compiler/ast/expr/expr.h"
 #include "compiler/ast/error.h"
+#include "compiler/ast/expr/expr.h"
 
 namespace xi
 {
@@ -13,6 +13,6 @@ struct Xi_Return
     auto          operator<=>(const Xi_Return &) const = default;
 };
 
-auto TypeAssign(Xi_Return &stmt) -> TypeAssignResult;
+auto TypeAssign(Xi_Return &stmt, LocalVariableRecord = {}) -> TypeAssignResult;
 
 } // namespace xi

@@ -17,6 +17,6 @@ struct Xi_Set
     auto operator<=>(const Xi_Set &) const                = default;
 };
 
-auto TypeAssign(Xi_Set &) -> TypeAssignResult;
+auto TypeAssign(Xi_Set &, LocalVariableRecord = {}) -> TypeAssignResult;
 
 } // namespace xi

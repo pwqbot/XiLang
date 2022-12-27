@@ -61,7 +61,7 @@ constexpr auto OpMaps = std::array<
     {"--", Xi_Op::Sub},
 }};
 
-constexpr auto KeyWords = std::array<std::string_view, 12>{
+constexpr auto KeyWords = std::array<std::string_view, 13>{
     "if",
     "then",
     "else",
@@ -71,6 +71,7 @@ constexpr auto KeyWords = std::array<std::string_view, 12>{
     "let",
     "arr",
     "i64",
+    "int",
     "real",
     "while",
     "return",

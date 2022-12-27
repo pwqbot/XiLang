@@ -24,6 +24,6 @@ inline auto operator<=>(const Xi_While &lhs, const Xi_While &rhs)
     return lhs.body <=> rhs.body;
 }
 
-auto TypeAssign(Xi_While &stmt) -> TypeAssignResult;
+auto TypeAssign(Xi_While &stmt, LocalVariableRecord = {}) -> TypeAssignResult;
 
 } // namespace xi

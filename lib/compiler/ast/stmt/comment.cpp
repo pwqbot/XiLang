@@ -6,7 +6,7 @@
 namespace xi
 {
 
-auto TypeAssign(Xi_Comment & /*unused*/) -> TypeAssignResult
+auto TypeAssign(Xi_Comment & /*unused*/, LocalVariableRecord) -> TypeAssignResult
 {
     return xi::type::unknown{};
 }

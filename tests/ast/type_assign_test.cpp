@@ -1,3 +1,4 @@
+#include "compiler/ast/expr/basic.h"
 #include "test_header.h"
 
 #include <compiler/ast/ast.h>
@@ -640,4 +641,112 @@ TEST_CASE("Assign Call")
         func_call_mismatch_type.error().err == TypeAssignError::TypeMismatch
     );
 }
+
+TEST_CASE("Assign var")
+{
+    auto var_match = Xi_Program{
+        {
+            Xi_Var{
+                .name      = "x",
+                .value     = Xi_Integer{2},
+                .type_name = "int",
+            },
+        },
+    };
+    REQUIRE_THAT(
+        TypeAssign(var_match),
+        TypeAssignMatcher(std::vector<type::Xi_Type>{
+            type::i64{},
+        })
+    );
+
+    auto var_mismatch = Xi_Program{
+        {
+            Xi_Var{
+                .name      = "x",
+                .value     = Xi_Boolean{true},
+                .type_name = "int",
+            },
+        },
+    };
+    REQUIRE(!TypeAssign(var_mismatch).has_value());
+    REQUIRE(
+        TypeAssign(var_mismatch).error().err == TypeAssignError::TypeMismatch
+    );
+
+    auto var_hidden_match = Xi_Program{
+        {
+            Xi_Var{
+                .name      = "x",
+                .value     = Xi_Boolean{true},
+                .type_name = "buer",
+            },
+            Xi_Decl{
+                .name        = "f",
+                .return_type = "i64",
+                .params_type = {"i64", "i64"},
+            },
+            Xi_Func{
+                .name = "f",
+                .params =
+                    {
+                        {
+                            Xi_Iden{.name = "x", .expr = std::monostate{}},
+                            Xi_Iden{.name = "y", .expr = std::monostate{}},
+                        },
+                    },
+                .expr =
+                    Xi_Binop{
+                        .lhs = Xi_Iden{.name = "x", .expr = std::monostate{}},
+                        .rhs = Xi_Iden{.name = "y", .expr = std::monostate{}},
+                        .op  = Xi_Op::Add,
+                    },
+            },
+        },
+    };
+
+    REQUIRE_THAT(
+        TypeAssign(var_hidden_match),
+        TypeAssignMatcher(std::vector<type::Xi_Type>{
+            type::buer{},
+            type::function{type::i64{}, {type::i64{}, type::i64{}}},
+            type::function{type::i64{}, {type::i64{}, type::i64{}}},
+        })
+    );
+}
+
+TEST_CASE("Assign while")
+{
+    auto while_match = Xi_Program{
+        {
+            Xi_Var{
+                .name      = "x",
+                .value     = Xi_Integer{2},
+                .type_name = "int",
+            },
+            Xi_While{
+                .cond = Xi_Boolean{true},
+                .body =
+                    {
+                        Xi_Binop{
+                            .lhs =
+                                Xi_Iden{.name = "x", .expr = std::monostate{}},
+                            .rhs = Xi_Integer{2},
+                            .op  = Xi_Op::Add,
+                        },
+                    },
+            },
+        },
+    };
+    REQUIRE_THAT(
+        TypeAssign(while_match),
+        TypeAssignMatcher(std::vector<type::Xi_Type>{
+            type::i64{},
+            type::types{
+                {type::i64{}},
+            },
+        })
+    );
+}
+
 } // namespace xi

@@ -19,6 +19,6 @@ struct Xi_Decl
     auto                     operator<=>(const Xi_Decl &) const = default;
 };
 
-auto TypeAssign(Xi_Decl &decl) -> TypeAssignResult;
+auto TypeAssign(Xi_Decl &decl, LocalVariableRecord = {}) -> TypeAssignResult;
 
 } // namespace xi

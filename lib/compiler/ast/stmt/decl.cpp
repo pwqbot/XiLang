@@ -6,7 +6,7 @@
 namespace xi
 {
 
-auto TypeAssign(Xi_Decl &decl) -> TypeAssignResult
+auto TypeAssign(Xi_Decl &decl, LocalVariableRecord) -> TypeAssignResult
 {
     if (GetSymbolTable().contains({decl.name, SymbolType::Function}))
     {

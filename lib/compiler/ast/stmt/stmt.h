@@ -1,10 +1,12 @@
 #pragma once
 
+#include "compiler/ast/error.h"
 #include "compiler/ast/expr/expr.h"
 #include "compiler/ast/stmt/comment.h"
 #include "compiler/ast/stmt/decl.h"
 #include "compiler/ast/stmt/return.h"
 #include "compiler/ast/stmt/set.h"
+#include "compiler/ast/stmt/var.h"
 
 #include <variant>
 
@@ -29,10 +31,11 @@ using Xi_Stmt = std::variant<
     Xi_Set,
     Xi_Comment,
     Xi_Return,
+    Xi_Var,
     recursive_wrapper<Xi_Func>,
     recursive_wrapper<Xi_While>,
     recursive_wrapper<Xi_Stmts>>;
 
-auto TypeAssign(Xi_Stmt &stmt) -> TypeAssignResult;
+auto TypeAssign(Xi_Stmt &stmt, LocalVariableRecord &) -> TypeAssignResult;
 
 } // namespace xi

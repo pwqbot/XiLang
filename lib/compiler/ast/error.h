@@ -6,6 +6,7 @@
 #include "compiler/utils/expected.h"
 
 #include <fmt/core.h>
+#include <fmt/std.h>
 #include <magic_enum.hpp>
 #include <string>
 
@@ -67,6 +68,12 @@ inline auto GetFunctionDefinitionTable()
 {
     static std::unordered_map<std::string, type::Xi_Type> symbol_table;
     return symbol_table;
+}
+
+inline auto GetCurrentFuncType() -> type::function&
+{
+    static type::function func_type{};
+    return func_type;
 }
 
 auto findTypeInSymbolTable(std::string_view name, SymbolType st)

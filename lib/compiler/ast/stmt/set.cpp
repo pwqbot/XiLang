@@ -5,7 +5,7 @@
 namespace xi
 {
 
-auto TypeAssign(Xi_Set &set) -> TypeAssignResult
+auto TypeAssign(Xi_Set &set, LocalVariableRecord) -> TypeAssignResult
 {
     if (GetSymbolTable().contains({set.name, SymbolType::Type}))
     {

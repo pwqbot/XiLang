@@ -1,15 +1,16 @@
 #include "compiler/ast/stmt/while.h"
 
 #include "compiler/ast/all.h"
+#include "compiler/ast/error.h"
 #include "error.h"
 
 namespace xi
 {
 
-auto TypeAssign(Xi_While &whilest) -> TypeAssignResult
+auto TypeAssign(Xi_While &whilest, LocalVariableRecord record) -> TypeAssignResult
 {
     return TypeAssign(whilest.cond) >>=
-           [&whilest](auto cond_type) -> TypeAssignResult
+           [&whilest, &record](auto cond_type) -> TypeAssignResult
     {
         if (cond_type != type::buer{})
         {
@@ -19,9 +20,9 @@ auto TypeAssign(Xi_While &whilest) -> TypeAssignResult
         }
         return flatmap_(
                    whilest.body,
-                   [](auto &x)
+                   [&record](auto &x)
                    {
-                       return TypeAssign(x);
+                       return TypeAssign(x, record);
                    }
                ) >>= [&whilest](std::vector<type::Xi_Type> body_types
                      ) -> TypeAssignResult

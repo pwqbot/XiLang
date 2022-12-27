@@ -6,14 +6,13 @@
 namespace xi
 {
 
-auto TypeAssign(Xi_Stmts &stmt)
-    -> TypeAssignResult
+auto TypeAssign(Xi_Stmts &stmt, LocalVariableRecord &record) -> TypeAssignResult
 {
     auto types = flatmap_(
         stmt.stmts,
-        [](auto &x)
+        [&record](auto &x)
         {
-            return TypeAssign(x);
+            return TypeAssign(x, record);
         }
     );
     if (types.has_value())

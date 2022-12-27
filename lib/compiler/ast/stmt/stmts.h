@@ -1,5 +1,6 @@
 #pragma once
 
+#include "compiler/ast/error.h"
 #include "compiler/ast/stmt/stmt.h"
 
 namespace xi
@@ -16,6 +17,6 @@ inline auto operator<=>(const Xi_Stmts &lhs, const Xi_Stmts &rhs)
     return lhs.stmts <=> rhs.stmts;
 }
 
-auto TypeAssign(Xi_Stmts &stmt) -> TypeAssignResult;
+auto TypeAssign(Xi_Stmts &stmt, LocalVariableRecord &) -> TypeAssignResult;
 
 } // namespace xi

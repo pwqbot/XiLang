@@ -71,7 +71,8 @@ struct types
     std::vector<Xi_Type> types;
 };
 
-inline auto operator<=>(const types &lhs, const types &rhs) -> std::partial_ordering
+inline auto operator<=>(const types &lhs, const types &rhs)
+    -> std::partial_ordering
 {
     return lhs.types <=> rhs.types;
 }
@@ -130,8 +131,9 @@ inline auto operator<=>(const array &lhs, const array &rhs)
 }
 
 inline constexpr auto BuiltinTypes =
-    std::array<std::pair<std::string_view, Xi_Type>, 5>{{
+    std::array<std::pair<std::string_view, Xi_Type>, 6>{{
         {"i64", i64{}},
+        {"int", i64{}},
         {"real", real{}},
         {"string", string{}},
         {"buer", buer{}},

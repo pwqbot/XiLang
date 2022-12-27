@@ -7,12 +7,12 @@
 namespace xi
 {
 
-auto TypeAssign(Xi_Stmt &stmt) -> TypeAssignResult
+auto TypeAssign(Xi_Stmt &stmt, LocalVariableRecord &record) -> TypeAssignResult
 {
     return std::visit(
-        [](auto& x) -> TypeAssignResult
+        [&record](auto &x) -> TypeAssignResult
         {
-            return TypeAssign(x);
+            return TypeAssign(x, record);
         },
         stmt
     );

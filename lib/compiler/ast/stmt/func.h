@@ -47,6 +47,6 @@ inline auto operator<=>(const Xi_Func &lhs, const Xi_Func &rhs)
     return lhs.stmts <=> rhs.stmts;
 }
 
-auto TypeAssign(Xi_Func &func_def) -> TypeAssignResult;
+auto TypeAssign(Xi_Func &func_def, LocalVariableRecord = {}) -> TypeAssignResult;
 
 } // namespace xi

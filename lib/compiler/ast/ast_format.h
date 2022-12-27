@@ -259,6 +259,26 @@ struct fmt::formatter<xi::Xi_Return> : fmt::formatter<xi::Xi_Expr>
 };
 
 template <>
+struct fmt::formatter<xi::Xi_Var> : fmt::formatter<xi::Xi_Expr>
+{
+    template <typename FormatContext>
+    auto format(const xi::Xi_Var &i, FormatContext &ctx) const
+    {
+        const auto value = fmt::format("{}", i.value) | wd;
+        const auto type  = fmt::format("{}", i.type) | wd;
+        return fmt::format_to(
+            ctx.out(),
+            "Xi_Var {}"
+            "{}"
+            "{}",
+            i.name,
+            value,
+            type
+        );
+    }
+};
+
+template <>
 struct fmt::formatter<xi::Xi_Func> : fmt::formatter<xi::Xi_Expr>
 {
     template <typename FormatContext>
