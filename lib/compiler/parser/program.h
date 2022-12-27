@@ -24,9 +24,11 @@ const auto Xi_top_stmt = Xi_top_stmt_ >> [](auto stmt)
     return unit(std::move(stmt));
 };
 
-const auto Xi_exprStmt = Xi_expr >> [](auto expr)
+const auto Xi_exprStmt = maybe(Xi_expr) >> [](auto expr)
 {
-    return token(symbol(';')) > unit(Xi_Stmt{expr});
+    return token(symbol(';')) > (expr
+                                     ? unit(Xi_Stmt{expr.value()})
+                                     : unit(Xi_Stmt{Xi_Comment{.text = ".."}}));
 };
 
 const auto Xi_var = type_s >> [](std::string type)
@@ -35,13 +37,14 @@ const auto Xi_var = type_s >> [](std::string type)
     {
         return maybe(token(str("=")) > Xi_expr) >> [name, type](auto expr)
         {
-            return token(symbol(';')) > unit(Xi_Stmt{
-                Xi_Var{
-                    .name  = name,
-                    .value = expr.value_or(std::monostate{}),
-                    .type_name  = type,
-                },
-            });
+            return token(symbol(';')) >
+                   unit(Xi_Stmt{
+                       Xi_Var{
+                           .name      = name,
+                           .value     = expr.value_or(std::monostate{}),
+                           .type_name = type,
+                       },
+                   });
         };
     };
 };
