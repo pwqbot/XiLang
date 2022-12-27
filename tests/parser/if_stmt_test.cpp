@@ -46,6 +46,32 @@ TEST_CASE("Parse if stmt")
     );
 
     REQUIRE_THAT(
+        Xi_if_stmt("if (a < 2) { a = b; }"),
+        AstNodeMatcher(Xi_If_stmt{
+            .cond =
+                Xi_Binop{
+                    .lhs = Xi_Iden{.name = "a", .expr = std::monostate{}},
+                    .rhs = Xi_Integer{2},
+                    .op  = Xi_Op::Lt,
+                },
+            .then =
+                {
+                    Xi_Expr{
+                        Xi_Assign{
+                            .name = "a",
+                            .expr =
+                                Xi_Iden{
+                                    .name = "b",
+                                    .expr = std::monostate{},
+                                },
+                        },
+                    },
+                },
+            .els = {},
+        })
+    );
+
+    REQUIRE_THAT(
         Xi_if_stmt("if (1 + 1 < 2) { 1; 2; }"),
         AstNodeMatcher(Xi_If_stmt{
             .cond =

@@ -9,6 +9,7 @@
 #include <compiler/utils/recursive_wrapper.h>
 #include <llvm/ADT/APFloat.h>
 #include <llvm/Analysis/LoopAnalysisManager.h>
+#include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/Constants.h>
 #include <llvm/IR/DataLayout.h>
 #include <llvm/IR/DerivedTypes.h>
@@ -96,6 +97,39 @@ auto CodeGen(Xi_Boolean boolean) -> codegen_result_t
     return llvm::ConstantInt::get(
         *context, llvm::APInt(1, static_cast<uint64_t>(boolean.value))
     );
+}
+
+auto CodeGen(Xi_While wle) -> codegen_result_t
+{
+    llvm::Function *function = builder->GetInsertBlock()->getParent();
+    auto *cond_bb = llvm::BasicBlock::Create(*context, "cond", function);
+    builder->CreateBr(cond_bb);
+    builder->SetInsertPoint(cond_bb);
+    return CodeGen(wle.cond) >>=
+           [&function, wle, cond_bb](llvm::Value *end_cond) -> codegen_result_t
+    {
+        llvm::BasicBlock *loopbb =
+            llvm::BasicBlock::Create(*context, "loop", function);
+        auto *after_bb =
+            llvm::BasicBlock::Create(*context, "afterloop", function);
+        builder->CreateCondBr(end_cond, loopbb, after_bb);
+        builder->SetInsertPoint(loopbb);
+        return flatmap(
+                   wle.body,
+                   [](auto x)
+                   {
+                       return CodeGen(x);
+                   }
+               ) >>= [wle,
+                      after_bb,
+                      cond_bb](std::vector<llvm::Value *>) -> codegen_result_t
+        {
+            builder->CreateBr(cond_bb);
+            builder->SetInsertPoint(after_bb);
+            return llvm::Constant::getNullValue(llvm::Type::getDoubleTy(*context
+            ));
+        };
+    };
 }
 
 auto XiTypeToLLVMType(type::Xi_Type xi_t) -> ExpectedCodeGen<llvm::Type *>
@@ -257,11 +291,6 @@ auto CodeGen(Xi_Set set) -> codegen_result_t
     };
 }
 
-auto CodeGen(Xi_While) -> codegen_result_t
-{
-    return tl::unexpected(ErrorCodeGen(ErrorCodeGen::NotImplemented, "while"));
-}
-
 auto CodeGen(Xi_ArrayIndex index) -> codegen_result_t
 {
     // generate code for array index
@@ -283,6 +312,45 @@ auto CodeGen(Xi_ArrayIndex index) -> codegen_result_t
             element_type, array_pointer->second, index_v, "element_ptr"
         );
         return builder->CreateLoad(element_type, element_ptr, "load");
+    };
+}
+
+auto CodeGen(Xi_If_stmt if_stmt) -> codegen_result_t
+{
+    return CodeGen(if_stmt.cond) >>=
+           [if_stmt](llvm::Value *cond) -> codegen_result_t
+    {
+        auto *function = builder->GetInsertBlock()->getParent();
+        auto *then_bb  = llvm::BasicBlock::Create(*context, "then", function);
+        auto *else_bb  = llvm::BasicBlock::Create(*context, "else", function);
+        auto *after_bb = llvm::BasicBlock::Create(*context, "after", function);
+        builder->CreateCondBr(cond, then_bb, else_bb);
+        builder->SetInsertPoint(then_bb);
+        return flatmap(
+                   if_stmt.then,
+                   [](auto x)
+                   {
+                       return CodeGen(x);
+                   }
+               ) >>=
+               [after_bb, else_bb, function, if_stmt](auto) -> codegen_result_t
+        {
+            builder->CreateBr(after_bb);
+            builder->SetInsertPoint(else_bb);
+            return flatmap(
+                       if_stmt.els,
+                       [](auto x)
+                       {
+                           return CodeGen(x);
+                       }
+                   ) >>= [after_bb, function](auto) -> codegen_result_t
+            {
+                builder->CreateBr(after_bb);
+                builder->SetInsertPoint(after_bb);
+                module->print(llvm::errs(), nullptr);
+                return function;
+            };
+        };
     };
 }
 
@@ -642,6 +710,20 @@ auto CodeGen(Xi_Func xi_func) -> codegen_result_t
 auto CodeGen(Xi_Comment) -> codegen_result_t
 {
     return {};
+}
+
+auto CodeGen(Xi_Stmts stmts) -> codegen_result_t
+{
+    return flatmap(
+               stmts.stmts,
+               [](auto stmt)
+               {
+                   return CodeGen(stmt);
+               }
+           ) >>= [](auto) -> codegen_result_t
+    {
+        return {};
+    };
 }
 
 auto CodeGen(Xi_Stmt stmt) -> codegen_result_t
