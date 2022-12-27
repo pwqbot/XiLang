@@ -19,16 +19,45 @@ const auto Xi_block_stmt = Xi_block_stmt_ >> [](auto stmt)
     return unit(std::move(stmt));
 };
 
-const auto Xi_top_stmt = Xi_top_stmt_ >> [](auto stmt)
+const auto Xi_top_stmt = Xi_top_stmt_ >> [](Xi_Stmt stmt)
 {
     return unit(std::move(stmt));
 };
 
-const auto Xi_exprStmt = maybe(Xi_expr) >> [](auto expr)
+const auto Xi_exprStmt = maybe(Xi_expr) >> [](std::optional<Xi_Expr> expr)
 {
     return token(symbol(';')) > (expr
                                      ? unit(Xi_Stmt{expr.value()})
                                      : unit(Xi_Stmt{Xi_Comment{.text = ".."}}));
+};
+
+const auto Xi_compound_stmt = Xi_block_stmt >> [](Xi_Stmt stmt)
+{
+    return unit(Xi_Stmts{
+        .stmts = {stmt},
+    });
+} || (token(symbol('{')) > many(Xi_block_stmt) >> [](std::vector<Xi_Stmt> stmts) {
+        return token(symbol('}')) > unit(Xi_Stmts{
+            .stmts = std::move(stmts),
+        });
+    });
+
+const auto Xi_if_stmt = token(str("if")) > token(symbol('(')) > Xi_expr >>
+                        [](Xi_Expr expr)
+{
+    return token(symbol(')')) > Xi_compound_stmt >> [expr](auto then_stmt)
+    {
+        return maybe(token(str("else")) > Xi_compound_stmt) >> [=](auto else_stmt)
+        {
+            return unit(Xi_Stmt{
+                Xi_If_stmt{
+                    .cond = expr,
+                    .then = then_stmt.stmts,
+                    .els  = else_stmt ? else_stmt.value().stmts
+                                      : std::vector<Xi_Stmt>{}},
+            });
+        };
+    };
 };
 
 const auto Xi_var = type_s >> [](std::string type)

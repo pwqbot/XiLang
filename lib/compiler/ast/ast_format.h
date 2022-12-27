@@ -383,6 +383,28 @@ struct fmt::formatter<xi::Xi_While> : fmt::formatter<xi::Xi_Expr>
 };
 
 template <>
+struct fmt::formatter<xi::Xi_If_stmt> : fmt::formatter<xi::Xi_Expr>
+{
+    template <typename FormatContext>
+    auto format(const xi::Xi_If_stmt &i, FormatContext &ctx) const
+    {
+        auto cond = fmt::format("{}", i.cond) | wd;
+        auto then = fmt::format("{}", i.then) | wd;
+        auto els  = fmt::format("{}", i.els) | wd;
+        return fmt::format_to(
+            ctx.out(),
+            "Xi_If_stmt \n"
+            "{}\n"
+            "{}\n",
+            "{}",
+            cond,
+            then,
+            els
+        );
+    }
+};
+
+template <>
 struct fmt::formatter<xi::Xi_Stmts> : fmt::formatter<xi::Xi_Expr>
 {
     template <typename FormatContext>

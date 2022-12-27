@@ -25,6 +25,10 @@ struct Xi_Func;
 auto operator<=>(const Xi_Func &lhs, const Xi_Func &rhs)
     -> std::partial_ordering;
 
+struct Xi_If_stmt;
+auto operator<=>(const Xi_If_stmt &lhs, const Xi_If_stmt &rhs)
+    -> std::partial_ordering;
+
 using Xi_Stmt = std::variant<
     Xi_Expr,
     Xi_Decl,
@@ -32,6 +36,7 @@ using Xi_Stmt = std::variant<
     Xi_Comment,
     Xi_Return,
     Xi_Var,
+    recursive_wrapper<Xi_If_stmt>,
     recursive_wrapper<Xi_Func>,
     recursive_wrapper<Xi_While>,
     recursive_wrapper<Xi_Stmts>>;
