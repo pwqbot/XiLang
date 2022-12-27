@@ -10,6 +10,7 @@ struct Xi_If_stmt
     Xi_Expr              cond;
     std::vector<Xi_Stmt> then;
     std::vector<Xi_Stmt> els;
+    type::Xi_Type        type = type::unknown{};
 };
 
 inline auto operator<=>(const Xi_If_stmt &lhs, const Xi_If_stmt &rhs)

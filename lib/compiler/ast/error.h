@@ -21,6 +21,7 @@ struct TypeAssignError
         DuplicateDeclaration,
         DuplicateDefinition,
         TypeMismatch,
+        ReturnTypeMismatch,
         ParameterCountMismatch,
         UnknownVariable,
         UnknownMember,

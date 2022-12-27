@@ -9,7 +9,7 @@ namespace xi
 
 auto TypeAssign(Xi_While &whilest, LocalVariableRecord record) -> TypeAssignResult
 {
-    return TypeAssign(whilest.cond) >>=
+    return TypeAssign(whilest.cond, record) >>=
            [&whilest, &record](auto cond_type) -> TypeAssignResult
     {
         if (cond_type != type::buer{})

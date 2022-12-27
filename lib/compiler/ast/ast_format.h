@@ -269,8 +269,8 @@ struct fmt::formatter<xi::Xi_Var> : fmt::formatter<xi::Xi_Expr>
         return fmt::format_to(
             ctx.out(),
             "Xi_Var {}"
-            "{}"
-            "{}",
+            "{}\n"
+            "{}\n",
             i.name,
             value,
             type
@@ -291,9 +291,9 @@ struct fmt::formatter<xi::Xi_Func> : fmt::formatter<xi::Xi_Expr>
         const auto stmts     = fmt::format("{}", i.stmts) | wd;
         return fmt::format_to(
             ctx.out(),
-            "Xi_Func \n"
-            "{} param: {} let: {}\n"
-            "{}",
+            "Xi_Func {}\n"
+            "param: {} let: {}\n"
+            "{}\n"
             "{}",
             name,
             params,

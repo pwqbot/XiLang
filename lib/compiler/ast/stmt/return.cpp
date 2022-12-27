@@ -13,7 +13,7 @@ auto TypeAssign(Xi_Return &stmt, LocalVariableRecord record) -> TypeAssignResult
         if (expr_type != GetCurrentFuncType().return_type)
         {
             return tl::make_unexpected(TypeAssignError{
-                .err     = TypeAssignError::TypeMismatch,
+                .err     = TypeAssignError::ReturnTypeMismatch,
                 .message = fmt::format(
                     "return type mismatch, expect {}, found {}",
                     GetCurrentFuncType().return_type,

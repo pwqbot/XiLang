@@ -11,6 +11,12 @@ auto TypeAssign(Xi_Var &var, LocalVariableRecord &record) -> TypeAssignResult
     return findTypeInSymbolTable(var.type_name, SymbolType::Type) >>=
            [&record, &var](type::Xi_Type expect_type) -> TypeAssignResult
     {
+        if (var.value == std::monostate{})
+        {
+            record.insert_or_assign(var.name, expect_type);
+            return var.type = expect_type;
+        }
+
         return TypeAssign(var.value, record) >>=
                [&expect_type, &var, &record](type::Xi_Type expr_type
                ) -> TypeAssignResult

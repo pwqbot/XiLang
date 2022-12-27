@@ -256,6 +256,32 @@ TEST_CASE("Parse program", "[Xi_Expr]")
     );
 
     REQUIRE_THAT(
+        Xi_program("main = { int a; a = 2; }"),
+        AstNodeMatcher(Xi_Program{
+            std::vector<Xi_Stmt>{
+                Xi_Func{
+                    .name      = "main",
+                    .params    = {},
+                    .expr      = std::monostate{},
+                    .let_idens = {},
+                    .stmts =
+                        {
+                            Xi_Var{
+                                .name      = "a",
+                                .value     = std::monostate{},
+                                .type_name = "int",
+                            },
+                            Xi_Assign{
+                                .name = "a",
+                                .expr = Xi_Integer{2},
+                            },
+                        },
+                },
+            },
+        })
+    );
+
+    REQUIRE_THAT(
         Xi_program("main = {while (a < b) {\n"
                    "a++;\n"
                    "}\n"

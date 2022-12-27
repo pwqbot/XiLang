@@ -237,6 +237,40 @@ TEST_CASE("Parse decl func")
             ""
         )
     );
+        
+    REQUIRE_THAT(
+        Xi_func("func x y = {x + 1; x + 2;}"),
+        AstNodeMatcher(
+            Xi_Func{
+                .name = "func",
+                .params =
+                    {
+                        "x",
+                        "y",
+                    },
+                .expr      = std::monostate{},
+                .let_idens = {},
+                .stmts =
+                    {
+                        Xi_Stmt{
+                            Xi_Binop{
+                                Xi_Iden{.name = "x", .expr = std::monostate{}},
+                                Xi_Integer{1},
+                                Xi_Op::Add,
+                            },
+                        },
+                        Xi_Stmt{
+                            Xi_Binop{
+                                Xi_Iden{.name = "x", .expr = std::monostate{}},
+                                Xi_Integer{2},
+                                Xi_Op::Add,
+                            },
+                        },
+                    },
+            },
+            ""
+        )
+    );
 }
 
 } // namespace xi

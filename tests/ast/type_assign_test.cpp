@@ -749,4 +749,89 @@ TEST_CASE("Assign while")
     );
 }
 
+TEST_CASE("Assign decl func")
+{
+    auto decl_func_match = Xi_Program{
+        {
+            Xi_Decl{
+                .name        = "f",
+                .return_type = "i64",
+                .params_type = {"i64", "i64"},
+            },
+            Xi_Func{
+                .name = "f",
+                .params =
+                    {
+                        {
+                            Xi_Iden{.name = "x", .expr = std::monostate{}},
+                            Xi_Iden{.name = "y", .expr = std::monostate{}},
+                        },
+                    },
+                .expr      = std::monostate{},
+                .let_idens = {},
+                .stmts =
+                    {
+                        Xi_Var{
+                            .name      = "x",
+                            .value     = Xi_Integer{2},
+                            .type_name = "int",
+                        },
+                        Xi_Return{
+                            .expr =
+                                Xi_Iden{.name = "x", .expr = std::monostate{}},
+                        },
+                    },
+            },
+        },
+    };
+    REQUIRE_THAT(
+        TypeAssign(decl_func_match),
+        TypeAssignMatcher(std::vector<type::Xi_Type>{
+            type::function{type::i64{}, {type::i64{}, type::i64{}}},
+            type::function{type::i64{}, {type::i64{}, type::i64{}}},
+        })
+    );
+
+    ClearTypeAssignState();
+    auto decl_func_mismatch = Xi_Program{
+        {
+            Xi_Decl{
+                .name        = "f",
+                .return_type = "i64",
+                .params_type = {"i64", "i64"},
+            },
+            Xi_Func{
+                .name = "f",
+                .params =
+                    {
+                        {
+                            Xi_Iden{.name = "x", .expr = std::monostate{}},
+                            Xi_Iden{.name = "y", .expr = std::monostate{}},
+                        },
+                    },
+                .expr      = std::monostate{},
+                .let_idens = {},
+                .stmts =
+                    {
+                        Xi_Var{
+                            .name      = "x",
+                            .value     = Xi_Boolean{true},
+                            .type_name = "buer",
+                        },
+                        Xi_Return{
+                            .expr =
+                                Xi_Iden{.name = "x", .expr = std::monostate{}},
+                        },
+                    },
+            },
+        },
+    };
+    auto decl_func_mismatch_result = TypeAssign(decl_func_mismatch);
+    fmt::print("decl_func_mismatch_result: {}\n", decl_func_mismatch_result.error().what());
+    REQUIRE(!decl_func_mismatch_result.has_value());
+    REQUIRE(
+        decl_func_mismatch_result.error().err == TypeAssignError::ReturnTypeMismatch
+    );
+}
+
 } // namespace xi

@@ -14,7 +14,8 @@ namespace xi
 inline auto Xi_block_stmt_(std::string_view input) -> Parsed_t<Xi_Stmt>
 {
     return (
-        Xi_exprStmt || Xi_comment || Xi_for || Xi_while || Xi_return || Xi_var
+        Xi_exprStmt || Xi_comment || Xi_for || Xi_while || Xi_return ||
+        Xi_var || Xi_if_stmt
     )(input);
 }
 
