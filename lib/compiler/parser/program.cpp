@@ -13,12 +13,14 @@ namespace xi
 
 inline auto Xi_block_stmt_(std::string_view input) -> Parsed_t<Xi_Stmt>
 {
-    return (Xi_exprStmt || Xi_comment || Xi_for || Xi_while || Xi_return)(input);
+    return (
+        Xi_exprStmt || Xi_comment || Xi_for || Xi_while || Xi_return || Xi_var
+    )(input);
 }
 
 inline auto Xi_top_stmt_(std::string_view input) -> Parsed_t<Xi_Stmt>
 {
-    return (Xi_func || Xi_decl || Xi_set || Xi_comment)(input);
+    return (Xi_func || Xi_decl || Xi_set || Xi_comment || Xi_var)(input);
 }
 
 } // namespace xi

@@ -2,6 +2,7 @@
 
 #include "compiler/ast/all.h"
 #include "compiler/parser/basic_parsers.h"
+#include "compiler/parser/decl.h"
 
 #include <compiler/ast/ast.h>
 #include <compiler/parser/expr.h>
@@ -26,6 +27,23 @@ const auto Xi_top_stmt = Xi_top_stmt_ >> [](auto stmt)
 const auto Xi_exprStmt = Xi_expr >> [](auto expr)
 {
     return token(symbol(';')) > unit(Xi_Stmt{expr});
+};
+
+const auto Xi_var = type_s >> [](std::string type)
+{
+    return s_iden >> [type](std::string name)
+    {
+        return maybe(token(str("=")) > Xi_expr) >> [name, type](auto expr)
+        {
+            return token(symbol(';')) > unit(Xi_Stmt{
+                Xi_Var{
+                    .name  = name,
+                    .value = expr.value_or(std::monostate{}),
+                    .type_name  = type,
+                },
+            });
+        };
+    };
 };
 
 const auto Xi_return = token(str("return")) > Xi_expr >> [](Xi_Expr expr)
