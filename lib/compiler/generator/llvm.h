@@ -354,6 +354,17 @@ auto CodeGen(Xi_If_stmt if_stmt) -> codegen_result_t
     };
 }
 
+auto CodeGen(Xi_Assign assign) -> codegen_result_t
+{
+    return CodeGen(assign.expr) >>= [assign](llvm::Value *v) -> codegen_result_t
+    {
+        auto *variable = namedValues[assign.name];
+        auto *old_v = builder->CreateLoad(variable->getAllocatedType(), variable, "old");
+        builder->CreateStore(v, variable);
+        return old_v;
+    };
+}
+
 auto CodeGen(Xi_If if_expr) -> codegen_result_t
 {
     return CodeGen(if_expr.cond) >>=
@@ -442,17 +453,17 @@ auto CodeGen(Xi_Binop bop) -> codegen_result_t
                 return builder->CreateSDiv(lhs, rhs, "divtmp");
             // TODO(ding.wang): check type
             case Xi_Op::Lt:
-                return builder->CreateICmpULT(lhs, rhs, "cmptmp");
+                return builder->CreateICmpSLT(lhs, rhs, "cmptmp");
             case Xi_Op::Gt:
-                return builder->CreateICmpUGT(lhs, rhs, "cmptmp");
+                return builder->CreateICmpSGT(lhs, rhs, "cmptmp");
             case Xi_Op::Eq:
                 return builder->CreateICmpEQ(lhs, rhs, "cmptmp");
             case Xi_Op::Neq:
                 return builder->CreateICmpNE(lhs, rhs, "cmptmp");
             case Xi_Op::Leq:
-                return builder->CreateICmpULE(lhs, rhs, "cmptmp");
+                return builder->CreateICmpSLE(lhs, rhs, "cmptmp");
             case Xi_Op::Geq:
-                return builder->CreateICmpUGE(lhs, rhs, "cmptmp");
+                return builder->CreateICmpSGE(lhs, rhs, "cmptmp");
             case Xi_Op::Mod:
                 return builder->CreateSRem(lhs, rhs, "modtmp");
             case Xi_Op::And:
@@ -508,16 +519,6 @@ auto CodeGen(Xi_Call call_expr) -> codegen_result_t
 auto CodeGen(Xi_Lam) -> codegen_result_t
 {
     return tl::unexpected(ErrorCodeGen(ErrorCodeGen::NotImplemented, "Lambda"));
-}
-
-auto CodeGen(Xi_Assign assign) -> codegen_result_t
-{
-    return CodeGen(assign.expr) >>= [assign](llvm::Value *v) -> codegen_result_t
-    {
-        auto *variable = namedValues[assign.name];
-        builder->CreateStore(v, variable);
-        return variable;
-    };
 }
 
 auto CodeGen(Xi_String s) -> codegen_result_t

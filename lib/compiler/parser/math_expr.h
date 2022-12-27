@@ -86,11 +86,27 @@ inline const auto Xi_parenmathexpr = token(s_lparen) > Xi_expr >>
     return token(s_rparen) > unit(expr);
 };
 
+inline const Parser auto Xi_pp = s_iden >> [](std::string name)
+{
+    return (op("++") || op("--")) >> [name](Xi_Op op)
+    {
+        return unit(Xi_Expr(Xi_Assign{
+            .name = name,
+            .expr =
+                Xi_Binop{
+                    .lhs = Xi_Iden{.name = name, .expr = std::monostate{}},
+                    .rhs = Xi_Integer{1},
+                    .op  = op,
+                },
+        }));
+    };
+};
+
 inline auto Xi_factor(std::string_view input) -> Parsed_t<Xi_Expr>
 {
     return (
         Xi_lam || Xi_string || Xi_if || Xi_parenmathexpr || Xi_number ||
-        Xi_call || Xi_arrayIndex || Xi_assign || Xi_idenexpr || Xi_array
+        Xi_call || Xi_arrayIndex || Xi_pp || Xi_assign || Xi_idenexpr || Xi_array
     )(input);
 }
 
