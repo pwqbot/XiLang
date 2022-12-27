@@ -38,11 +38,11 @@ namespace xi
 {
 using codegen_result_t = ExpectedCodeGen<llvm::Value *>;
 
-static std::unique_ptr<llvm::LLVMContext>   context;
-static std::unique_ptr<llvm::IRBuilder<>>   builder;
-static std::unique_ptr<llvm::Module>        module;
-static std::map<std::string, llvm::Value *> namedValues;
-constexpr int                               llvm_int_precision = 64;
+static std::unique_ptr<llvm::LLVMContext>        context;
+static std::unique_ptr<llvm::IRBuilder<>>        builder;
+static std::unique_ptr<llvm::Module>             module;
+static std::map<std::string, llvm::AllocaInst *> namedValues;
+constexpr int                                    llvm_int_precision = 64;
 
 inline void InitializeModule()
 {
@@ -52,7 +52,20 @@ inline void InitializeModule()
     builder = std::make_unique<llvm::IRBuilder<>>(*context);
 }
 
+// CreateEntryBlockAlloca - Create an alloca instruction in the entry block of
+// the function.  This is used for mutable variables etc.
+static llvm::AllocaInst *CreateEntryBlockAlloca(
+    llvm::Function *TheFunction, const std::string &VarName, llvm::Type *t
+)
+{
+    llvm::IRBuilder<> TmpB(
+        &TheFunction->getEntryBlock(), TheFunction->getEntryBlock().begin()
+    );
+    return TmpB.CreateAlloca(t, 0, nullptr, VarName.c_str());
+}
+
 auto CodeGen(Xi_Expr expr) -> codegen_result_t;
+auto CodeGen(Xi_Stmt stmt) -> codegen_result_t;
 
 template <typename T>
 auto CodeGen(recursive_wrapper<T> wrapper)
@@ -62,7 +75,9 @@ auto CodeGen(recursive_wrapper<T> wrapper)
 
 auto CodeGen(Xi_Real real) -> codegen_result_t
 {
-    return llvm::ConstantFP::get(*context, llvm::APFloat(real.value));
+    return (llvm::Value *)llvm::ConstantFP::get(
+        *context, llvm::APFloat(real.value)
+    );
 }
 
 auto CodeGen(Xi_Integer integer) -> codegen_result_t
@@ -320,7 +335,9 @@ auto CodeGen(Xi_Iden iden) -> codegen_result_t
             ErrorCodeGen(ErrorCodeGen::UnknownVariable, iden.name)
         );
     }
-    return value;
+    return builder->CreateLoad(
+        value->getAllocatedType(), value, iden.name.c_str()
+    );
 }
 
 auto codeGenDot(Xi_Binop bop) -> codegen_result_t
@@ -425,9 +442,14 @@ auto CodeGen(Xi_Lam) -> codegen_result_t
     return tl::unexpected(ErrorCodeGen(ErrorCodeGen::NotImplemented, "Lambda"));
 }
 
-auto CodeGen(Xi_Assign) -> codegen_result_t
+auto CodeGen(Xi_Assign assign) -> codegen_result_t
 {
-    return tl::unexpected(ErrorCodeGen(ErrorCodeGen::NotImplemented, "Assign"));
+    return CodeGen(assign.expr) >>= [assign](llvm::Value *v) -> codegen_result_t
+    {
+        auto *variable = namedValues[assign.name];
+        builder->CreateStore(v, variable);
+        return variable;
+    };
 }
 
 auto CodeGen(Xi_String s) -> codegen_result_t
@@ -479,6 +501,13 @@ auto CodeGen(Xi_Decl decl) -> codegen_result_t
     );
 }
 
+auto CodeGen(std::monostate) -> codegen_result_t
+{
+    return tl::unexpected(
+        ErrorCodeGen(ErrorCodeGen::NotImplemented, "monostate")
+    );
+}
+
 auto CodeGen(Xi_Expr expr) -> codegen_result_t
 {
     return std::visit(
@@ -488,6 +517,93 @@ auto CodeGen(Xi_Expr expr) -> codegen_result_t
         },
         expr
     );
+}
+
+auto CodeGen(Xi_Return ret) -> codegen_result_t
+{
+    return CodeGen(ret.expr) >>= [](llvm::Value *v) -> codegen_result_t
+    {
+        builder->CreateRet(v);
+        return v;
+    };
+}
+
+auto CodeGen(Xi_Var var) -> codegen_result_t
+{
+    return XiTypeToLLVMType(var.type) >>=
+           [var](llvm::Type *llvm_type) -> codegen_result_t
+    {
+        auto alloca =
+            builder->CreateAlloca(llvm_type, 0, nullptr, var.name.c_str());
+
+        namedValues[var.name] = alloca;
+        if (var.value != std::monostate{})
+        {
+            return CodeGen(var.value) >>=
+                   [var, &alloca](llvm::Value *init) -> codegen_result_t
+            {
+                builder->CreateStore(init, alloca);
+                return alloca;
+            };
+        }
+        return alloca;
+    };
+}
+
+auto codeGenExprFunc(Xi_Func xi_func, llvm::Function *llvm_func)
+    -> codegen_result_t
+{
+    return flatmap(
+               xi_func.let_idens,
+               [](Xi_Iden iden)
+               {
+                   return CodeGen(iden.expr);
+               }
+           ) >>= [&llvm_func, xi_func](auto idens_code) -> codegen_result_t
+    {
+        for (const auto &[iden_code, let_var] :
+             ranges::views::zip(idens_code, xi_func.let_idens))
+        {
+            llvm::AllocaInst *Alloca = CreateEntryBlockAlloca(
+                llvm_func, std::string(let_var.name), iden_code->getType()
+            );
+
+            // Store the initial value into the alloca.
+            builder->CreateStore(iden_code, Alloca);
+
+            // Add arguments to variable symbol table.
+            namedValues[let_var.name] = Alloca;
+        }
+
+        auto body = CodeGen(xi_func.expr);
+        if (body)
+        {
+            builder->CreateRet(body.value());
+            llvm::verifyFunction(*llvm_func);
+            // Optimize the function.
+            return llvm_func;
+        }
+
+        llvm_func->eraseFromParent();
+        return body;
+    };
+}
+
+auto codeGenStmtFunc(Xi_Func xi_func, llvm::Function *llvm_func)
+    -> codegen_result_t
+{
+    return flatmap(
+               xi_func.stmts,
+               [](auto stmt)
+               {
+                   return CodeGen(stmt);
+               }
+           ) >>=
+           [xi_func, &llvm_func](std::vector<llvm::Value *>) -> codegen_result_t
+    {
+        llvm::verifyFunction(*llvm_func);
+        return llvm_func;
+    };
 }
 
 auto CodeGen(Xi_Func xi_func) -> codegen_result_t
@@ -504,35 +620,23 @@ auto CodeGen(Xi_Func xi_func) -> codegen_result_t
     {
         arg.setName(*param_it);
         param_it++;
-        namedValues[arg.getName().str()] = &arg;
+        // Create an alloca for this variable.
+        llvm::AllocaInst *Alloca = CreateEntryBlockAlloca(
+            llvm_func, std::string(arg.getName()), arg.getType()
+        );
+
+        // Store the initial value into the alloca.
+        builder->CreateStore(&arg, Alloca);
+
+        // Add arguments to variable symbol table.
+        namedValues[std::string(arg.getName())] = Alloca;
     }
 
-    return flatmap(
-               xi_func.let_idens,
-               [](Xi_Iden iden)
-               {
-                   return CodeGen(iden.expr);
-               }
-           ) >>= [&llvm_func, xi_func](auto idens_code) -> codegen_result_t
+    if (xi_func.expr != std::monostate{})
     {
-        for (const auto &[iden_code, let_var] :
-             ranges::views::zip(idens_code, xi_func.let_idens))
-        {
-            namedValues[let_var.name] = iden_code;
-        }
-
-        auto body = CodeGen(xi_func.expr);
-        if (body)
-        {
-            builder->CreateRet(body.value());
-            llvm::verifyFunction(*llvm_func);
-            // Optimize the function.
-            return llvm_func;
-        }
-
-        llvm_func->eraseFromParent();
-        return body;
-    };
+        return codeGenExprFunc(xi_func, llvm_func);
+    }
+    return codeGenStmtFunc(xi_func, llvm_func);
 }
 
 auto CodeGen(Xi_Comment) -> codegen_result_t
