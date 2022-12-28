@@ -787,8 +787,9 @@ auto GenObj(std::string_view output_file)
     const auto *Features = "";
 
     llvm::TargetOptions opt;
-    // auto                RM = llvm::Optional<llvm::Reloc::Model::DynamicNoPIC>();
-    auto               *TargetMachine = Target->createTargetMachine(
+    // auto                RM =
+    // llvm::Optional<llvm::Reloc::Model::DynamicNoPIC>();
+    auto *TargetMachine = Target->createTargetMachine(
         TargetTriple, CPU, Features, opt, llvm::Reloc::Model::DynamicNoPIC
     );
 
@@ -802,24 +803,6 @@ auto GenObj(std::string_view output_file)
         llvm::errs() << "Could not open file: " << EC.message();
         return 1;
     }
-
-    // llvm::legacy::PassManager pass;
-    // llvm::LoopAnalysisManager     LAM;
-    // llvm::ModuleAnalysisManager   MAM;
-    // llvm::FunctionAnalysisManager FAM;
-    // llvm::CGSCCAnalysisManager    CGAM;
-    //
-    // llvm::PassBuilder PB;
-    // PB.registerModuleAnalyses(MAM);
-    // PB.registerCGSCCAnalyses(CGAM);
-    // PB.registerFunctionAnalyses(FAM);
-    // PB.registerLoopAnalyses(LAM);
-    // PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
-    // llvm::ModulePassManager MPM =
-    //     PB.buildPerModuleDefaultPipeline(llvm::OptimizationLevel::O2);
-    //
-    // llvm::ModulePassManager pass;
-    // pass.run(*module, MAM);
 
     auto                      FileType = llvm::CGFT_ObjectFile;
     llvm::legacy::PassManager old_pass;
