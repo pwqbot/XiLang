@@ -20,7 +20,6 @@
 #include <llvm/IR/Verifier.h>
 #include <llvm/MC/TargetRegistry.h>
 #include <llvm/Passes/OptimizationLevel.h>
-#include <llvm/Passes/PassBuilder.h>
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/Host.h>
 #include <llvm/Support/TargetSelect.h>
@@ -51,6 +50,7 @@ inline void InitializeModule()
     context                             = std::make_unique<llvm::LLVMContext>();
     module  = std::make_unique<llvm::Module>(moduleName, *context);
     builder = std::make_unique<llvm::IRBuilder<>>(*context);
+    namedValues.clear();
 }
 
 // CreateEntryBlockAlloca - Create an alloca instruction in the entry block of
@@ -359,7 +359,8 @@ auto CodeGen(Xi_Assign assign) -> codegen_result_t
     return CodeGen(assign.expr) >>= [assign](llvm::Value *v) -> codegen_result_t
     {
         auto *variable = namedValues[assign.name];
-        auto *old_v = builder->CreateLoad(variable->getAllocatedType(), variable, "old");
+        auto *old_v =
+            builder->CreateLoad(variable->getAllocatedType(), variable, "old");
         builder->CreateStore(v, variable);
         return old_v;
     };
@@ -784,9 +785,10 @@ auto GenObj(std::string_view output_file)
     const auto *Features = "";
 
     llvm::TargetOptions opt;
-    auto                RM = llvm::Optional<llvm::Reloc::Model>();
-    auto               *TargetMachine =
-        Target->createTargetMachine(TargetTriple, CPU, Features, opt, RM);
+    // auto                RM = llvm::Optional<llvm::Reloc::Model::DynamicNoPIC>();
+    auto               *TargetMachine = Target->createTargetMachine(
+        TargetTriple, CPU, Features, opt, llvm::Reloc::Model::DynamicNoPIC
+    );
 
     module->setDataLayout(TargetMachine->createDataLayout());
 
@@ -800,22 +802,22 @@ auto GenObj(std::string_view output_file)
     }
 
     // llvm::legacy::PassManager pass;
-    llvm::LoopAnalysisManager     LAM;
-    llvm::ModuleAnalysisManager   MAM;
-    llvm::FunctionAnalysisManager FAM;
-    llvm::CGSCCAnalysisManager    CGAM;
-
-    llvm::PassBuilder PB;
-    PB.registerModuleAnalyses(MAM);
-    PB.registerCGSCCAnalyses(CGAM);
-    PB.registerFunctionAnalyses(FAM);
-    PB.registerLoopAnalyses(LAM);
-    PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
-    llvm::ModulePassManager MPM =
-        PB.buildPerModuleDefaultPipeline(llvm::OptimizationLevel::O2);
-
-    llvm::ModulePassManager pass;
-    pass.run(*module, MAM);
+    // llvm::LoopAnalysisManager     LAM;
+    // llvm::ModuleAnalysisManager   MAM;
+    // llvm::FunctionAnalysisManager FAM;
+    // llvm::CGSCCAnalysisManager    CGAM;
+    //
+    // llvm::PassBuilder PB;
+    // PB.registerModuleAnalyses(MAM);
+    // PB.registerCGSCCAnalyses(CGAM);
+    // PB.registerFunctionAnalyses(FAM);
+    // PB.registerLoopAnalyses(LAM);
+    // PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
+    // llvm::ModulePassManager MPM =
+    //     PB.buildPerModuleDefaultPipeline(llvm::OptimizationLevel::O2);
+    //
+    // llvm::ModulePassManager pass;
+    // pass.run(*module, MAM);
 
     auto                      FileType = llvm::CGFT_ObjectFile;
     llvm::legacy::PassManager old_pass;
