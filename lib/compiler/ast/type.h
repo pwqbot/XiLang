@@ -68,13 +68,13 @@ using Xi_Type = std::variant<
 
 struct types
 {
-    std::vector<Xi_Type> types;
+    std::vector<Xi_Type> types_;
 };
 
 inline auto operator<=>(const types &lhs, const types &rhs)
     -> std::partial_ordering
 {
-    return lhs.types <=> rhs.types;
+    return lhs.types_ <=> rhs.types_;
 }
 
 struct function
