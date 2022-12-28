@@ -130,9 +130,19 @@ inline const Parser auto Xi_mod = Xi_dott >> [](Xi_Expr lhs)
            unit(lhs);
 };
 
-inline const Parser auto Xi_term = Xi_mod >> [](Xi_Expr lhs)
+inline const Parser auto Xi_xor = Xi_mod >> [](Xi_Expr lhs)
 {
-    return (some(combine_to_unop(Xi_mul || Xi_divide, Xi_mod), binop_fold) >>
+    return (some(combine_to_unop(op("^"), Xi_mod), binop_fold) >>
+            [lhs](Xi_Expr rhs)
+            {
+                return Xi_binop_fold_go(lhs, rhs);
+            }) ||
+           unit(lhs);
+};
+
+inline const Parser auto Xi_term = Xi_xor >> [](Xi_Expr lhs)
+{
+    return (some(combine_to_unop(Xi_mul || Xi_divide, Xi_xor), binop_fold) >>
             [lhs](Xi_Expr rhs)
             {
                 return Xi_binop_fold_go(lhs, rhs);

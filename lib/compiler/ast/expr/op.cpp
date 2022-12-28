@@ -153,6 +153,19 @@ auto TypeAssign(Xi_Binop &binop, LocalVariableRecord record) -> TypeAssignResult
                         "expect buer, lhs: {}, rhs: {}", lhs_type, rhs_type
                     ),
                 });
+            case Xi_Op::Xor:
+                if (lhs_type == type::buer{} || lhs_type == type::i64{})
+                {
+                    return binop.type = lhs_type;
+                }
+                return tl::make_unexpected(TypeAssignError{
+                    TypeAssignError::TypeMismatch,
+                    fmt::format(
+                        "expect buer or i64, lhs: {}, rhs: {}",
+                        lhs_type,
+                        rhs_type
+                    ),
+                });
             default:
                 return lhs_type;
             }

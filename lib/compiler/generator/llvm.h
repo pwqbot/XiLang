@@ -471,6 +471,8 @@ auto CodeGen(Xi_Binop bop) -> codegen_result_t
                 return builder->CreateAnd(lhs, rhs, "andtmp");
             case Xi_Op::Or:
                 return builder->CreateOr(lhs, rhs, "ortmp");
+            case Xi_Op::Xor:
+                return builder->CreateXor(lhs, rhs, "xortmp");
             default:
                 return tl::unexpected(ErrorCodeGen(
                     ErrorCodeGen::UnknownOperator, magic_enum::enum_name(bop.op)
