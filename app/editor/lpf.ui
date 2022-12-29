@@ -6,87 +6,92 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>3000</width>
-    <height>1500</height>
+    <width>2569</width>
+    <height>1829</height>
    </rect>
   </property>
+  <property name="font">
+   <font>
+    <pointsize>13</pointsize>
+   </font>
+  </property>
   <property name="windowTitle">
-   <string>Compiler</string>
+   <string>lpf</string>
   </property>
   <widget class="QWidget" name="centralWidget">
    <widget class="QPushButton" name="openButton">
     <property name="geometry">
      <rect>
-      <x>90</x>
-      <y>470</y>
+      <x>20</x>
+      <y>140</y>
       <width>81</width>
       <height>41</height>
      </rect>
     </property>
     <property name="text">
-     <string> open </string>
+     <string>open file</string>
     </property>
    </widget>
    <widget class="QPushButton" name="runButton">
     <property name="geometry">
      <rect>
-      <x>390</x>
-      <y>470</y>
+      <x>20</x>
+      <y>220</y>
       <width>81</width>
       <height>41</height>
      </rect>
     </property>
     <property name="text">
-     <string> run </string>
+     <string>run</string>
     </property>
    </widget>
    <widget class="QTextEdit" name="textEdit">
     <property name="geometry">
      <rect>
-      <x>20</x>
+      <x>110</x>
       <y>20</y>
-      <width>251</width>
-      <height>431</height>
+      <width>1121</width>
+      <height>1301</height>
      </rect>
     </property>
    </widget>
    <widget class="QTextEdit" name="textEdit_2">
     <property name="geometry">
      <rect>
-      <x>310</x>
-      <y>20</y>
-      <width>251</width>
-      <height>431</height>
+      <x>110</x>
+      <y>1370</y>
+      <width>1121</width>
+      <height>241</height>
      </rect>
     </property>
    </widget>
    <widget class="QTextEdit" name="textEdit_4">
     <property name="geometry">
      <rect>
-      <x>580</x>
+      <x>1960</x>
       <y>20</y>
-      <width>381</width>
-      <height>201</height>
+      <width>521</width>
+      <height>1181</height>
      </rect>
     </property>
    </widget>
    <widget class="QTextEdit" name="textEdit_5">
     <property name="geometry">
      <rect>
-      <x>580</x>
-      <y>250</y>
-      <width>381</width>
-      <height>201</height>
+      <x>1300</x>
+      <y>1240</y>
+      <width>1171</width>
+      <height>381</height>
      </rect>
     </property>
    </widget>
    <widget class="QTextEdit" name="textEdit_3">
     <property name="geometry">
      <rect>
-      <x>990</x>
+      <x>1300</x>
       <y>20</y>
-      <width>251</width>
-      <height>431</height>
+      <width>621</width>
+      <height>1181</height>
      </rect>
     </property>
    </widget>
@@ -96,8 +101,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1313</width>
-     <height>20</height>
+     <width>2569</width>
+     <height>29</height>
     </rect>
    </property>
   </widget>
@@ -117,3 +122,4 @@
  </resources>
  <connections/>
 </ui>
+

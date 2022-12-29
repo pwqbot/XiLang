@@ -47,7 +47,7 @@ void lpf::ShowftableToWindow(std::string)
 
 void lpf::ShowAstToWindow(std::string /*unused*/ in)
 {
-    ui->textEdit_3->setText(in.c_str());
+    ui->textEdit_5->setText(in.c_str());
 }
 
 // ��ʾ������������
@@ -58,7 +58,7 @@ void lpf::ShowResultToWindow(std::string in)
 // ��ʾpcode����
 void lpf::ShowPcodeToWindow(std::string in)
 {
-    ui->textEdit_5->setText(in.c_str());
+    ui->textEdit_3->setText(in.c_str());
 }
 
 auto exec(const char *cmd) -> std::string
