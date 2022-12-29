@@ -1,13 +1,49 @@
+#include "compiler/generator/pcode.h"
+
 #include <compiler/ast/ast_format.h>
 #include <compiler/ast/type_assign.h>
 #include <compiler/ast/type_format.h>
 #include <compiler/generator/llvm.h>
+#include <compiler/generator/pcode_gen.h>
 #include <compiler/parser/program.h>
 #include <cstdlib>
 #include <gflags/gflags.h>
 #include <spdlog/spdlog.h>
 
 DEFINE_string(o, "a", "Output file");
+DEFINE_bool(pcode, true, "whether run pcode");
+DEFINE_bool(llvm, false, "whether run pcode");
+
+int RunLLVM(xi::Xi_Program ast, std::string output_obj, std::string output_ll)
+{
+    auto codegen_result = xi::CodeGen(ast);
+    if (!codegen_result)
+    {
+        spdlog::error("LLVM: \n {}\n", codegen_result.error().what());
+        return 1;
+    }
+    // write the IR to a file
+    spdlog::info("Generate LLVM IR to {}", output_ll);
+    std::ofstream ir_file(output_ll.data());
+    ir_file << codegen_result.value();
+
+    xi::GenObj(output_obj);
+
+    // use clang to link the object file
+    spdlog::info("Linking to {}", FLAGS_o);
+    auto clang_result =
+        std::system(fmt::format("clang {} -o {}", output_obj, FLAGS_o).c_str());
+    if (clang_result != 0)
+    {
+        // delete the object file
+        std::remove(output_obj.data());
+        spdlog::error("Linking failed");
+        return 1;
+    }
+    std::remove(output_obj.data());
+    spdlog::info("Linking successfully");
+    return 0;
+}
 
 int main(int argc, char *argv[])
 {
@@ -48,42 +84,32 @@ int main(int argc, char *argv[])
 
             spdlog::info("Type:\n {}\n", ast_type.value());
             spdlog::info("Ast With Type:\n {}\n", ast);
-            auto codegen_result = xi::CodeGen(ast);
-            if (!codegen_result)
+            if (FLAGS_llvm)
             {
-                spdlog::error("LLVM: \n {}\n", codegen_result.error().what());
-                return 1;
+                return RunLLVM(ast, output_obj, output_ll);
             }
-            // write the IR to a file
-            spdlog::info("Generate LLVM IR to {}", output_ll);
-            std::ofstream ir_file(output_ll.data());
-            ir_file << codegen_result.value();
-
-            xi::GenObj(output_obj);
-
-            // use clang to link the object file
-            spdlog::info("Linking to {}", FLAGS_o);
-            auto clang_result = std::system(
-                fmt::format("clang {} -o {}", output_obj, FLAGS_o).c_str()
-            );
-            if (clang_result != 0)
+            if (FLAGS_pcode)
             {
-                // delete the object file
-                std::remove(output_obj.data());
-                spdlog::error("Linking failed");
-                return 1;
+                std::string output_pcode = FLAGS_o + ".pcode";
+                spdlog::info("Generate Pcode");
+                auto pcode_result = xi::PCodeGen(ast);
+                if (pcode_result)
+                {
+                    auto          pcode = pcode_result.value();
+                    std::ofstream ir_file(output_pcode.data());
+                    ir_file << xi::pCodeToString(pcode);
+                    ir_file.flush();
+                    ir_file.close();
+                    xi::Interpret(pcode);
+                }
+                return 0;
             }
-            std::remove(output_obj.data());
-            spdlog::info("Linking successfully");
         }
-        else
-        {
-            spdlog::error(
-                "Parse fail!\nparsed: {}\n{} not parsed\n",
-                ast_result.value().first,
-                ast_result.value().second
-            );
-        }
+        spdlog::error(
+            "Parse fail!\nparsed: {}\n{} not parsed\n",
+            ast_result.value().first,
+            ast_result.value().second
+        );
     }
     else
     {

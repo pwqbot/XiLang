@@ -3,7 +3,7 @@
 #include "compiler/generator/error.h"
 #include "compiler/generator/pcode.h"
 
-#include <cstdint>
+#include <spdlog/spdlog.h>
 
 namespace xi
 {
@@ -11,7 +11,7 @@ namespace xi
 struct PCodeGenState
 {
     std::vector<PCode>   pcodes;
-    int64_t              cur_level;
+    int64_t              cur_level{0};
     std::vector<int64_t> cur_base;
     struct var
     {
@@ -19,19 +19,41 @@ struct PCodeGenState
         int64_t     level;
         int64_t     addr;
     };
-    std::stack<std::map<std::string, var>> var_table;
-    std::stack<int64_t>                    cur_offset;
-    std::stack<std::stack<int64_t>>        old_offset;
-    auto                                   Emit(Op op, int64_t l, int64_t a)
+    struct func
+    {
+        type::function type;
+        int64_t        level;
+        int64_t        addr;
+    };
+    std::stack<std::map<std::string, var>>  var_table;
+    std::stack<std::map<std::string, func>> func_table;
+    std::stack<int64_t>                     cur_offset;
+    std::stack<std::stack<int64_t>>         old_offset;
+    auto                                    Emit(Op op, int64_t l, int64_t a)
     {
         return pcodes.push_back(PCode{op, l, a});
     }
+
+    PCodeGenState()
+    {
+        cur_base.push_back(0);
+        cur_offset.push(0);
+        old_offset.push(std::stack<int64_t>());
+        var_table.push(std::map<std::string, var>());
+        func_table.push(std::map<std::string, func>());
+    }
+
     [[nodiscard]] auto NextLabel() const -> uint64_t { return pcodes.size(); }
     [[nodiscard]] auto GetCurLevel() const -> int64_t { return cur_level; }
-    auto               EnterNextLevel()
+    auto               EnterNextLevel(int64_t param_num)
     {
         cur_level++;
         old_offset.emplace(cur_offset);
+        while (!cur_offset.empty())
+        {
+            cur_offset.pop();
+        }
+        cur_offset.push(param_num + 3);
     }
     auto LeaveCurLevel()
     {
@@ -43,10 +65,12 @@ struct PCodeGenState
     auto EnterBlock()
     {
         var_table.emplace(var_table.top());
+        func_table.emplace(func_table.top());
         cur_offset.emplace(cur_offset.top());
     }
     auto LeaveBlock()
     {
+        func_table.pop();
         var_table.pop();
         cur_offset.pop();
     }
@@ -67,11 +91,35 @@ struct PCodeGenState
         }
         throw std::runtime_error("Variable not found");
     }
+
+    auto
+    EnterFunc(const std::string &name, const type::function &type, int64_t addr)
+    {
+        spdlog::info("EnterFunc: {}", name);
+        auto &ft = func_table.top();
+        ft.insert_or_assign(name, func{type, cur_level, addr});
+    }
+
+    auto LookupFunc(const std::string &name) -> func &
+    {
+        auto &ft = func_table.top();
+        if (ft.contains(name))
+        {
+            return ft[name];
+        }
+        throw std::runtime_error("Function not found");
+    }
 };
 
-void PCodeGen(Xi_Expr, PCodeGenState);
-void PCodeGen(Xi_Stmt, PCodeGenState);
-void PCodeGen(std::vector<Xi_Stmt>, PCodeGenState);
+void PCodeGen(Xi_Expr, PCodeGenState &);
+void PCodeGen(Xi_Stmt, PCodeGenState &);
+void PCodeGen(std::vector<Xi_Stmt>, PCodeGenState &);
+
+template <typename T>
+auto PCodeGen(recursive_wrapper<T> wrapper, PCodeGenState &st)
+{
+    return PCodeGen(wrapper.get(), st);
+}
 
 auto PCodeGen(Xi_Integer i, PCodeGenState &st)
 {
@@ -231,7 +279,7 @@ auto size(type::Xi_Type t) -> int64_t
                 auto ans = 0;
                 for (auto &&[name, t_] : st.get().members)
                 {
-                    ans += size(t_);
+                    ans += static_cast<int>(size(t_));
                 }
                 return ans;
             },
@@ -259,6 +307,145 @@ auto PCodeGen(Xi_Assign assign, PCodeGenState &st)
     PCodeGen(assign.expr, st);
     auto var = st.LookupVar(assign.name);
     st.Emit(Op::sto, st.cur_level - var.level, var.addr);
+}
+
+auto PCodeGen(Xi_Return rt, PCodeGenState &st)
+{
+    PCodeGen(rt.expr, st);
+    st.Emit(Op::ret, 0, size(rt.type));
+}
+
+auto PCodeGen(Xi_Comment /*unused*/, PCodeGenState /*unused*/) {}
+
+void PCodeGen(Xi_Decl decl, PCodeGenState &st)
+{
+    return std::visit(
+        [decl, &st](auto decl_type_wrapper)
+        {
+            if constexpr (std::same_as<
+                              std::decay_t<decltype(decl_type_wrapper)>,
+                              recursive_wrapper<type::function>>)
+            {
+                auto decl_type = decl_type_wrapper.get();
+                st.EnterFunc(
+                    decl.name, decl_type, static_cast<int64_t>(st.NextLabel())
+                );
+                return;
+            }
+            else
+            {
+                return;
+            }
+        },
+        decl.type
+    );
+}
+
+void pCodeGenExprFunc(Xi_Func, PCodeGenState &) {}
+
+void pCodeGenStmtFunc(Xi_Func func, PCodeGenState &st)
+{
+    PCodeGen(func.stmts, st);
+}
+
+void PCodeGen(Xi_Func func, PCodeGenState &st)
+{
+    st.EnterNextLevel(static_cast<int64_t>(func.params.size()));
+
+    auto f = st.LookupFunc(func.name);
+    for (auto &&name : func.params)
+    {
+        st.EnterVar(name);
+    }
+
+    if (func.expr != std::monostate{})
+    {
+        pCodeGenExprFunc(func, st);
+    }
+    else
+    {
+        pCodeGenStmtFunc(func, st);
+    }
+
+    st.LeaveCurLevel();
+}
+
+void PCodeGen(Xi_Array, PCodeGenState &) {}
+
+void PCodeGen(Xi_Call func, PCodeGenState &st)
+{
+    auto f = st.LookupFunc(func.name);
+    st.Emit(Op::cap, st.cur_level - f.level, f.addr);
+    for (auto &&arg : func.args)
+    {
+        PCodeGen(arg, st);
+    }
+    st.Emit(Op::cal, 0, f.addr);
+}
+
+void PCodeGen(Xi_Lam, PCodeGenState &) {}
+void PCodeGen(Xi_If, PCodeGenState &) {}
+
+void PCodeGen(Xi_Iden iden, PCodeGenState &st)
+{
+    auto var = st.LookupVar(iden.name);
+    st.Emit(Op::lod, st.cur_level - var.level, var.addr);
+}
+
+void PCodeGen(Xi_ArrayIndex, PCodeGenState &) {}
+void PCodeGen(std::monostate, PCodeGenState &) {}
+
+void PCodeGen(Xi_Expr expr, PCodeGenState &st)
+{
+    return std::visit(
+        [&](auto arg)
+        {
+            PCodeGen(arg, st);
+        },
+        expr
+    );
+}
+
+void PCodeGen(Xi_Stmt stmt, PCodeGenState &st)
+{
+    return std::visit(
+        [&](auto arg)
+        {
+            PCodeGen(arg, st);
+        },
+        stmt
+    );
+}
+void PCodeGen(std::vector<Xi_Stmt> stmts, PCodeGenState &st)
+{
+    for (auto &&stmt : stmts)
+    {
+        PCodeGen(stmt, st);
+    }
+}
+
+void PCodeGen(Xi_Stmts stmts, PCodeGenState &st)
+{
+    for (auto &&stmt : stmts.stmts)
+    {
+        PCodeGen(stmt, st);
+    }
+}
+
+auto PCodeGen(Xi_Program program) -> ExpectedCodeGen<std::vector<PCode>>
+{
+    PCodeGenState st;
+    PCodeGen(program.stmts, st);
+    auto main_f = st.LookupFunc("main");
+    st.Emit(Op::cap, 0, 0);
+    st.Emit(Op::cal, 0, main_f.addr);
+    int i = 0;
+    for (auto &&code : st.pcodes)
+    {
+        spdlog::error("{} {} {} {}\n", i, code.op, code.l, code.a);
+        i++;
+    }
+    return st.pcodes;
 }
 
 } // namespace xi
