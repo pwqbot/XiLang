@@ -102,11 +102,23 @@ inline const Parser auto Xi_pp = s_iden >> [](std::string name)
     };
 };
 
+inline const Parser auto Xi_no = op("!") >> [](Xi_Op op)
+{
+    return Xi_expr >> [op](Xi_Expr expr)
+    {
+        return unit(Xi_Expr(Xi_Unop{
+            .expr = expr,
+            .op   = op,
+        }));
+    };
+};
+
 inline auto Xi_factor(std::string_view input) -> Parsed_t<Xi_Expr>
 {
     return (
         Xi_lam || Xi_string || Xi_if || Xi_parenmathexpr || Xi_number ||
-        Xi_call || Xi_arrayIndex || Xi_pp || Xi_assign || Xi_idenexpr || Xi_array
+        Xi_call || Xi_arrayIndex || Xi_pp || Xi_assign || Xi_idenexpr ||
+        Xi_array || Xi_no
     )(input);
 }
 
